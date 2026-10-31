@@ -2,7 +2,8 @@ English | [日本語](../ja/DEVELOPMENT.md) | [Español](../es/DEVELOPMENT.md) �
 
 # Development
 
-Setup, checks and conventions for working on the code.
+Setup, checks and conventions for working on the code of lyrics-video-app. Read it before changing code or docs.
+To use the app on a song instead, see the [User guide](USER_GUIDE.md).
 
 ## 1. Setup
 
@@ -12,11 +13,12 @@ git clone <audio-spectrum-app repository> ../audio-spectrum-app   # once, next t
 uv sync
 ```
 
-Python 3.13 and all dependencies are managed by `uv` (`pyproject.toml`, `uv.lock`). audio-spectrum-app is a path
-dependency (`../audio-spectrum-app`, editable, version 0.5.0 or later), so changes there are picked up without
-reinstalling ([ADR-001](../working/DECISIONS.md#adr-001-a-separate-repository-that-draws-under-audio-spectrum-apps-spectrum)).
-Only its public API, the names exported by `audio_spectrum`, may be used. Add a dependency with `uv add <package>`;
-keep dependencies few and widely used.
+- `uv` manages Python 3.13 and all dependencies (`pyproject.toml`, `uv.lock`).
+- audio-spectrum-app is a path dependency (`../audio-spectrum-app`, editable, version 0.5.0 or later), so changes
+  there are picked up without reinstalling
+  ([ADR-001](../working/DECISIONS.md#adr-001-a-separate-repository-that-draws-under-audio-spectrum-apps-spectrum)).
+  Only its public API, the names exported by `audio_spectrum`, may be used.
+- Add a dependency with `uv add <package>`. Keep dependencies few and widely used.
 
 ## 2. Tests
 
@@ -24,8 +26,8 @@ keep dependencies few and widely used.
 uv run pytest
 ```
 
-- Tests use generated text, images and signals only (`tests/signals.py`), never real songs, lyrics or third-party
-  fonts. Tests that need a font use macOS system fonts and are skipped where they are missing.
+Tests use generated text, images and signals only (`tests/signals.py`), never real songs, lyrics or third-party
+fonts. Tests that need a font use macOS system fonts and are skipped where they are missing.
 
 | File | Covers |
 |---|---|
@@ -42,31 +44,44 @@ uv run pytest
 
 ## 3. Local files
 
-Songs, lyrics, background images, fonts, real song files and everything rendered stay in `work/` (ignored by Git) or
-outside the repository. `.gitignore` also ignores media, image and font files and every `*.toml` except
-`pyproject.toml` and `*.example.toml` anywhere in the tree. Before a commit, check the file list for any of these and
-for absolute paths that contain a user name (write `~/...`).
+Keep songs, lyrics, background images, fonts, real song files and everything rendered in `work/` (ignored by Git) or
+outside the repository.
 
-## 4. Comparing images
+`.gitignore` also ignores, anywhere in the tree:
 
-`tools/compare_images.py` compares two folders of PNGs by file name, for example the old lyrics image script's
-output with this app's, and prints for each pair the share of differing pixels, the largest difference and where the
-differences are; stacked old / new / difference images go to `work/compare_images/`:
+- media, image and font files;
+- every `*.toml` except `pyproject.toml` and `*.example.toml`.
+
+Before a commit, check the file list for any of these. Also check for absolute paths that contain a user name (write
+`~/...`).
+
+## 4. Tools
+
+### Comparing caption images: `compare_images.py`
+
+Use it whenever a change should not alter the caption images.
 
 ```bash
 uv run python tools/compare_images.py OLD_FOLDER NEW_FOLDER
 ```
 
-It prints positions instead of file names (add `--names` to see them), so its output can go into reports without
-song or font names. Use it whenever a change should not alter the caption images.
+- It pairs the PNGs of two folders by file name, for example the old lyrics image script's output and this app's.
+- For each pair it prints the share of differing pixels, the largest difference and where the differences are.
+- Stacked old / new / difference images go to `work/compare_images/`.
+- It prints positions instead of file names (add `--names` to see them). So its output can go into reports without
+  song or font names.
 
-`tools/time_backdrop.py` times the picture under the spectrum per frame for each design, with a song file's
-background, fonts and video size; the target is under 10 ms per 1080p frame with a caption
-([ADR-004](../working/DECISIONS.md#adr-004-text-for-video-frames-drawn-with-pillow-composed-in-numpy-in-the-render-workers)):
+### Timing the backdrop: `time_backdrop.py`
+
+It times the picture under the spectrum per frame for each design. It uses a song file's background, fonts and video
+size.
 
 ```bash
 uv run python tools/time_backdrop.py work/my-song/song.toml --design classic soft panel
 ```
+
+The target is under 10 ms per 1080p frame with a caption
+([ADR-004](../working/DECISIONS.md#adr-004-text-for-video-frames-drawn-with-pillow-composed-in-numpy-in-the-render-workers)).
 
 ## 5. Conventions
 
@@ -74,11 +89,13 @@ uv run python tools/time_backdrop.py work/my-song/song.toml --design classic sof
   (`docs/ja/`, `docs/es/`, `README.ja.md`, `README.es.md`).
 - Frame `n` shows the audio at time `n / fps`; captions and credits are placed by time.
 - Normal use is fully offline.
-- Stable docs live in `docs/en/` with a Japanese twin in `docs/ja/` and a Spanish twin in `docs/es/`; each
-  translation records the English blob hash (`git hash-object docs/en/<FILE>.md`) on its first line and is updated
-  in the same commit as the English file. Working docs (plans, decisions, acceptance reports) live in
-  `docs/working/` in English only.
-- Work proceeds in phases: a plan in `docs/working/PHASE<N>_PLAN.md` approved by the owner, then implementation with a
-  commit per milestone, then an acceptance report.
+- Stable docs live in `docs/en/`, with a Japanese twin in `docs/ja/` and a Spanish twin in `docs/es/`.
+  - Each translation records the English blob hash (`git hash-object docs/en/<FILE>.md`) on its first line.
+  - It is updated in the same commit as the English file.
+  - Working docs (plans, decisions, acceptance reports) live in `docs/working/` in English only.
+- Work proceeds in phases:
+  1. a plan in `docs/working/PHASE<N>_PLAN.md`, approved by the owner;
+  2. implementation, with a commit per milestone;
+  3. an acceptance report.
 - Before the repository is made public, its whole history is scanned with a secret scanner (for example
   `gitleaks`).

@@ -2,7 +2,9 @@ English | [日本語](../ja/README.md) | [Español](../es/README.md) · [Reposit
 
 # lyrics-video-app documentation
 
-How the offline lyrics video maker is set up, designed and developed, and the records of each phase.
+Every doc of lyrics-video-app, the offline lyrics video maker, with one line on each. To make captions and stills
+for a song, start with the [User guide](USER_GUIDE.md). To work on the code, start with
+[Development](DEVELOPMENT.md). The working docs record decisions and each phase.
 
 ## Guides
 

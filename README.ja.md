@@ -1,34 +1,38 @@
-<!-- source: README.md blob 26dba1fed53b37c294f70349c23bb346496fea17 -->
+<!-- source: README.md blob 2b328ea50aad2609a3ad9291acd4ae0ef56d188f -->
 [English](README.md) | 日本語 | [Español](README.es.md)
 
-> この文書は[英語版](README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
+> この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
 
 # lyrics-video-app
 
-自作曲の歌詞動画を、Mac 上で完全にオフラインで作ります。背景の静止画、曲名、画面下でフェードイン・アウトする歌詞の字幕、
-クレジット、そして [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムを、
-曲の音声とともに 1 本の動画にします。動画編集ソフトで字幕画像を重ねていた手作業を置き換えるものです。
+自作曲の歌詞動画を、Mac 上で完全にオフラインで作る。動画は背景の静止画、曲名、画面下でフェードイン・アウトする歌詞の字幕、
+クレジット、[audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムと、
+曲の音声でできている。動画編集ソフトで字幕画像を重ねていた手作業を、これで置き換える。
 
-**状況:** Phase 1（デザイン）は受け入れ済みです。`lyrics-video captions` が歌詞ファイルから旧歌詞画像
-スクリプトと同じ字幕画像を作り（iMovie 用）、`lyrics-video compare` がテキストを多くのフォントで並べて見せ、
-`lyrics-video still` が将来の動画のフレーム（背景、曲名、字幕、クレジット、スペクトラム）を 3 つのデザイン（既定は `soft`）で
-描きます。動画全体の書き出しは後のフェーズで加わります。[Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md)（英語のみ）
-を参照してください。
+**状況：** Phase 1（デザイン）は受け入れ済み。動画全体の書き出しは後のフェーズで加わる。詳しくは
+[Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md)（英語のみ）を参照。
+
+## 今できること
+
+- `lyrics-video captions`：歌詞ファイルから、旧歌詞画像スクリプトと同じ字幕画像を作る。iMovie で使う。
+- `lyrics-video compare`：テキストを多くのフォントで並べて見せる。
+- `lyrics-video still`：将来の動画のフレーム（背景、曲名、字幕、クレジット、スペクトラム）を 3 つのデザインで描く。
+  既定のデザインは `soft`。
 
 ## クイックスタート
 
-audio-spectrum-app をこのリポジトリの隣（`../audio-spectrum-app`）に置いておく必要があります。
+audio-spectrum-app をこのリポジトリの隣（`../audio-spectrum-app`）に置いておく必要がある。
 
 ```bash
 brew install uv ffmpeg
 uv sync
-mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # フォント、色、歌詞ファイルを設定する
+mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # このあとフォント、色、歌詞ファイルを設定する
 uv run lyrics-video captions work/my-song/song.toml         # 字幕 1 行につき 1 枚の PNG
 uv run lyrics-video compare work/my-song/song.toml          # 比較用テキストを複数のフォントで
 uv run lyrics-video still work/my-song/song.toml --time 60  # 指定した時刻の動画のフレーム
 ```
 
-テストは `uv run pytest` で実行します。
+テストは `uv run pytest` で走らせる。
 
 ## ドキュメント
 
@@ -38,4 +42,4 @@ uv run lyrics-video still work/my-song/song.toml --time 60  # 指定した時刻
 
 ## ライセンス
 
-[MIT](LICENSE)。曲、歌詞、画像、フォントはこのリポジトリには一切含まれません。
+[MIT](LICENSE)。曲、歌詞、画像、フォントはこのリポジトリに一切含めない。

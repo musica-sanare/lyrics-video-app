@@ -1,11 +1,14 @@
-<!-- source: docs/en/README.md blob 2527a164b0c53fc81f51239ec4c62ea736ff2132 -->
+<!-- source: docs/en/README.md blob b7d54872eb8ab5f1d082f9926a3c15ddbeb67f4c -->
 [English](../en/README.md) | [日本語](../ja/README.md) | Español · [README del repositorio](../../README.es.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/README.md). Si hay diferencias, prevalece la versión en inglés.
 
 # Documentación de lyrics-video-app
 
-Cómo se instala, se diseña y se desarrolla el creador de vídeos con letra sin conexión, y los registros de cada fase.
+Todos los documentos de lyrics-video-app, el creador de vídeos con letra sin conexión, con una línea sobre cada uno.
+Para crear los subtítulos y los fotogramas de una canción, empieza por la [Guía de uso](USER_GUIDE.md). Para
+trabajar en el código, empieza por [Desarrollo](DEVELOPMENT.md). Los documentos de trabajo registran las decisiones y
+cada fase.
 
 ## Guías
 

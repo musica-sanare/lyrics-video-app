@@ -1,11 +1,11 @@
-<!-- source: docs/en/README.md blob 2527a164b0c53fc81f51239ec4c62ea736ff2132 -->
+<!-- source: docs/en/README.md blob b7d54872eb8ab5f1d082f9926a3c15ddbeb67f4c -->
 [English](../en/README.md) | 日本語 | [Español](../es/README.md) · [リポジトリの README](../../README.ja.md)
 
-> この文書は[英語版](../en/README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
+> この文書は[英語版](../en/README.md)の翻訳。内容が異なる場合は英語版が優先する。
 
 # lyrics-video-app ドキュメント
 
-オフラインの歌詞動画メーカーのセットアップ・設計・開発方法と、各フェーズの記録です。
+オフラインの歌詞動画メーカー lyrics-video-app の全文書を、1 行の説明付きで並べる。曲の字幕や静止画を作るなら[ユーザーガイド](USER_GUIDE.md)から、コードを触るなら[開発](DEVELOPMENT.md)から読む。作業用ドキュメントには設計判断と各フェーズの記録がある。
 
 ## ガイド
 
