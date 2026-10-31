@@ -17,8 +17,13 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
   (`../audio-spectrum-app`, editable, `>=0.5.0`) while both repositories change.
 - Consequences: One render path and one sync invariant for both apps; previews (`Preview.frames`) equal video
   frames. A checkout needs audio-spectrum-app next to it. Changes needed there are planned in its own workspace,
-  never made from here. Pinning the tag `v0.5.0` (a Git dependency) is postponed until both repositories are
-  public. Rejected: lyrics features inside audio-spectrum-app; a second render loop on its internals.
+  never made from here. Rejected: lyrics features inside audio-spectrum-app; a second render loop on its internals.
+- Update (2026-10-31, [Phase 0 acceptance](PHASE0_ACCEPTANCE.md) P0-3): when the repositories are made public, the
+  path dependency is replaced by a Git dependency on a tag of audio-spectrum-app (for example
+  `git+https://github.com/musica-sanare/audio-spectrum-app@v0.5.0`), so `uv sync` alone installs it.
+  audio-spectrum-app is made public first or together with this repository, and the README links to it. Rejected: a
+  Git submodule (more steps to clone and update, nothing gained over a pinned tag) and a PyPI release (not needed
+  for now).
 
 ## ADR-002: Pillow for the caption PNGs
 
