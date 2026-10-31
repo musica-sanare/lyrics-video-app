@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob 3f88d0d3176094830c5daf09fd751bf7af8a7dbd -->
+<!-- source: docs/en/README.md blob 2527a164b0c53fc81f51239ec4c62ea736ff2132 -->
 [English](../en/README.md) | [日本語](../ja/README.md) | Español · [README del repositorio](../../README.es.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/README.md). Si hay diferencias, prevalece la versión en inglés.
@@ -24,3 +24,4 @@ Cómo se instala, se diseña y se desarrolla el creador de vídeos con letra sin
 | [Phase 0 acceptance](../working/PHASE0_ACCEPTANCE.md) (solo en inglés) | Informe de aceptación de la fase 0: criterios, comparación con las imágenes de subtítulos antiguas, seguridad del repositorio, temas pendientes. |
 | [Phase 1 plan](../working/PHASE1_PLAN.md) (solo en inglés) | El diseño de un vídeo con letra como partes configurables: modelo de fotograma, backdrop, diseños para comparar, orden `still`. |
 | [Phase 1 acceptance](../working/PHASE1_ACCEPTANCE.md) (solo en inglés) | Informe de aceptación de la fase 1: el diseño elegido por el propietario, criterios, tiempo medido del backdrop, seguridad del repositorio, temas pendientes. |
+| [Phase 2 plan](../working/PHASE2_PLAN.md) (solo en inglés) | Los tiempos de la letra: un archivo LRC, una página para marcar y ajustar tiempos, subtítulos por tiempo con adelanto y fundidos cruzados, el documento de arquitectura. |

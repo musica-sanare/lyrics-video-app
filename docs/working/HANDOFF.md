@@ -17,8 +17,8 @@ image and lyrics in, finished video out"; the hard part is the timing of the lyr
    size shrunk until the text fits with a margin. Settings live in a TOML file. It also renders one caption in many
    fonts side by side to compare them.
 2. In iMovie: the background image fills the frame; the song title is part of that image (placed at its top); each
-   caption image is placed at the very bottom, full width, with about 2 s fades, timed by hand; credits appear before
-   and after the song.
+   caption image is placed at the very bottom, full width, with short fades (about 0.2 s to 0.5 s; first noted here
+   as 2 s, corrected by the owner in the Phase 2 plan), timed by hand; credits appear before and after the song.
 3. The result is exported, and the spectrum video from audio-spectrum-app is laid over it with a chroma key, centered.
    The spectrum may cover the lyrics now and then; that is fine.
 
