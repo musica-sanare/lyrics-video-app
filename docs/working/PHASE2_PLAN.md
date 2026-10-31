@@ -3,7 +3,8 @@
 # Phase 2 plan: timing of the lyrics
 
 Status: approved by the owner on 2026-10-31 with the recommended options (A1, B1, C1); the answers to the questions
-are recorded in the last section. The keys and the feel of the page are settled with a mock-up first (milestone 1).
+are recorded in the last section. The keys and the feel of the page were settled with a mock-up on 2026-11-01
+(milestone 1, see "Mock-up results").
 
 ## Goal
 
@@ -81,14 +82,15 @@ sends no cross-origin headers. The song is streamed to the page with range reque
 `<audio>` element cannot send headers, the token is accepted as a query parameter for that one route. Page texts in
 Japanese, English, Spanish and French (Q6). Plain HTML, CSS and JavaScript without a build step.
 
-- **Tap mode:** the lines are listed; play at normal speed (Q5) and mark the start and the end of each line. Two
-  ways are tried in the mock-up: `Space` for a start and `Enter` for an end, or holding `Space` while a line is sung
-  (press at its start, release at its end). `Backspace` undoes the last mark. Times come from the audio element's
-  current time, minus a reaction offset (default 0, adjustable after a first try).
+- **Tap mode:** the lines are listed; play at normal speed (Q5) and mark the start and the end of each line:
+  `Space` for the start of the next line, `Enter` for the end of the current one (before a pause), `Backspace` to
+  undo the last mark. Times come from the audio element's current time, minus a reaction offset (a setting, default
+  0, so off).
 - **Adjust mode:** a waveform of the whole song (decoded in the browser) with a marker per time, a zoomed view
   around the selected line, buttons to move a time by ±0.05 s and ±0.5 s or to drag it, "play from 2 s before this
   line", and a still of the video at the selected moment (`render_stills` through the backdrop, so it is the exact
-  frame).
+  frame). Several lines (a range with `Shift` and a click or the up and down arrows, single lines added with `⌘` and
+  a click, or all lines) can be selected and shifted together; one undo restores them all.
 - **Save** writes the LRC safely (temporary file and rename, a `.bak` copy of the previous one). Nothing is written
   without pressing Save; leaving with unsaved changes asks first.
 
@@ -116,7 +118,7 @@ Generated text, signals and images only.
 
 ### Architecture document
 
-`docs/{en,ja,es}/ARCHITECTURE.md`: the layers (song file and designs; layers and backdrop; audio-spectrum-app;
+`docs/{en,ja}/ARCHITECTURE.md`: the layers (song file and designs; layers and backdrop; audio-spectrum-app;
 commands and the page), the data flow from song file to still, the invariants (frame `n` at `n / fps`, backdrop
 picklable and pure, nothing written without an explicit command or Save), performance notes (ADR-004) and extension
 points (new caption styles, alignments, designs).
@@ -141,6 +143,16 @@ points (new caption styles, alignments, designs).
 | Frames with a crossfade stay under 20 ms at 1080p (others as in Phase 1) | `tools/time_backdrop.py` |
 | The page cannot be driven by other web pages, and nothing is written without Save | Server tests (token, host); by hand |
 | Docs (including the architecture) in English and Japanese, nothing private committed | Hash check, file review, `gitleaks` |
+
+## Mock-up results
+
+The owner tried the mock-up (milestone 1) on 2026-11-01:
+
+- Keys: `Space` for a start and `Enter` for an end was much easier than holding `Space` while a line is sung
+  (tiring), so only the first way is built.
+- Reaction offset: not needed by default; it stays as a setting with default 0.
+- Added: selecting several or all lines in adjust mode and shifting their times together. Finer details of the
+  selection can be tuned once the real page exists.
 
 ## Questions for the owner
 
