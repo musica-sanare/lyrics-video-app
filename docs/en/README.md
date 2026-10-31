@@ -1,4 +1,4 @@
-English | [日本語](../ja/README.md) | [Español](../es/README.md) · [Repository README](../../README.md)
+English | [日本語](../ja/README.md) · [Repository README](../../README.md)
 
 # lyrics-video-app documentation
 

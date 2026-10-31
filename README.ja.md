@@ -1,5 +1,5 @@
-<!-- source: README.md blob 22c6f362d3ee0595049c3d1409d6eb905412dfb3 -->
-[English](README.md) | 日本語 | [Español](README.es.md)
+<!-- source: README.md blob 6b8075f842dc654c3c717e8d70b4ef2fb36af36a -->
+[English](README.md) | 日本語
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
 

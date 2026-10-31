@@ -1,5 +1,5 @@
-<!-- source: docs/en/DEVELOPMENT.md blob 39f8fe98f0bc052611d725c25051a7931c7fb7d8 -->
-[English](../en/DEVELOPMENT.md) | 日本語 | [Español](../es/DEVELOPMENT.md) · [目次に戻る](README.md)
+<!-- source: docs/en/DEVELOPMENT.md blob b01395d73529f53681570987bd1eb447a0da5c6c -->
+[English](../en/DEVELOPMENT.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/DEVELOPMENT.md)の翻訳。内容が異なる場合は英語版が優先する。
 
@@ -84,11 +84,11 @@ uv run python tools/time_backdrop.py work/my-song/song.toml --design classic sof
 
 ## 5. 規約
 
-- コード、コメント、コミットメッセージ、ドキュメントは英語で書く。日本語とスペイン語は翻訳
-  （`docs/ja/`、`docs/es/`、`README.ja.md`、`README.es.md`）にだけ使う。
+- コード、コメント、コミットメッセージ、ドキュメントは英語で書く。日本語は翻訳
+  （`docs/ja/`、`README.ja.md`）にだけ使う。
 - フレーム `n` は時刻 `n / fps` の音声を映す。字幕とクレジットは時刻で配置する。
 - 普段の利用は完全にオフライン。
-- 安定した文書は `docs/en/` に置き、日本語版を `docs/ja/`、スペイン語版を `docs/es/` に置く。
+- 安定した文書は `docs/en/` に置き、日本語版を `docs/ja/` に置く。
   - 各翻訳は 1 行目に英語版の blob ハッシュ（`git hash-object docs/en/<FILE>.md`）を記録する。
   - 翻訳は英語版と同じコミットで更新する。
   - 作業用ドキュメント（計画、設計判断、受け入れ報告）は `docs/working/` に英語だけで置く。

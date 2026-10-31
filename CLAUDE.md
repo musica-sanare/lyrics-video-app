@@ -35,13 +35,6 @@ If any path does not exist, report it rather than silently inventing its content
 - Automated tests use generated text, images and signals only, never real songs, lyrics or third-party fonts. Tests
   that need a font use macOS system fonts and are skipped where they are missing.
 
-## Documentation
-- Same structure as audio-spectrum-app: stable docs in `docs/en/` with Japanese (`docs/ja/`) and Spanish
-  (`docs/es/`) twins that record the English blob hash on their first line and are updated in the same commit;
-  `README.md` with `README.ja.md` and `README.es.md`; working docs in `docs/working/`, English only. Language
-  switchers read `English | 日本語 | Español`. Spanish adds to the shared documentation rule, which covers English
-  and Japanese only.
-
 ## Workflow
 - Work in phases: write a plan in `docs/working/PHASE<N>_PLAN.md`, get the owner's approval, then implement, measure and
   propose a commit per milestone. Each phase ends with `docs/working/PHASE<N>_ACCEPTANCE.md`.

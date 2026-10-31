@@ -1,4 +1,4 @@
-English | [日本語](../ja/USER_GUIDE.md) | [Español](../es/USER_GUIDE.md) · [Docs index](README.md)
+English | [日本語](../ja/USER_GUIDE.md) · [Docs index](README.md)
 
 # User guide
 

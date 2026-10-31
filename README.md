@@ -1,4 +1,4 @@
-English | [日本語](README.ja.md) | [Español](README.es.md)
+English | [日本語](README.ja.md)
 
 # lyrics-video-app
 

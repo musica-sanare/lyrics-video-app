@@ -1,4 +1,4 @@
-English | [日本語](../ja/DEVELOPMENT.md) | [Español](../es/DEVELOPMENT.md) · [Docs index](README.md)
+English | [日本語](../ja/DEVELOPMENT.md) · [Docs index](README.md)
 
 # Development
 
@@ -85,11 +85,11 @@ The target is under 10 ms per 1080p frame with a caption
 
 ## 5. Conventions
 
-- Code, comments, commit messages and docs are in English. Japanese and Spanish appear only in the translations
-  (`docs/ja/`, `docs/es/`, `README.ja.md`, `README.es.md`).
+- Code, comments, commit messages and docs are in English. Japanese appears only in the translations
+  (`docs/ja/`, `README.ja.md`).
 - Frame `n` shows the audio at time `n / fps`; captions and credits are placed by time.
 - Normal use is fully offline.
-- Stable docs live in `docs/en/`, with a Japanese twin in `docs/ja/` and a Spanish twin in `docs/es/`.
+- Stable docs live in `docs/en/`, with a Japanese twin in `docs/ja/`.
   - Each translation records the English blob hash (`git hash-object docs/en/<FILE>.md`) on its first line.
   - It is updated in the same commit as the English file.
   - Working docs (plans, decisions, acceptance reports) live in `docs/working/` in English only.
