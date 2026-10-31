@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob 7a67b0750471fdd58ea46073c9dd72c7039c5e47 -->
+<!-- source: docs/en/README.md blob b2fafe01c8d8e600bba858d4f56ca3d645c8dd2a -->
 [English](../en/README.md) | 日本語 | [Español](../es/README.md) · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -22,3 +22,4 @@
 | [Decisions](../working/DECISIONS.md)（英語のみ） | 設計判断の記録（ADR）。 |
 | [Phase 0 plan](../working/PHASE0_PLAN.md)（英語のみ） | リポジトリの土台と、字幕画像生成の CLI 化。 |
 | [Phase 0 acceptance](../working/PHASE0_ACCEPTANCE.md)（英語のみ） | Phase 0 の受け入れ報告：基準、旧字幕画像との比較、リポジトリの安全性、未決事項。 |
+| [Phase 1 plan](../working/PHASE1_PLAN.md)（英語のみ） | 歌詞動画のデザインを設定可能な部品にする：フレームの構成、backdrop、比較するデザイン、`still` コマンド。 |
