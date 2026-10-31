@@ -14,7 +14,7 @@ caption at the right moment:
 2. A tapping page: play the song, press a key at the start of each line, then correct the times while listening and
    looking at the waveform and at exact stills of the video.
 3. Captions placed by time in the backdrop, with fades between consecutive lines and around pauses.
-4. An architecture document in three languages (proposed in the Phase 1 acceptance report).
+4. An architecture document in English with a Japanese twin (proposed in the Phase 1 acceptance report).
 
 Not in this phase: whole videos (Phase 3), MusicXML drafts and automatic alignment (Phase 4).
 
@@ -79,7 +79,7 @@ Opens in the browser like audio-spectrum-app's GUI, with the same local protecti
 server listens on `127.0.0.1` only, refuses foreign `Host` headers and API requests without the session token, and
 sends no cross-origin headers. The song is streamed to the page with range requests so it can seek; because an
 `<audio>` element cannot send headers, the token is accepted as a query parameter for that one route. Page texts in
-Japanese, English and Spanish (要確認 Q6). Plain HTML, CSS and JavaScript without a build step.
+Japanese, English, Spanish and French (Q6). Plain HTML, CSS and JavaScript without a build step.
 
 - **Tap mode:** the lines are listed; play at normal speed (Q5) and mark the start and the end of each line. Two
   ways are tried in the mock-up: `Space` for a start and `Enter` for an end, or holding `Space` while a line is sung
@@ -100,7 +100,7 @@ Japanese, English and Spanish (要確認 Q6). Plain HTML, CSS and JavaScript wit
 | `backdrop.py` | `TimedCaption` list from the timing; the caption opacities at a time (lead, crossfade, fades at pauses) |
 | `design.py` | Caption `lead_seconds`, `fade_seconds`, `transition` (`"crossfade"` or `"sequential"`) |
 | `still.py` | With timing, `--time` shows the caption of that moment; `--caption` stays for songs without timing |
-| `web/` | The server, the page, its messages in three languages |
+| `web/` | The server, the page, its messages in four languages |
 
 ### Tests
 
@@ -111,7 +111,7 @@ Generated text, signals and images only.
   captions shorter than their fades.
 - Backdrop: two captions blended during a crossfade; stills at chosen times show the expected caption.
 - Server (FastAPI's test client): token and host checks, the token in the audio URL only for audio, range requests,
-  loading and saving timing (safe write, backup), previews; message files complete in three languages. The page
+  loading and saving timing (safe write, backup), previews; message files complete in four languages. The page
   itself is checked by hand in a browser.
 
 ### Architecture document
@@ -129,7 +129,7 @@ points (new caption styles, alignments, designs).
 | 1. Mock-up | none | A page with the planned layout and both ways of tapping, in `work/mock/` (not committed), working on any song chosen in the browser; the owner tries it and the keys and layout are settled before the real page is built (Q5) |
 | 2. Captions by time | `feat: place captions by time from an LRC file` | `timing.py`, opacities with lead and crossfades, `still` by time, tests, user guide |
 | 3. Tapping page | `feat: add the sync page for tapping and adjusting times` | Server, page (tap and adjust), safe save, tests, user guide |
-| 4. Architecture and acceptance | `docs: accept Phase 2` | `ARCHITECTURE.md` in three languages, a song timed by the owner, `PHASE2_ACCEPTANCE.md` |
+| 4. Architecture and acceptance | `docs: accept Phase 2` | `ARCHITECTURE.md` in English and Japanese, a song timed by the owner, `PHASE2_ACCEPTANCE.md` |
 
 ## Acceptance criteria
 
@@ -140,7 +140,7 @@ points (new caption styles, alignments, designs).
 | Times survive a round trip (page → LRC → page) unchanged, and a changed `lyrics.txt` keeps the times of unchanged lines | Tests |
 | Frames with a crossfade stay under 20 ms at 1080p (others as in Phase 1) | `tools/time_backdrop.py` |
 | The page cannot be driven by other web pages, and nothing is written without Save | Server tests (token, host); by hand |
-| Docs (including the architecture) in three languages, nothing private committed | Hash check, file review, `gitleaks` |
+| Docs (including the architecture) in English and Japanese, nothing private committed | Hash check, file review, `gitleaks` |
 
 ## Questions for the owner
 
@@ -152,7 +152,8 @@ Answers (2026-10-31):
 - Q4: the fade length is adjustable (today's videos used about 0.2 s to 0.5 s, not 2 s), and crossfade or
   fading out then in is a choice.
 - Q5: normal speed is enough; the keys and the feel are checked with a mock-up first.
-- Q6: the page speaks Japanese, English and Spanish.
+- Q6: the page speaks Japanese, English and Spanish. Amended 2026-11-01: French is added (four UI languages); docs
+  are English and Japanese only.
 - Q7: the matching lyrics for the song in `work/design/` are in place.
 - Q8: caption PNGs alone will no longer be needed once whole videos are made; `captions` and `compare` stay until
   Phase 3 delivers videos, and their removal is planned there.
