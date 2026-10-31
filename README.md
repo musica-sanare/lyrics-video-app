@@ -9,7 +9,7 @@ workflow of caption images layered in a video editor.
 
 **Status:** Phase 0. `lyrics-video captions` makes the caption images of the old lyrics image script from a lyrics
 file, for use in iMovie, and `lyrics-video compare` shows a text in many fonts. Whole videos come in later phases.
-See the [Phase 0 plan](docs/working/PHASE0_PLAN.md).
+Phase 0 is delivered and waits for the owner's acceptance: see the [Phase 0 acceptance](docs/working/PHASE0_ACCEPTANCE.md).
 
 ## Quick start
 

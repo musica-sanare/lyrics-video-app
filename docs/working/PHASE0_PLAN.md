@@ -3,7 +3,8 @@
 # Phase 0 plan: a safe foundation and the caption images as a CLI
 
 Status: approved by the owner on 2026-10-31 with every recommendation (A1, B1, C1, D1, E1); the answers to the
-questions are recorded in the last section.
+questions are recorded in the last section. Delivered the same day
+([Phase 0 acceptance](PHASE0_ACCEPTANCE.md)).
 
 ## Goal
 

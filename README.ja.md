@@ -1,4 +1,4 @@
-<!-- source: README.md blob decdd241df1aa63651407711b8dbe801f30965fd -->
+<!-- source: README.md blob 3c199aa087e1cb6af83144c54657205bc0c88af1 -->
 [English](README.md) | 日本語 | [Español](README.es.md)
 
 > この文書は[英語版](README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -11,7 +11,7 @@
 
 **状況:** Phase 0。`lyrics-video captions` が歌詞ファイルから旧歌詞画像スクリプトと同じ字幕画像を作り（iMovie 用）、
 `lyrics-video compare` がテキストを多くのフォントで並べて見せます。動画全体の書き出しは後のフェーズで加わります。
-[Phase 0 plan](docs/working/PHASE0_PLAN.md)（英語のみ）を参照してください。
+Phase 0 は完成し、オーナーの受け入れ待ちです。[Phase 0 acceptance](docs/working/PHASE0_ACCEPTANCE.md)（英語のみ）を参照してください。
 
 ## クイックスタート
 

@@ -43,7 +43,20 @@ outside the repository. `.gitignore` also ignores media, image and font files an
 `pyproject.toml` and `*.example.toml` anywhere in the tree. Before a commit, check the file list for any of these and
 for absolute paths that contain a user name (write `~/...`).
 
-## 4. Conventions
+## 4. Comparing images
+
+`tools/compare_images.py` compares two folders of PNGs by file name, for example the old lyrics image script's
+output with this app's, and prints for each pair the share of differing pixels, the largest difference and where the
+differences are; stacked old / new / difference images go to `work/compare_images/`:
+
+```bash
+uv run python tools/compare_images.py OLD_FOLDER NEW_FOLDER
+```
+
+It prints positions instead of file names (add `--names` to see them), so its output can go into reports without
+song or font names. Use it whenever a change should not alter the caption images.
+
+## 5. Conventions
 
 - Code, comments, commit messages and docs are in English. Japanese and Spanish appear only in the translations
   (`docs/ja/`, `docs/es/`, `README.ja.md`, `README.es.md`).

@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob 368f513d3a0b29bd81b54e145e313fd4e8014055 -->
+<!-- source: docs/en/README.md blob 7a67b0750471fdd58ea46073c9dd72c7039c5e47 -->
 [English](../en/README.md) | 日本語 | [Español](../es/README.md) · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -21,3 +21,4 @@
 | [Handoff](../working/HANDOFF.md)（英語のみ） | このリポジトリができた経緯、オーナーの回答、決定事項、フェーズ案。 |
 | [Decisions](../working/DECISIONS.md)（英語のみ） | 設計判断の記録（ADR）。 |
 | [Phase 0 plan](../working/PHASE0_PLAN.md)（英語のみ） | リポジトリの土台と、字幕画像生成の CLI 化。 |
+| [Phase 0 acceptance](../working/PHASE0_ACCEPTANCE.md)（英語のみ） | Phase 0 の受け入れ報告：基準、旧字幕画像との比較、リポジトリの安全性、未決事項。 |

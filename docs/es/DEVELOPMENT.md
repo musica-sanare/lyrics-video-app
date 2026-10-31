@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob 2852382f0dd281c6b0607f5e07f07d041ccad412 -->
+<!-- source: docs/en/DEVELOPMENT.md blob cb5449d0911a95444d6c0a9a83bc0bc56037a6ef -->
 [English](../en/DEVELOPMENT.md) | [日本語](../ja/DEVELOPMENT.md) | Español · [Índice de la documentación](README.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/DEVELOPMENT.md). Si hay diferencias, prevalece la versión en inglés.
@@ -49,7 +49,22 @@ quedan en `work/` (ignorado por Git) o fuera del repositorio. `.gitignore` tambi
 `*.example.toml`. Antes de cada commit, revisa que la lista de archivos no contenga nada de esto ni rutas absolutas
 con un nombre de usuario (escribe `~/...`).
 
-## 4. Convenciones
+## 4. Comparar imágenes
+
+`tools/compare_images.py` compara por nombre de archivo los PNG de dos carpetas, por ejemplo la salida del antiguo
+script de imágenes de letra con la de esta aplicación, y muestra para cada pareja el porcentaje de píxeles distintos,
+la mayor diferencia y dónde están las diferencias; las imágenes apiladas (antigua / nueva / diferencia) van a
+`work/compare_images/`:
+
+```bash
+uv run python tools/compare_images.py OLD_FOLDER NEW_FOLDER
+```
+
+Muestra posiciones en lugar de nombres de archivo (añade `--names` para verlos), así que su salida puede ir en los
+informes sin nombres de canciones ni de fuentes. Úsalo siempre que un cambio no deba alterar las imágenes de
+subtítulos.
+
+## 5. Convenciones
 
 - El código, los comentarios, los mensajes de commit y la documentación se escriben en inglés. El japonés y el
   español aparecen solo en las traducciones (`docs/ja/`, `docs/es/`, `README.ja.md`, `README.es.md`).

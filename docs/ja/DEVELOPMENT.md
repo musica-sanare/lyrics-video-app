@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob 2852382f0dd281c6b0607f5e07f07d041ccad412 -->
+<!-- source: docs/en/DEVELOPMENT.md blob cb5449d0911a95444d6c0a9a83bc0bc56037a6ef -->
 [English](../en/DEVELOPMENT.md) | 日本語 | [Español](../es/DEVELOPMENT.md) · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/DEVELOPMENT.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -46,7 +46,20 @@ uv run pytest
 `pyproject.toml` と `*.example.toml` 以外のすべての `*.toml` も除外します。コミットの前には、ファイル一覧にこれらが
 含まれていないこと、ユーザー名を含む絶対パスがないこと（`~/...` と書く）を確認します。
 
-## 4. 規約
+## 4. 画像の比較
+
+`tools/compare_images.py` は 2 つのフォルダの PNG をファイル名で組にして比べます（例：旧歌詞画像スクリプトの出力と
+このアプリの出力）。組ごとに、差のあるピクセルの割合、最大の差、差のある範囲を表示し、旧・新・差を縦に並べた画像を
+`work/compare_images/` に書き出します。
+
+```bash
+uv run python tools/compare_images.py OLD_FOLDER NEW_FOLDER
+```
+
+ファイル名の代わりに番号を表示する（`--names` で名前を表示）ので、曲名やフォント名を含めずに出力を報告に貼れます。
+字幕画像が変わってはいけない変更のたびに使います。
+
+## 5. 規約
 
 - コード、コメント、コミットメッセージ、ドキュメントは英語で書きます。日本語とスペイン語は翻訳
   （`docs/ja/`、`docs/es/`、`README.ja.md`、`README.es.md`）にだけ現れます。

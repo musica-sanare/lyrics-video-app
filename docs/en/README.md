@@ -18,3 +18,4 @@ How the offline lyrics video maker is set up, designed and developed, and the re
 | [Handoff](../working/HANDOFF.md) | Why this repository exists, the owner's answers, decisions and proposed phases. |
 | [Decisions](../working/DECISIONS.md) | Architecture decision log (ADRs). |
 | [Phase 0 plan](../working/PHASE0_PLAN.md) | Repository foundation and the caption images as a CLI. |
+| [Phase 0 acceptance](../working/PHASE0_ACCEPTANCE.md) | Phase 0 acceptance report: criteria, comparison with the old caption images, repository safety, open items. |
