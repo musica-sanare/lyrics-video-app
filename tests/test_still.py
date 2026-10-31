@@ -71,3 +71,22 @@ def test_existing_stills_are_kept_unless_overwrite(tmp_path, sans_font, capsys):
 
     assert main(["still", str(song), "--time", "1"]) == EXIT_FAILED
     assert main(["still", str(song), "--time", "1", "--overwrite"]) == EXIT_OK
+
+
+def test_several_designs_and_a_comparison(tmp_path, sans_font):
+    song = make_song(tmp_path, sans_font)
+
+    assert main(["still", str(song), "--time", "1", "--design", "classic", "soft", "panel"]) == EXIT_OK
+
+    names = sorted(p.name for p in (tmp_path / "stills").iterdir())
+    assert names == ["classic_1s.png", "compare_1s.png", "panel_1s.png", "soft_1s.png"]
+    sheet = Image.open(tmp_path / "stills/compare_1s.png")
+    assert sheet.width == 240
+    assert sheet.height > 3 * 135
+
+
+def test_an_unknown_design_is_reported(tmp_path, sans_font, capsys):
+    song = make_song(tmp_path, sans_font)
+
+    assert main(["still", str(song), "--time", "1", "--design", "fancy"]) == EXIT_FAILED
+    assert "unknown design 'fancy'" in capsys.readouterr().err

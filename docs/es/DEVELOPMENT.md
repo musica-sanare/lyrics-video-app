@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob 6baa9c1744876da630051cfe7148bf45d215e8bc -->
+<!-- source: docs/en/DEVELOPMENT.md blob 51bd021eaf596c3ccb09f2b9b6a979d9f03abe29 -->
 [English](../en/DEVELOPMENT.md) | [日本語](../ja/DEVELOPMENT.md) | Español · [Índice de la documentación](README.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/DEVELOPMENT.md). Si hay diferencias, prevalece la versión en inglés.
@@ -40,9 +40,9 @@ uv run pytest
 | `test_caption_image.py` | Imágenes de subtítulos: los mismos píxeles que una transcripción del script antiguo, tamaños, disposición |
 | `test_cli.py` | `captions` y `compare`: nombres de archivo, sobrescritura, ningún archivo tras un error, fuentes desde la línea de órdenes |
 | `test_design.py` | Diseños incluidos, ajustes, archivos de diseño, valores no válidos |
-| `test_layers.py` | Fondo que cubre y se recorta (nunca se estira), focus, dim y blur; capas de título, franja de subtítulo y créditos; mezcla |
+| `test_layers.py` | Fondo que cubre y se recorta (nunca se estira), focus, dim y blur; título (espaciado, línea), franja, sombra y recuadro del subtítulo, créditos (posiciones, recuadro); mezcla |
 | `test_backdrop.py` | Fundidos, subtítulos y créditos por tiempo, pickle y otros procesos, un fotograma equivale al backdrop bajo el espectro |
-| `test_still.py` | La orden `still`: nombres de archivo, subtítulos, diseño y espectro del archivo de la canción, errores |
+| `test_still.py` | La orden `still`: nombres de archivo, subtítulos, diseño y espectro del archivo de la canción, varios diseños y la comparación, errores |
 | `test_spectrum_dependency.py` | audio-spectrum-app está instalado; se dibuja un fotograma sobre un fondo (backdrop) suministrado |
 
 ## 3. Archivos locales
@@ -67,6 +67,16 @@ uv run python tools/compare_images.py OLD_FOLDER NEW_FOLDER
 Muestra posiciones en lugar de nombres de archivo (añade `--names` para verlos), así que su salida puede ir en los
 informes sin nombres de canciones ni de fuentes. Úsalo siempre que un cambio no deba alterar las imágenes de
 subtítulos.
+
+`tools/time_backdrop.py` mide, para cada diseño, el tiempo por fotograma de la imagen que va bajo el espectro, con el
+fondo, las fuentes y el tamaño de vídeo de un archivo de canción; el objetivo es menos de 10 ms por fotograma 1080p
+con subtítulo
+([ADR-004](../working/DECISIONS.md#adr-004-text-for-video-frames-drawn-with-pillow-composed-in-numpy-in-the-render-workers),
+solo en inglés):
+
+```bash
+uv run python tools/time_backdrop.py work/my-song/song.toml --design classic soft panel
+```
 
 ## 5. Convenciones
 

@@ -44,3 +44,19 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
   image whose center pixel is used, so old sample images still work. Only `*.example.toml` files are committed.
 - Consequences: Settings shared by songs are repeated for now; shared defaults can be added later. The timing format
   is chosen in Phase 2.
+
+## ADR-004: Text for video frames drawn with Pillow, composed in NumPy in the render workers
+
+- Context: ADR-002 left open which library draws text inside videos. The backdrop runs in audio-spectrum-app's
+  worker processes once per frame; Phase 1 needed a title, captions in three styles (band, gradient, frosted panel)
+  and credits ([Phase 1 plan](PHASE1_PLAN.md), option B).
+- Decision: Pillow draws every text layer once per process and frame size, as a coverage mask colored afterwards
+  (straight-alpha RGBA, with optional blurred shadows). The background and title are composed once; the frosted
+  panel blurs that still picture once. Per frame, NumPy blends only the caption's layer (and the credits while they
+  fade) over a copy of the cached picture. Captions keep today's rules (left-aligned, up to two rows) behind an
+  `align` setting that can grow.
+- Consequences: Captions in videos use the same text engine and metrics as the caption PNGs. Measured on an M1 at
+  1080p with a 5000 × 3333 photo (`tools/time_backdrop.py`): a frame with a caption takes 4.0 ms (panel), 7.6 ms
+  (classic) and 9.4 ms (soft), under the 10 ms target; frames without a caption 0.2 ms; credits fading in or out
+  1 ms to 2 ms, except 27 ms for designs that darken the whole frame (classic), for about 3 s of a song. Rejected for
+  now: Skia for text (different metrics from the caption PNGs; kept as the fallback if a later design is too slow).

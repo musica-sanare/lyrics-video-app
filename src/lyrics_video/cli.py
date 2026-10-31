@@ -58,6 +58,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--caption", type=int, metavar="LINE", help="the caption at this line index (0-based); by default the first"
     )
     which.add_argument("--no-caption", action="store_true", help="show no caption")
+    still.add_argument(
+        "--design",
+        nargs="+",
+        metavar="NAME",
+        help="designs to draw instead of the song file's (built-in names or files); with several, also a comparison",
+    )
     still.add_argument("--overwrite", action="store_true", help="replace existing images")
     return parser
 
@@ -70,7 +76,12 @@ def main(argv: list[str] | None = None) -> int:
             written = make_captions(song, overwrite=args.overwrite)
         elif args.command == "still":
             written = make_stills(
-                song, args.time, args.caption, with_caption=not args.no_caption, overwrite=args.overwrite
+                song,
+                args.time,
+                args.caption,
+                with_caption=not args.no_caption,
+                overwrite=args.overwrite,
+                designs=args.design,
             )
         else:
             fonts = [p.expanduser() for p in args.font]

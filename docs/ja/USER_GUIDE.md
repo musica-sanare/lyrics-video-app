@@ -1,4 +1,4 @@
-<!-- source: docs/en/USER_GUIDE.md blob 01640a9b6aeb8404821a419ee846696023a98f3f -->
+<!-- source: docs/en/USER_GUIDE.md blob 517778fd4a7bdef2a55c879358818038d0f4fbc1 -->
 [English](../en/USER_GUIDE.md) | 日本語 | [Español](../es/USER_GUIDE.md) · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/USER_GUIDE.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -85,6 +85,13 @@ uv run lyrics-video still work/my-song/song.toml --time 3 62.5 --caption 4
 タイミングが付くまでは、静止画には字幕を 1 つだけ表示します。`--caption` で行番号（字幕画像の名前と同じ数え方）を指定し、
 省略すると最初の字幕、`--no-caption` で字幕なしになります。`--overwrite` は `captions` と同じです。
 
+デザインを見比べるには `--design` で名前を並べます。曲ファイルのデザインの上書き（曲名のフォントなど）はどのデザインにも
+適用され、`compare_<時刻>s.png` に半分の大きさで縦に並べて書き出します。
+
+```bash
+uv run lyrics-video still work/my-song/song.toml --time 62.5 --design classic soft panel
+```
+
 フレームは下から順に次の部品でできています。
 
 | 部品 | 内容 |
@@ -95,8 +102,15 @@ uv run lyrics-video still work/my-song/song.toml --time 3 62.5 --caption 4
 | クレジット | `credits` の各行。曲の最初と最後の数秒に、暗くした画面の上に表示します |
 | スペクトラム | `[spectrum]` のプリセットと上書き設定で audio-spectrum-app が描きます |
 
-部品の見た目をまとめたものが**デザイン**です。組み込みのデザインは `classic` で、曲名を上部中央に大きく、字幕を
-旧字幕画像の決まりで画面下端の不透明な帯に、クレジットを中央に置きます。`design = "classic"` で選ぶか、自分のデザイン
+部品の見た目をまとめたものが**デザイン**です。組み込みのデザイン：
+
+| デザイン | 曲名 | 字幕 | クレジット |
+|---|---|---|---|
+| `classic` | 大きく、上部中央 | 画面下端の不透明な帯。旧字幕画像の決まりで描きます | 暗くした画面の中央 |
+| `soft` | 小さく、左上。細い線付き | 下から立ち上がる柔らかい陰の上 | 小さく、右下 |
+| `panel` | 字間を広げて、上部中央 | 下寄りの、すりガラス風の角丸の枠の中（背景をぼかしています） | 中央、同じ種類の枠の中 |
+
+どのデザインでも、字幕は今と同じく左寄せで 2 行までです。`design = "classic"` で選ぶか、自分のデザイン
 ファイルを `design = "my-design.toml"` で指定します。一部の値だけ変えるには、デザインの `name` と変えたい部品を
 `[design]` テーブルに書きます。
 
@@ -115,11 +129,13 @@ band_color = "#101820"
 | 部品 | キー（大きさは高さ 1080 ピクセルの画面でのピクセル数で、動画の高さに合わせて拡大縮小します） |
 |---|---|
 | `background` | `focus`（`[x, y]`、0〜1。切り取るときに残す位置）、`dim`（0〜1）、`blur` |
-| `title` | `enabled`、`position`（`"top-center"`、`"top-left"`）、`font`、`size`、`subtitle_size`、`color`、`margin`、`gap`、`shadow` |
-| `caption` | `style`（`"band"`）、`align`（`"left"`）、`font`、`text_color`、`band_color`、`band_opacity`、`band_height`、`fade_seconds` |
-| `credits` | `enabled`、`font`、`size`、`color`、`line_spacing`、`dim`、`show_seconds`、`fade_seconds`、`shadow` |
+| `title` | `enabled`、`position`（`"top-center"`、`"top-left"`）、`font`、`size`、`subtitle_size`、`color`、`margin`、`gap`、`letter_spacing`、`rule`、`rule_thickness`、`rule_gap`、`shadow` |
+| `caption` | `style`（`"band"`、`"gradient"`、`"panel"`）、`align`（`"left"`）、`font`、`text_color`、`fade_seconds`。帯：`band_color`、`band_opacity`、`band_height`。陰と枠：`size`（最大の文字の大きさ）、`line_spacing`、`margin_x`、`margin_bottom`、`gradient`、`panel`、`shadow` |
+| `credits` | `enabled`、`font`、`size`、`color`、`line_spacing`、`position`（`"center"`、`"bottom-right"`）、`margin_x`、`margin_bottom`、`dim`、`panel`、`show_seconds`、`fade_seconds`、`shadow` |
 | `spectrum` | `set`：曲ファイルの `[spectrum] set` より先に適用するプリセットの上書き |
-| `shadow`（`title`、`credits` の中） | `blur`（0 で影なし）、`offset`、`color`、`opacity` |
+| `shadow`（`title`、`caption`、`credits` の中） | `blur`（0 で影なし）、`offset`、`color`、`opacity` |
+| `gradient`（`caption` の中） | `height`、`color`、`opacity`（下端での不透明度） |
+| `panel`（`caption`、`credits` の中） | `color`、`opacity`（色の濃さ）、`blur`（背後のぼかし）、`radius`、`padding`（`[x, y]`） |
 
 どの部品も、自分の `font` を指定しない限り `fonts.default` を使います。色は `"#RRGGBB"` で書きます。
 

@@ -1,4 +1,4 @@
-<!-- source: docs/en/USER_GUIDE.md blob 01640a9b6aeb8404821a419ee846696023a98f3f -->
+<!-- source: docs/en/USER_GUIDE.md blob 517778fd4a7bdef2a55c879358818038d0f4fbc1 -->
 [English](../en/USER_GUIDE.md) | [日本語](../ja/USER_GUIDE.md) | Español · [Índice de la documentación](README.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/USER_GUIDE.md). Si hay diferencias, prevalece la versión en inglés.
@@ -93,6 +93,14 @@ un fotograma muestra un solo subtítulo: la línea indicada con `--caption` (el 
 nombres de las imágenes de subtítulos), el primer subtítulo por defecto, o ninguno con `--no-caption`. `--overwrite`
 funciona igual que en `captions`.
 
+Para comparar diseños, nómbralos con `--design`; los ajustes de diseño del archivo de la canción (por ejemplo, la
+fuente del título) se aplican a cada uno, y `compare_<instante>s.png` los muestra uno debajo de otro a la mitad de
+tamaño:
+
+```bash
+uv run lyrics-video still work/my-song/song.toml --time 62.5 --design classic soft panel
+```
+
 Un fotograma se compone de estas partes, de abajo arriba:
 
 | Parte | Contenido |
@@ -103,9 +111,15 @@ Un fotograma se compone de estas partes, de abajo arriba:
 | Créditos | Las líneas de `credits`, durante los primeros y los últimos segundos de la canción, sobre el encuadre oscurecido |
 | Espectro | Dibujado por audio-spectrum-app con el preset y los ajustes de `[spectrum]` |
 
-El aspecto de las partes es un **diseño**. El diseño incluido es `classic`: el título grande arriba en el centro, los
-subtítulos en una franja opaca a lo largo del borde inferior dibujados con las reglas de las imágenes de subtítulos
-antiguas y los créditos centrados. Elige un diseño con `design = "classic"`, o un archivo de diseño propio con
+El aspecto de las partes es un **diseño**. Los diseños incluidos:
+
+| Diseño | Título | Subtítulo | Créditos |
+|---|---|---|---|
+| `classic` | Grande, arriba en el centro | Una franja opaca a lo largo del borde inferior, dibujada con las reglas de las imágenes de subtítulos antiguas | Centrados sobre el encuadre oscurecido |
+| `soft` | Pequeño, arriba a la izquierda, con una línea fina | Sobre una sombra suave que sube desde abajo | Pequeños, abajo a la derecha |
+| `panel` | Con letras espaciadas, arriba en el centro | En un recuadro redondeado de vidrio esmerilado cerca del borde inferior (el fondo desenfocado detrás) | Centrados, en el mismo tipo de recuadro |
+
+En todos los diseños los subtítulos van alineados a la izquierda y tienen como mucho dos filas, como ahora. Elige un diseño con `design = "classic"`, o un archivo de diseño propio con
 `design = "my-design.toml"`. Para cambiar valores sueltos, escribe una tabla `[design]` con el `name` del diseño y las
 partes que cambian:
 
@@ -124,11 +138,13 @@ band_color = "#101820"
 | Parte | Claves (tamaños en píxeles de un encuadre de 1080 píxeles de alto; se escalan con la altura del vídeo) |
 |---|---|
 | `background` | `focus` (`[x, y]` de 0 a 1, el punto que queda a la vista al recortar), `dim` (0 a 1), `blur` |
-| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `subtitle_size`, `color`, `margin`, `gap`, `shadow` |
-| `caption` | `style` (`"band"`), `align` (`"left"`), `font`, `text_color`, `band_color`, `band_opacity`, `band_height`, `fade_seconds` |
-| `credits` | `enabled`, `font`, `size`, `color`, `line_spacing`, `dim`, `show_seconds`, `fade_seconds`, `shadow` |
+| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `subtitle_size`, `color`, `margin`, `gap`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `shadow` |
+| `caption` | `style` (`"band"`, `"gradient"`, `"panel"`), `align` (`"left"`), `font`, `text_color`, `fade_seconds`; franja: `band_color`, `band_opacity`, `band_height`; sombra y recuadro: `size` (tamaño de letra máximo), `line_spacing`, `margin_x`, `margin_bottom`, `gradient`, `panel`, `shadow` |
+| `credits` | `enabled`, `font`, `size`, `color`, `line_spacing`, `position` (`"center"`, `"bottom-right"`), `margin_x`, `margin_bottom`, `dim`, `panel`, `show_seconds`, `fade_seconds`, `shadow` |
 | `spectrum` | `set`: ajustes del preset aplicados antes de `[spectrum] set` del archivo de la canción |
-| `shadow` (en `title`, `credits`) | `blur` (0 = sin sombra), `offset`, `color`, `opacity` |
+| `shadow` (en `title`, `caption`, `credits`) | `blur` (0 = sin sombra), `offset`, `color`, `opacity` |
+| `gradient` (en `caption`) | `height`, `color`, `opacity` (en el borde inferior) |
+| `panel` (en `caption`, `credits`) | `color`, `opacity` (del tinte), `blur` (de la imagen de detrás), `radius`, `padding` (`[x, y]`) |
 
 Cada parte usa `fonts.default` salvo que indique su propia `font`. Los colores se escriben `"#RRGGBB"`.
 

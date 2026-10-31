@@ -1,5 +1,6 @@
 """Stills: frames of the future video at chosen moments, with the spectrum drawn over the backdrop."""
 
+import dataclasses
 import math
 from pathlib import Path
 
@@ -8,18 +9,29 @@ from PIL import Image
 
 from lyrics_video.backdrop import LyricsBackdrop, TimedCaption
 from lyrics_video.captions import Written
-from lyrics_video.config import Song
+from lyrics_video.config import Song, song_design
+from lyrics_video.contact_sheet import contact_sheet
 from lyrics_video.errors import ConfigError, LyricsError, SpectrumError
 from lyrics_video.lyrics import read_lyrics
 from lyrics_video.output import write_images
 
 STILLS_DIR = "stills"
+# Stills are shown at this share of their size in the comparison sheet.
+COMPARE_SCALE = 0.5
 
 
 def make_stills(
-    song: Song, times: list[float], caption_index: int | None = None, with_caption: bool = True, overwrite: bool = False
+    song: Song,
+    times: list[float],
+    caption_index: int | None = None,
+    with_caption: bool = True,
+    overwrite: bool = False,
+    designs: list[str] | None = None,
 ) -> Written:
-    """One PNG per time, named `<design>_<time>s.png`, in `stills/` next to the song file.
+    """One PNG per design and time, named `<design>_<time>s.png`, in `stills/` next to the song file.
+
+    `designs` replaces the song file's design name; the song file's design overrides apply to each. With more than
+    one design, `compare_<time>s.png` shows the designs one under the other at half size.
 
     Until lyrics have timing (Phase 2) the still shows one caption: the line `caption_index` of the lyrics file
     (0-based, as in the caption image names), or the first caption.
@@ -27,22 +39,29 @@ def make_stills(
     if song.audio is None:
         raise ConfigError(f"{song.path}: audio is not set (the song file for the spectrum)")
     captions = [TimedCaption(-math.inf, math.inf, _caption_rows(song, caption_index))] if with_caption else []
+    chosen = [song_design(song.path, name, song.design_overrides) for name in designs] if designs else [song.design]
     video = song.video
+    folder = song.path.parent / STILLS_DIR
+    images: dict[Path, Image.Image] = {}
     try:
         preview = Preview(song.audio, video.fps)
-        preset = override_preset(
-            load_preset(song.spectrum_preset), [*song.design.spectrum.set, *song.spectrum_set]
-        )
-        backdrop = LyricsBackdrop.for_song(song, captions, preview.duration)
-        backdrop.prepare(video.width, video.height)
-        frames = preview.frames(preset, times, video.width, video.height, backdrop=backdrop)
+        for design in chosen:
+            preset = override_preset(load_preset(song.spectrum_preset), [*design.spectrum.set, *song.spectrum_set])
+            backdrop = LyricsBackdrop.for_song(dataclasses.replace(song, design=design), captions, preview.duration)
+            backdrop.prepare(video.width, video.height)
+            frames = preview.frames(preset, times, video.width, video.height, backdrop=backdrop)
+            for seconds, frame in zip(times, frames, strict=True):
+                images[folder / f"{design.name}_{seconds:g}s.png"] = Image.fromarray(frame)
     except AudioSpectrumError as error:
         raise SpectrumError(str(error)) from None
-    folder = song.path.parent / STILLS_DIR
-    images = {
-        folder / f"{song.design.name}_{seconds:g}s.png": Image.fromarray(frame)
-        for seconds, frame in zip(times, frames, strict=True)
-    }
+    if len(chosen) > 1:
+        size = (round(video.width * COMPARE_SCALE), round(video.height * COMPARE_SCALE))
+        for seconds in times:
+            entries = [
+                (design.name, images[folder / f"{design.name}_{seconds:g}s.png"].resize(size, Image.Resampling.LANCZOS))
+                for design in chosen
+            ]
+            images[folder / f"compare_{seconds:g}s.png"] = contact_sheet(entries)
     write_images(images, overwrite)
     return Written(folder, list(images))
 

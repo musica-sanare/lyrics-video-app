@@ -1,0 +1,36 @@
+# Readable over busy backgrounds: the title letter-spaced at the top center, captions and credits in frosted
+# rounded boxes (the background blurred and tinted behind them).
+name = "panel"
+
+[title]
+position = "top-center"
+size = 60
+subtitle_size = 28
+letter_spacing = 6
+margin = 60
+
+[title.shadow]
+blur = 8
+opacity = 0.5
+
+[caption]
+style = "panel"
+size = 58
+margin_x = 160
+margin_bottom = 56
+
+[caption.panel]
+opacity = 0.35
+blur = 24
+radius = 28
+padding = [48, 28]
+
+[credits]
+size = 40
+dim = 0.0
+
+[credits.panel]
+opacity = 0.35
+blur = 24
+radius = 28
+padding = [56, 40]

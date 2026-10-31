@@ -35,9 +35,9 @@ uv run pytest
 | `test_caption_image.py` | Caption images: the same pixels as a transcription of the old script, sizes, layout |
 | `test_cli.py` | `captions` and `compare`: file names, overwriting, no files on errors, fonts from the command line |
 | `test_design.py` | Built-in designs, overrides, design files, invalid values |
-| `test_layers.py` | Background cover and crop (never stretched), focus, dim and blur; title, caption band and credits layers; blending |
+| `test_layers.py` | Background cover and crop (never stretched), focus, dim and blur; title (spacing, rule), caption band, gradient and panel, credits (positions, panel); blending |
 | `test_backdrop.py` | Fades, captions and credits by time, pickling and other processes, a still equals the backdrop under the spectrum |
-| `test_still.py` | The `still` command: file names, captions, design and spectrum from the song file, errors |
+| `test_still.py` | The `still` command: file names, captions, design and spectrum from the song file, several designs and the comparison, errors |
 | `test_spectrum_dependency.py` | audio-spectrum-app is installed; a still is drawn over a supplied backdrop |
 
 ## 3. Local files
@@ -59,6 +59,14 @@ uv run python tools/compare_images.py OLD_FOLDER NEW_FOLDER
 
 It prints positions instead of file names (add `--names` to see them), so its output can go into reports without
 song or font names. Use it whenever a change should not alter the caption images.
+
+`tools/time_backdrop.py` times the picture under the spectrum per frame for each design, with a song file's
+background, fonts and video size; the target is under 10 ms per 1080p frame with a caption
+([ADR-004](../working/DECISIONS.md#adr-004-text-for-video-frames-drawn-with-pillow-composed-in-numpy-in-the-render-workers)):
+
+```bash
+uv run python tools/time_backdrop.py work/my-song/song.toml --design classic soft panel
+```
 
 ## 5. Conventions
 

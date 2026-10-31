@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob 6baa9c1744876da630051cfe7148bf45d215e8bc -->
+<!-- source: docs/en/DEVELOPMENT.md blob 51bd021eaf596c3ccb09f2b9b6a979d9f03abe29 -->
 [English](../en/DEVELOPMENT.md) | 日本語 | [Español](../es/DEVELOPMENT.md) · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/DEVELOPMENT.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -38,9 +38,9 @@ uv run pytest
 | `test_caption_image.py` | 字幕画像：旧スクリプトを書き写したものと同じピクセルになること、大きさ、配置 |
 | `test_cli.py` | `captions` と `compare`：ファイル名、上書き、エラー時にファイルを残さないこと、コマンドラインからのフォント指定 |
 | `test_design.py` | 組み込みデザイン、上書き、デザインファイル、不正な値 |
-| `test_layers.py` | 背景の拡大と切り取り（引き伸ばさない）、focus、dim、blur。曲名・字幕の帯・クレジットの層、重ね合わせ |
+| `test_layers.py` | 背景の拡大と切り取り（引き伸ばさない）、focus、dim、blur。曲名（字間、線）、字幕の帯・陰・枠、クレジット（位置、枠）、重ね合わせ |
 | `test_backdrop.py` | フェード、時刻ごとの字幕とクレジット、pickle と別プロセス、静止画がスペクトラムの下の backdrop と一致すること |
-| `test_still.py` | `still` コマンド：ファイル名、字幕、曲ファイルからのデザインとスペクトラム、エラー |
+| `test_still.py` | `still` コマンド：ファイル名、字幕、曲ファイルからのデザインとスペクトラム、複数のデザインと比較画像、エラー |
 | `test_spectrum_dependency.py` | audio-spectrum-app が入っていること、渡した背景（backdrop）の上に静止画が描かれること |
 
 ## 3. ローカルのファイル
@@ -62,6 +62,14 @@ uv run python tools/compare_images.py OLD_FOLDER NEW_FOLDER
 
 ファイル名の代わりに番号を表示する（`--names` で名前を表示）ので、曲名やフォント名を含めずに出力を報告に貼れます。
 字幕画像が変わってはいけない変更のたびに使います。
+
+`tools/time_backdrop.py` は、曲ファイルの背景・フォント・動画の大きさを使って、スペクトラムの下の絵を作る時間をデザインごとに
+1 フレーム単位で計ります。目標は、字幕のある 1080p のフレームで 10 ms 未満です
+（[ADR-004](../working/DECISIONS.md#adr-004-text-for-video-frames-drawn-with-pillow-composed-in-numpy-in-the-render-workers)、英語のみ）。
+
+```bash
+uv run python tools/time_backdrop.py work/my-song/song.toml --design classic soft panel
+```
 
 ## 5. 規約
 

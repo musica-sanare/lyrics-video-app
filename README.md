@@ -9,7 +9,7 @@ workflow of caption images layered in a video editor.
 
 **Status:** Phase 1 (design) in progress. `lyrics-video captions` makes the caption images of the old lyrics image
 script from a lyrics file, for use in iMovie; `lyrics-video compare` shows a text in many fonts; `lyrics-video still`
-renders frames of the future video (background, title, caption, credits and spectrum) in the `classic` design. Whole
+renders frames of the future video (background, title, caption, credits and spectrum) in three designs to compare. Whole
 videos come in later phases. See the [Phase 0 acceptance](docs/working/PHASE0_ACCEPTANCE.md) and the
 [Phase 1 plan](docs/working/PHASE1_PLAN.md).
 

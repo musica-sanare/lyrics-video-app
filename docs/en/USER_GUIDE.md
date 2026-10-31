@@ -86,6 +86,13 @@ on top, exactly as the video will have them. Until the lyrics have timing, a sti
 by `--caption` (the line index, counted as in the caption image names), the first caption by default, or none with
 `--no-caption`. `--overwrite` works as for `captions`.
 
+To compare designs, name them with `--design`; the song file's design overrides (for example a title font) apply to
+each, and `compare_<time>s.png` shows them one under the other at half size:
+
+```bash
+uv run lyrics-video still work/my-song/song.toml --time 62.5 --design classic soft panel
+```
+
 A frame is made of these parts, from bottom to top:
 
 | Part | Content |
@@ -96,9 +103,15 @@ A frame is made of these parts, from bottom to top:
 | Credits | The `credits` lines, shown over the first and last seconds of the song, over a darkened frame |
 | Spectrum | Drawn by audio-spectrum-app with the `[spectrum]` preset and overrides |
 
-How the parts look is a **design**. The built-in design is `classic`: the title large at the top center, captions in
-an opaque band along the bottom edge drawn with the rules of the old caption images, credits centered. Choose a
-design with `design = "classic"`, or a design file of your own with `design = "my-design.toml"`. To change single
+How the parts look is a **design**. The built-in designs:
+
+| Design | Title | Caption | Credits |
+|---|---|---|---|
+| `classic` | Large, top center | An opaque band along the bottom edge, drawn with the rules of the old caption images | Centered over a darkened frame |
+| `soft` | Small, top left, with a thin rule | Over a soft shade rising from the bottom | Small, bottom right |
+| `panel` | Letter-spaced, top center | In a frosted rounded box near the bottom (the background blurred behind it) | Centered, in the same kind of box |
+
+Captions are left-aligned with up to two rows in every design, as today. Choose a design with `design = "classic"`, or a design file of your own with `design = "my-design.toml"`. To change single
 values, write a `[design]` table with the design's `name` and the parts to change:
 
 ```toml
@@ -116,11 +129,13 @@ band_color = "#101820"
 | Part | Keys (sizes in pixels of a 1080-pixel-high frame; they scale with the video height) |
 |---|---|
 | `background` | `focus` (`[x, y]` from 0 to 1, the point kept in view when cropping), `dim` (0 to 1), `blur` |
-| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `subtitle_size`, `color`, `margin`, `gap`, `shadow` |
-| `caption` | `style` (`"band"`), `align` (`"left"`), `font`, `text_color`, `band_color`, `band_opacity`, `band_height`, `fade_seconds` |
-| `credits` | `enabled`, `font`, `size`, `color`, `line_spacing`, `dim`, `show_seconds`, `fade_seconds`, `shadow` |
+| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `subtitle_size`, `color`, `margin`, `gap`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `shadow` |
+| `caption` | `style` (`"band"`, `"gradient"`, `"panel"`), `align` (`"left"`), `font`, `text_color`, `fade_seconds`; band: `band_color`, `band_opacity`, `band_height`; gradient and panel: `size` (largest font size), `line_spacing`, `margin_x`, `margin_bottom`, `gradient`, `panel`, `shadow` |
+| `credits` | `enabled`, `font`, `size`, `color`, `line_spacing`, `position` (`"center"`, `"bottom-right"`), `margin_x`, `margin_bottom`, `dim`, `panel`, `show_seconds`, `fade_seconds`, `shadow` |
 | `spectrum` | `set`: preset overrides applied before the song file's `[spectrum] set` |
-| `shadow` (in `title`, `credits`) | `blur` (0 = no shadow), `offset`, `color`, `opacity` |
+| `shadow` (in `title`, `caption`, `credits`) | `blur` (0 = no shadow), `offset`, `color`, `opacity` |
+| `gradient` (in `caption`) | `height`, `color`, `opacity` (at the bottom edge) |
+| `panel` (in `caption`, `credits`) | `color`, `opacity` (of the tint), `blur` (of the picture behind), `radius`, `padding` (`[x, y]`) |
 
 Every part uses `fonts.default` unless it names its own `font`. Colors are `"#RRGGBB"`.
 

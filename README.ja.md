@@ -1,4 +1,4 @@
-<!-- source: README.md blob 0f8064ca67f9b65fd25759fc419e7a9355cec444 -->
+<!-- source: README.md blob 2bbd3d0c5ee2624824a27b84400655341c022eb5 -->
 [English](README.md) | 日本語 | [Español](README.es.md)
 
 > この文書は[英語版](README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -11,7 +11,7 @@
 
 **状況:** Phase 1（デザイン）を進行中。`lyrics-video captions` が歌詞ファイルから旧歌詞画像スクリプトと同じ字幕画像を
 作り（iMovie 用）、`lyrics-video compare` がテキストを多くのフォントで並べて見せ、`lyrics-video still` が将来の動画の
-フレーム（背景、曲名、字幕、クレジット、スペクトラム）を `classic` デザインで描きます。動画全体の書き出しは後のフェーズで
+フレーム（背景、曲名、字幕、クレジット、スペクトラム）を、見比べられる 3 つのデザインで描きます。動画全体の書き出しは後のフェーズで
 加わります。[Phase 0 acceptance](docs/working/PHASE0_ACCEPTANCE.md) と [Phase 1 plan](docs/working/PHASE1_PLAN.md)
 （どちらも英語のみ）を参照してください。
 

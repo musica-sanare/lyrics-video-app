@@ -142,3 +142,77 @@ def test_long_credits_shrink_to_fit(sans_font):
 
     columns = np.nonzero((layer.rgba[:, :, 3] > 0).any(axis=0))[0]
     assert columns.max() - columns.min() <= 640 * 0.9 + 4
+
+
+def test_title_letter_spacing_and_rule(sans_font):
+    plain = title_layer("TITLE", "", TitleStyle(), sans_font, 1920, 1080, 1.0)
+    spaced = title_layer("TITLE", "", TitleStyle(letter_spacing=10), sans_font, 1920, 1080, 1.0)
+    ruled = title_layer("TITLE", "", TitleStyle(rule=True, rule_thickness=4), sans_font, 1920, 1080, 1.0)
+
+    assert spaced.rgba.shape[1] - plain.rgba.shape[1] == pytest.approx(40, abs=3)
+    assert ruled.rgba.shape[0] > plain.rgba.shape[0]
+    assert (ruled.rgba[-3, :, 3] == 255).mean() > 0.9, "a solid line as wide as the title"
+
+
+def test_gradient_caption_rises_from_the_bottom(sans_font):
+    style = CaptionStyle(style="gradient", gradient={"height": 300, "opacity": 0.8}, margin_x=100)
+
+    layer = caption_layer(("一行目", "二行目"), style, sans_font, 1920, 1080, 1.0)
+
+    alpha = layer.rgba[:, :, 3]
+    assert layer.top + alpha.shape[0] == 1080
+    assert alpha[-1, -1] == 204, "full shade at the bottom edge"
+    assert alpha[-300, -1] == 0, "transparent at the top of the shade"
+    columns = np.nonzero((layer.rgba[:, :, :3] == 255).all(axis=2).any(axis=0))[0]
+    assert 95 <= columns.min() <= 110, "left-aligned at the margin"
+
+
+def test_long_gradient_rows_shrink_to_fit(sans_font):
+    style = CaptionStyle(style="gradient", margin_x=100, size=120)
+
+    layer = caption_layer(("とても長い歌詞の行" * 4,), style, sans_font, 1920, 1080, 1.0)
+
+    columns = np.nonzero((layer.rgba[:, :, :3] == 255).all(axis=2).any(axis=0))[0]
+    assert columns.max() <= 1920 - 100 + 2
+
+
+def test_panel_caption_is_a_frosted_box(sans_font):
+    base = np.zeros((1080, 1920, 3), dtype=np.uint8)
+    base[:, ::2] = 255
+    style = CaptionStyle(style="panel", margin_x=160, margin_bottom=56, panel={"opacity": 0.0, "blur": 10})
+
+    layer = caption_layer(("歌詞",), style, sans_font, 1920, 1080, 1.0, base)
+
+    assert layer.left == 160
+    assert layer.top + layer.rgba.shape[0] == 1080 - 56
+    assert layer.rgba[0, 0, 3] == 0, "rounded corner"
+    middle = layer.rgba[layer.rgba.shape[0] // 2, -100, :3]
+    assert 100 < middle[0] < 155, "the stripes behind it are blurred"
+
+
+def test_panel_boxes_keep_their_size_for_one_and_two_rows(sans_font):
+    base = np.zeros((540, 960, 3), dtype=np.uint8)
+    style = CaptionStyle(style="panel")
+
+    one = caption_layer(("一行",), style, sans_font, 960, 540, 0.5, base)
+    two = caption_layer(("一行", "二行"), style, sans_font, 960, 540, 0.5, base)
+
+    assert one.rgba.shape == two.rgba.shape
+
+
+def test_credits_at_the_bottom_right(sans_font):
+    style = CreditsStyle(position="bottom-right", dim=0, margin_x=50, margin_bottom=40)
+
+    layer = credits_layer(("Music: Someone", "Words: Else"), style, sans_font, 1920, 1080, 1.0)
+
+    assert abs(layer.left + layer.rgba.shape[1] - (1920 - 50)) <= 4
+    assert abs(layer.top + layer.rgba.shape[0] - (1080 - 40)) <= 20
+
+
+def test_credits_in_a_panel(sans_font):
+    base = np.full((540, 960, 3), 200, dtype=np.uint8)
+    style = CreditsStyle(dim=0, panel={"color": "#000000", "opacity": 0.5, "blur": 0})
+
+    layer = credits_layer(("Music: Someone",), style, sans_font, 960, 540, 0.5, base)
+
+    assert layer.rgba[layer.rgba.shape[0] // 2, 5].tolist() == [100, 100, 100, 255]

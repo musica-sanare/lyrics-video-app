@@ -135,7 +135,7 @@ class LyricsBackdrop:
             title = title_layer(self.title, self.subtitle, design.title, self.default_font, width, height, scale)
             if title is not None:
                 blend(base, title)
-            credits = credits_layer(self.credits, design.credits, self.default_font, width, height, scale)
+            credits = credits_layer(self.credits, design.credits, self.default_font, width, height, scale, base)
             with_credits = None
             if credits is not None:
                 with_credits = base.copy()
@@ -145,6 +145,7 @@ class LyricsBackdrop:
 
     def _caption(self, prepared: _Prepared, rows: tuple[str, ...], width: int, height: int) -> Layer:
         if rows not in prepared.captions:
-            style = self.design.caption
-            prepared.captions[rows] = caption_layer(rows, style, self.default_font, width, height, scale_for(height))
+            style, scale = self.design.caption, scale_for(height)
+            layer = caption_layer(rows, style, self.default_font, width, height, scale, prepared.base)
+            prepared.captions[rows] = layer
         return prepared.captions[rows]

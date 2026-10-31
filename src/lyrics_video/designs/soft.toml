@@ -1,0 +1,37 @@
+# Modern and quiet: the title small at the top left with a thin rule, captions over a soft shade rising from the
+# bottom, credits small at the bottom right. The background stays visible.
+name = "soft"
+
+[title]
+position = "top-left"
+size = 56
+subtitle_size = 30
+margin = 64
+rule = true
+
+[title.shadow]
+blur = 8
+opacity = 0.5
+
+[caption]
+style = "gradient"
+size = 60
+margin_x = 96
+margin_bottom = 64
+
+[caption.gradient]
+height = 380
+opacity = 0.75
+
+[caption.shadow]
+blur = 8
+opacity = 0.6
+
+[credits]
+position = "bottom-right"
+size = 30
+dim = 0.0
+
+[credits.shadow]
+blur = 6
+opacity = 0.6

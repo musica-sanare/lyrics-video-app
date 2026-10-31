@@ -45,6 +45,28 @@ class Shadow(_Part):
     opacity: Fraction = 0.6
 
 
+class Panel(_Part):
+    """A rounded box behind text: the picture under it blurred and tinted, like frosted glass."""
+
+    color: Color = (0, 0, 0)
+    opacity: Fraction = 0.35
+    """How strongly the color tints the box."""
+    blur: Pixels = 24.0
+    """Blur of the picture behind the box; the background is still, so this is computed once."""
+    radius: Pixels = 28.0
+    padding: tuple[Pixels, Pixels] = (48.0, 28.0)
+    """Space between the box's edges and the text, horizontally and vertically."""
+
+
+class Gradient(_Part):
+    """A shade rising from the bottom edge, transparent at its top."""
+
+    height: Pixels = Field(default=380.0, gt=0)
+    color: Color = (0, 0, 0)
+    opacity: Fraction = 0.75
+    """Opacity at the bottom edge."""
+
+
 class BackgroundStyle(_Part):
     focus: tuple[Fraction, Fraction] = (0.5, 0.5)
     """The point of the image kept in view when it is cropped, as fractions of its width and height."""
@@ -65,20 +87,38 @@ class TitleStyle(_Part):
     """Distance from the top edge (and the left edge for "top-left")."""
     gap: Pixels = 12.0
     """Space between the title and the subtitle."""
+    letter_spacing: Pixels = 0.0
+    """Extra space between the title's characters."""
+    rule: bool = False
+    """A thin line under the title and subtitle, as wide as the title."""
+    rule_thickness: Pixels = 2.0
+    rule_gap: Pixels = 14.0
     shadow: Shadow = Shadow()
 
 
 class CaptionStyle(_Part):
-    style: Literal["band"] = "band"
-    """"band": today's caption images at video resolution, an opaque band along the bottom edge."""
+    style: Literal["band", "gradient", "panel"] = "band"
+    """"band": today's caption images at video resolution, an opaque band along the bottom edge; "gradient": text
+    over a shade rising from the bottom; "panel": text in a frosted rounded box near the bottom."""
     align: Literal["left"] = "left"
+    """Only "left" for now; the setting exists so other alignments can be added without changing song files."""
     font: Path | None = None
     text_color: Color = (255, 255, 255)
+    fade_seconds: Pixels = 2.0
     band_color: Color = (0, 0, 0)
     band_opacity: Fraction = 1.0
     band_height: Pixels = Field(default=309.0, gt=0)
     """Today's 1440 x 232 caption images are 309 pixels high when scaled to the frame width."""
-    fade_seconds: Pixels = 2.0
+    size: Pixels = Field(default=60.0, gt=0)
+    """Gradient and panel: the largest font size; longer rows shrink to fit the width."""
+    line_spacing: float = Field(default=1.35, ge=1.0)
+    margin_x: Pixels = 96.0
+    """Gradient and panel: distance of the text (or the panel) from the left and right edges."""
+    margin_bottom: Pixels = 64.0
+    """Gradient and panel: distance of the text (or the panel) from the bottom edge."""
+    gradient: Gradient = Gradient()
+    panel: Panel = Panel()
+    shadow: Shadow = Shadow()
 
 
 class CreditsStyle(_Part):
@@ -87,8 +127,15 @@ class CreditsStyle(_Part):
     size: Pixels = 44.0
     color: Color = (255, 255, 255)
     line_spacing: float = Field(default=1.6, ge=1.0)
+    position: Literal["center", "bottom-right"] = "center"
+    margin_x: Pixels = 96.0
+    """Bottom-right: distance from the right edge."""
+    margin_bottom: Pixels = 64.0
+    """Bottom-right: distance from the bottom edge."""
     dim: Fraction = 0.5
     """How much the frame is darkened behind the credits."""
+    panel: Panel | None = None
+    """A frosted box behind the credits; none by default."""
     show_seconds: Pixels = 6.0
     """How long the credits stay at the start and at the end of the song."""
     fade_seconds: Pixels = 1.5

@@ -107,6 +107,7 @@ class Song:
     background_image: Path | None = None
     default_font: Path | None = None
     design: Design | None = None
+    design_overrides: dict[str, Any] = field(default_factory=dict)
     spectrum_preset: str = "default"
     spectrum_set: tuple[str, ...] = ()
     video: VideoSettings = field(default_factory=VideoSettings)
@@ -152,19 +153,24 @@ def load_song(path: Path) -> Song:
         credits=tuple(song.credits),
         background_image=resolve_path(song.background_image, base) if song.background_image else None,
         default_font=resolve_path(song.fonts.default, base) if song.fonts.default else None,
-        design=_design(song.design, base, path),
+        design=song_design(path, *_design_name(song.design)),
+        design_overrides=_design_name(song.design)[1],
         spectrum_preset=_preset_name_or_path(song.spectrum.preset, base),
         spectrum_set=tuple(song.spectrum.set),
         video=song.video,
     )
 
 
-def _design(value: str | dict[str, Any], base: Path, song_path: Path) -> Design:
+def _design_name(value: str | dict[str, Any]) -> tuple[str, dict[str, Any]]:
     if isinstance(value, str):
-        name, overrides = value, {}
-    else:
-        overrides = dict(value)
-        name = overrides.pop("name", "classic")
+        return value, {}
+    overrides = dict(value)
+    return overrides.pop("name", "classic"), overrides
+
+
+def song_design(song_path: Path, name: str, overrides: dict[str, Any]) -> Design:
+    """The design `name` with the song file's overrides; paths are relative to the song file."""
+    base = song_path.parent
     try:
         design = load_design(name, overrides, base)
     except ConfigError as error:
