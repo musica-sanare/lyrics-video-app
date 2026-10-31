@@ -58,7 +58,6 @@ class LyricsBackdrop:
         duration: float,
         background_image: Path | None = None,
         title: str = "",
-        subtitle: str = "",
         credits: tuple[str, ...] = (),
         default_font: Path | None = None,
     ):
@@ -67,7 +66,6 @@ class LyricsBackdrop:
         self.duration = duration
         self.background_image = background_image
         self.title = title
-        self.subtitle = subtitle
         self.credits = credits
         self.default_font = default_font
         self._prepared: dict[tuple[int, int], _Prepared] = {}
@@ -80,7 +78,6 @@ class LyricsBackdrop:
             duration=duration,
             background_image=song.background_image,
             title=song.title,
-            subtitle=song.subtitle,
             credits=song.credits,
             default_font=song.default_font,
         )
@@ -132,7 +129,7 @@ class LyricsBackdrop:
             design, scale = self.design, scale_for(height)
             style = design.background
             base = background(self.background_image, width, height, style.focus, style.dim, style.blur * scale)
-            title = title_layer(self.title, self.subtitle, design.title, self.default_font, width, height, scale)
+            title = title_layer(self.title, design.title, self.default_font, width, height, scale)
             if title is not None:
                 blend(base, title)
             credits = credits_layer(self.credits, design.credits, self.default_font, width, height, scale, base)

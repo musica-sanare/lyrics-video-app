@@ -5,7 +5,6 @@ name = "classic"
 [title]
 position = "top-center"
 size = 84
-subtitle_size = 40
 margin = 56
 
 [title.shadow]

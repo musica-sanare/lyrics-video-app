@@ -5,7 +5,6 @@ name = "soft"
 [title]
 position = "top-left"
 size = 56
-subtitle_size = 30
 margin = 64
 rule = true
 

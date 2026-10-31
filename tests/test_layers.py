@@ -78,7 +78,7 @@ def test_blend_opacity():
 
 
 def test_title_at_the_top_center(sans_font):
-    layer = title_layer("Title", "Sub", TitleStyle(margin=50), sans_font, 1920, 1080, 1.0)
+    layer = title_layer("Title", TitleStyle(margin=50), sans_font, 1920, 1080, 1.0)
 
     height, width = layer.rgba.shape[:2]
     assert 40 <= layer.top <= 80
@@ -87,19 +87,19 @@ def test_title_at_the_top_center(sans_font):
 
 
 def test_title_at_the_top_left_scales_with_the_frame(sans_font):
-    layer = title_layer("Title", "", TitleStyle(position="top-left", margin=60), sans_font, 1280, 720, 720 / 1080)
+    layer = title_layer("Title", TitleStyle(position="top-left", margin=60), sans_font, 1280, 720, 720 / 1080)
 
     assert 35 <= layer.left <= 45
 
 
 def test_title_off_or_empty(sans_font):
-    assert title_layer("Title", "", TitleStyle(enabled=False), sans_font, 100, 100, 1.0) is None
-    assert title_layer("", "", TitleStyle(), sans_font, 100, 100, 1.0) is None
+    assert title_layer("Title", TitleStyle(enabled=False), sans_font, 100, 100, 1.0) is None
+    assert title_layer("", TitleStyle(), sans_font, 100, 100, 1.0) is None
 
 
 def test_a_part_without_a_font_is_reported():
     with pytest.raises(ConfigError, match="no font for the title"):
-        title_layer("Title", "", TitleStyle(), None, 100, 100, 1.0)
+        title_layer("Title", TitleStyle(), None, 100, 100, 1.0)
 
 
 def test_caption_band_along_the_bottom(sans_font):
@@ -145,9 +145,9 @@ def test_long_credits_shrink_to_fit(sans_font):
 
 
 def test_title_letter_spacing_and_rule(sans_font):
-    plain = title_layer("TITLE", "", TitleStyle(), sans_font, 1920, 1080, 1.0)
-    spaced = title_layer("TITLE", "", TitleStyle(letter_spacing=10), sans_font, 1920, 1080, 1.0)
-    ruled = title_layer("TITLE", "", TitleStyle(rule=True, rule_thickness=4), sans_font, 1920, 1080, 1.0)
+    plain = title_layer("TITLE", TitleStyle(), sans_font, 1920, 1080, 1.0)
+    spaced = title_layer("TITLE", TitleStyle(letter_spacing=10), sans_font, 1920, 1080, 1.0)
+    ruled = title_layer("TITLE", TitleStyle(rule=True, rule_thickness=4), sans_font, 1920, 1080, 1.0)
 
     assert spaced.rgba.shape[1] - plain.rgba.shape[1] == pytest.approx(40, abs=3)
     assert ruled.rgba.shape[0] > plain.rgba.shape[0]

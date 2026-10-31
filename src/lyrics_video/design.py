@@ -81,16 +81,13 @@ class TitleStyle(_Part):
     font: Path | None = None
     """A font for the title only; by default the song file's `fonts.default`."""
     size: Pixels = 72.0
-    subtitle_size: Pixels = 36.0
     color: Color = (255, 255, 255)
     margin: Pixels = 64.0
     """Distance from the top edge (and the left edge for "top-left")."""
-    gap: Pixels = 12.0
-    """Space between the title and the subtitle."""
     letter_spacing: Pixels = 0.0
     """Extra space between the title's characters."""
     rule: bool = False
-    """A thin line under the title and subtitle, as wide as the title."""
+    """A thin line under the title, as wide as it."""
     rule_thickness: Pixels = 2.0
     rule_gap: Pixels = 14.0
     shadow: Shadow = Shadow()

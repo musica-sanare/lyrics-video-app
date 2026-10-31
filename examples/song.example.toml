@@ -8,20 +8,19 @@ lyrics = "lyrics.txt"
 audio = "song.wav"                     # the song, for the spectrum
 background_image = "background.jpg"    # covers the frame and is cropped, never stretched
 title = "Song Title"
-subtitle = "Artist"
-credits = ["Music & Lyrics: Your Name", "Vocals: Someone", "Illustration: Someone Else"]
-design = "classic"                     # a built-in design, or a design file
+credits = ["by Your Name"]             # shown at the start and the end of the song
+design = "soft"                        # a built-in design (soft, classic, panel), or a design file
 
 [fonts]
 default = "~/path/to/your-font.otf"    # every part of the video uses it unless it names its own
 
 # Overrides of the design, part by part. Use a [design] table with `name` instead of `design = "..."` above:
 # [design]
-# name = "classic"
+# name = "soft"
 # [design.title]
 # font = "~/path/to/title-font.otf"
 # [design.caption]
-# band_color = "#101820"
+# size = 56
 
 [spectrum]
 preset = "default"                     # an audio-spectrum-app preset name, or a preset file

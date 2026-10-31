@@ -1,4 +1,4 @@
-<!-- source: docs/en/USER_GUIDE.md blob 517778fd4a7bdef2a55c879358818038d0f4fbc1 -->
+<!-- source: docs/en/USER_GUIDE.md blob 0e372f0f243123ad4af358d4d4e08869f26bff52 -->
 [English](../en/USER_GUIDE.md) | 日本語 | [Español](../es/USER_GUIDE.md) · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/USER_GUIDE.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -97,39 +97,39 @@ uv run lyrics-video still work/my-song/song.toml --time 62.5 --design classic so
 | 部品 | 内容 |
 |---|---|
 | 背景 | `background_image`。画面を覆うように拡大して切り取り、引き伸ばしません。画像がなければ黒 |
-| 曲名 | `title` と `subtitle`。アプリが描きます |
+| 曲名 | `title`。アプリが描きます |
 | 字幕 | その時点の字幕。フェードイン・アウトします |
 | クレジット | `credits` の各行。曲の最初と最後の数秒に、暗くした画面の上に表示します |
 | スペクトラム | `[spectrum]` のプリセットと上書き設定で audio-spectrum-app が描きます |
 
-部品の見た目をまとめたものが**デザイン**です。組み込みのデザイン：
+部品の見た目をまとめたものが**デザイン**です。組み込みのデザイン（既定は `soft`）：
 
 | デザイン | 曲名 | 字幕 | クレジット |
 |---|---|---|---|
-| `classic` | 大きく、上部中央 | 画面下端の不透明な帯。旧字幕画像の決まりで描きます | 暗くした画面の中央 |
 | `soft` | 小さく、左上。細い線付き | 下から立ち上がる柔らかい陰の上 | 小さく、右下 |
+| `classic` | 大きく、上部中央 | 画面下端の不透明な帯。旧字幕画像の決まりで描きます | 暗くした画面の中央 |
 | `panel` | 字間を広げて、上部中央 | 下寄りの、すりガラス風の角丸の枠の中（背景をぼかしています） | 中央、同じ種類の枠の中 |
 
-どのデザインでも、字幕は今と同じく左寄せで 2 行までです。`design = "classic"` で選ぶか、自分のデザイン
+どのデザインでも、字幕は今と同じく左寄せで 2 行までです。`design = "soft"` で選ぶか、自分のデザイン
 ファイルを `design = "my-design.toml"` で指定します。一部の値だけ変えるには、デザインの `name` と変えたい部品を
 `[design]` テーブルに書きます。
 
 ```toml
 [design]
-name = "classic"
+name = "soft"
 
 [design.title]
 font = "~/path/to/title-font.otf"   # 曲名だけ fonts.default と別のフォントにする
-size = 96
+size = 64
 
 [design.caption]
-band_color = "#101820"
+size = 56
 ```
 
 | 部品 | キー（大きさは高さ 1080 ピクセルの画面でのピクセル数で、動画の高さに合わせて拡大縮小します） |
 |---|---|
 | `background` | `focus`（`[x, y]`、0〜1。切り取るときに残す位置）、`dim`（0〜1）、`blur` |
-| `title` | `enabled`、`position`（`"top-center"`、`"top-left"`）、`font`、`size`、`subtitle_size`、`color`、`margin`、`gap`、`letter_spacing`、`rule`、`rule_thickness`、`rule_gap`、`shadow` |
+| `title` | `enabled`、`position`（`"top-center"`、`"top-left"`）、`font`、`size`、`color`、`margin`、`letter_spacing`、`rule`、`rule_thickness`、`rule_gap`、`shadow` |
 | `caption` | `style`（`"band"`、`"gradient"`、`"panel"`）、`align`（`"left"`）、`font`、`text_color`、`fade_seconds`。帯：`band_color`、`band_opacity`、`band_height`。陰と枠：`size`（最大の文字の大きさ）、`line_spacing`、`margin_x`、`margin_bottom`、`gradient`、`panel`、`shadow` |
 | `credits` | `enabled`、`font`、`size`、`color`、`line_spacing`、`position`（`"center"`、`"bottom-right"`）、`margin_x`、`margin_bottom`、`dim`、`panel`、`show_seconds`、`fade_seconds`、`shadow` |
 | `spectrum` | `set`：曲ファイルの `[spectrum] set` より先に適用するプリセットの上書き |
@@ -149,9 +149,9 @@ TOML ファイルです。パスは曲ファイルからの相対パスで、`~`
 | `lyrics` | `"lyrics.txt"` | 歌詞ファイル |
 | `audio` | なし | 曲の音声（スペクトラム用、`still`） |
 | `background_image` | なし | 動画の背景画像 |
-| `title`、`subtitle` | `""` | 曲名と、その下の 1 行 |
-| `credits` | `[]` | クレジットの各行 |
-| `design` | `"classic"` | デザイン名かデザインファイル、または `name` と上書きを書いた `[design]` テーブル（5 節） |
+| `title` | `""` | 曲名（1 行） |
+| `credits` | `[]` | クレジットの各行。例：`["by Your Name"]` |
+| `design` | `"soft"` | デザイン名かデザインファイル、または `name` と上書きを書いた `[design]` テーブル（5 節） |
 | `fonts.default` | なし | 自分のフォントを指定しない、動画のすべての部品のフォント |
 | `spectrum.preset` | `"default"` | audio-spectrum-app のプリセット名かプリセットファイル |
 | `spectrum.set` | `[]` | プリセットの上書き（audio-spectrum-app の `--set` と同じ） |

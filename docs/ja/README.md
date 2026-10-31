@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob 90a32e8f1ea7c128a19809125b09a239c4d76d33 -->
+<!-- source: docs/en/README.md blob 3f88d0d3176094830c5daf09fd751bf7af8a7dbd -->
 [English](../en/README.md) | 日本語 | [Español](../es/README.md) · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -23,3 +23,4 @@
 | [Phase 0 plan](../working/PHASE0_PLAN.md)（英語のみ） | リポジトリの土台と、字幕画像生成の CLI 化。 |
 | [Phase 0 acceptance](../working/PHASE0_ACCEPTANCE.md)（英語のみ） | Phase 0 の受け入れ報告：基準、旧字幕画像との比較、リポジトリの安全性、未決事項。 |
 | [Phase 1 plan](../working/PHASE1_PLAN.md)（英語のみ） | 歌詞動画のデザインを設定可能な部品にする：フレームの構成、backdrop、比較するデザイン、`still` コマンド。 |
+| [Phase 1 acceptance](../working/PHASE1_ACCEPTANCE.md)（英語のみ） | Phase 1 の受け入れ報告：オーナーが選んだデザイン、基準、backdrop の計測時間、リポジトリの安全性、未決事項。 |

@@ -98,38 +98,38 @@ A frame is made of these parts, from bottom to top:
 | Part | Content |
 |---|---|
 | Background | `background_image`, scaled to cover the frame and cropped, never stretched; black without an image |
-| Title | `title` and `subtitle`, drawn by the app |
+| Title | `title`, drawn by the app |
 | Caption | The caption of the moment, fading in and out |
 | Credits | The `credits` lines, shown over the first and last seconds of the song, over a darkened frame |
 | Spectrum | Drawn by audio-spectrum-app with the `[spectrum]` preset and overrides |
 
-How the parts look is a **design**. The built-in designs:
+How the parts look is a **design**. The built-in designs (`soft` is the default):
 
 | Design | Title | Caption | Credits |
 |---|---|---|---|
-| `classic` | Large, top center | An opaque band along the bottom edge, drawn with the rules of the old caption images | Centered over a darkened frame |
 | `soft` | Small, top left, with a thin rule | Over a soft shade rising from the bottom | Small, bottom right |
+| `classic` | Large, top center | An opaque band along the bottom edge, drawn with the rules of the old caption images | Centered over a darkened frame |
 | `panel` | Letter-spaced, top center | In a frosted rounded box near the bottom (the background blurred behind it) | Centered, in the same kind of box |
 
-Captions are left-aligned with up to two rows in every design, as today. Choose a design with `design = "classic"`, or a design file of your own with `design = "my-design.toml"`. To change single
+Captions are left-aligned with up to two rows in every design, as today. Choose a design with `design = "soft"`, or a design file of your own with `design = "my-design.toml"`. To change single
 values, write a `[design]` table with the design's `name` and the parts to change:
 
 ```toml
 [design]
-name = "classic"
+name = "soft"
 
 [design.title]
 font = "~/path/to/title-font.otf"   # the title in another font than fonts.default
-size = 96
+size = 64
 
 [design.caption]
-band_color = "#101820"
+size = 56
 ```
 
 | Part | Keys (sizes in pixels of a 1080-pixel-high frame; they scale with the video height) |
 |---|---|
 | `background` | `focus` (`[x, y]` from 0 to 1, the point kept in view when cropping), `dim` (0 to 1), `blur` |
-| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `subtitle_size`, `color`, `margin`, `gap`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `shadow` |
+| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `color`, `margin`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `shadow` |
 | `caption` | `style` (`"band"`, `"gradient"`, `"panel"`), `align` (`"left"`), `font`, `text_color`, `fade_seconds`; band: `band_color`, `band_opacity`, `band_height`; gradient and panel: `size` (largest font size), `line_spacing`, `margin_x`, `margin_bottom`, `gradient`, `panel`, `shadow` |
 | `credits` | `enabled`, `font`, `size`, `color`, `line_spacing`, `position` (`"center"`, `"bottom-right"`), `margin_x`, `margin_bottom`, `dim`, `panel`, `show_seconds`, `fade_seconds`, `shadow` |
 | `spectrum` | `set`: preset overrides applied before the song file's `[spectrum] set` |
@@ -149,9 +149,9 @@ A TOML file. Paths are relative to the song file; `~` is the home folder. Every 
 | `lyrics` | `"lyrics.txt"` | The lyrics file |
 | `audio` | none | The song, for the spectrum (`still`) |
 | `background_image` | none | The background image of the video |
-| `title`, `subtitle` | `""` | The title and a line under it |
-| `credits` | `[]` | Lines of credits |
-| `design` | `"classic"` | A design name or file, or a `[design]` table with `name` and overrides (section 5) |
+| `title` | `""` | The song title, one line |
+| `credits` | `[]` | Lines of credits, for example `["by Your Name"]` |
+| `design` | `"soft"` | A design name or file, or a `[design]` table with `name` and overrides (section 5) |
 | `fonts.default` | none | The font of every part of the video that does not name its own |
 | `spectrum.preset` | `"default"` | An audio-spectrum-app preset name or preset file |
 | `spectrum.set` | `[]` | Preset overrides, like audio-spectrum-app's `--set` |

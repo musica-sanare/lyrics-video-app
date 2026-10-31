@@ -20,3 +20,4 @@ How the offline lyrics video maker is set up, designed and developed, and the re
 | [Phase 0 plan](../working/PHASE0_PLAN.md) | Repository foundation and the caption images as a CLI. |
 | [Phase 0 acceptance](../working/PHASE0_ACCEPTANCE.md) | Phase 0 acceptance report: criteria, comparison with the old caption images, repository safety, open items. |
 | [Phase 1 plan](../working/PHASE1_PLAN.md) | The design of a lyrics video as configurable parts: frame model, backdrop, designs to compare, `still` command. |
+| [Phase 1 acceptance](../working/PHASE1_ACCEPTANCE.md) | Phase 1 acceptance report: the owner's choice of design, criteria, measured backdrop time, repository safety, open items. |

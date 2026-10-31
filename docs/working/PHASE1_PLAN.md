@@ -3,7 +3,8 @@
 # Phase 1 plan: the design of a lyrics video as configurable parts
 
 Status: approved by the owner on 2026-10-31 with the recommended options (A1, B1, C1, D1); the answers to the
-questions are recorded in the last section. Still open: Q5 (materials for the drafts).
+questions are recorded in the last section. Delivered the same day with `soft` as the default design
+([Phase 1 acceptance](PHASE1_ACCEPTANCE.md)).
 
 ## Goal
 

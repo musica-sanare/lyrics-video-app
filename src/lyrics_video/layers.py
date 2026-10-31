@@ -154,31 +154,22 @@ def _frosted(base: np.ndarray, box: tuple[int, int, int, int], panel: Panel, sca
 
 
 def title_layer(
-    title: str, subtitle: str, style: TitleStyle, default_font: Path | None, width: int, height: int, scale: float
+    title: str, style: TitleStyle, default_font: Path | None, width: int, height: int, scale: float
 ) -> Layer | None:
-    if not style.enabled or not (title or subtitle):
+    if not style.enabled or not title:
         return None
-    font_path = _font_for(style.font, default_font, "title")
+    font = load_font(_font_for(style.font, default_font, "title"), max(1, round(style.size * scale)))
     mask = Image.new("L", (width, height), 0)
     draw = ImageDraw.Draw(mask)
-    centered = style.position == "top-center"
     spacing = style.letter_spacing * scale
-    y = style.margin * scale
-    title_width = 0.0
-    for text, size, extra in ((title, style.size, spacing), (subtitle, style.subtitle_size, 0.0)):
-        if not text:
-            continue
-        font = load_font(font_path, max(1, round(size * scale)))
-        text_width = _spaced_width(text, font, extra)
-        title_width = title_width or text_width
-        x = (width - text_width) / 2 if centered else style.margin * scale
-        _draw_spaced(draw, x, y, text, font, extra)
-        y += _line_height(font) + style.gap * scale
+    title_width = _spaced_width(title, font, spacing)
+    left = (width - title_width) / 2 if style.position == "top-center" else style.margin * scale
+    top = style.margin * scale
+    _draw_spaced(draw, left, top, title, font, spacing)
     if style.rule:
         thickness = max(1, round(style.rule_thickness * scale))
-        top = round(y - style.gap * scale + style.rule_gap * scale)
-        left = (width - title_width) / 2 if centered else style.margin * scale
-        draw.rectangle([round(left), top, round(left + title_width) - 1, top + thickness - 1], fill=255)
+        rule_top = round(top + _line_height(font) + style.rule_gap * scale)
+        draw.rectangle([round(left), rule_top, round(left + title_width) - 1, rule_top + thickness - 1], fill=255)
     return _cropped(_with_shadow(mask, style.color, style.shadow, scale))
 
 

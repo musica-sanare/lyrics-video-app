@@ -1,4 +1,4 @@
-<!-- source: README.md blob 2bbd3d0c5ee2624824a27b84400655341c022eb5 -->
+<!-- source: README.md blob 0d8d19a5a9e88e731b58037667f8222835a7ee4c -->
 [English](README.md) | [日本語](README.ja.md) | Español
 
 > Este documento es una traducción de la [versión en inglés](README.md). Si hay diferencias, prevalece la versión en inglés.
@@ -10,12 +10,12 @@ canción, subtítulos con la letra que aparecen y desaparecen en la parte inferi
 dibujado por [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), con el audio de la canción.
 Sustituye un proceso manual en el que se superponían imágenes de subtítulos en un editor de vídeo.
 
-**Estado:** fase 1 (diseño) en curso. `lyrics-video captions` crea a partir de un archivo de letra las mismas
-imágenes de subtítulos que el antiguo script de imágenes de letra, para usarlas en iMovie; `lyrics-video compare`
-muestra un texto en muchas fuentes; `lyrics-video still` dibuja fotogramas del futuro vídeo (fondo, título,
-subtítulo, créditos y espectro) en tres diseños para comparar. Los vídeos completos llegarán en fases posteriores. Consulta
-el [informe de aceptación de la fase 0](docs/working/PHASE0_ACCEPTANCE.md) y el
-[plan de la fase 1](docs/working/PHASE1_PLAN.md) (solo en inglés).
+**Estado:** fase 1 (diseño) terminada, a la espera de la aceptación del propietario. `lyrics-video captions` crea a
+partir de un archivo de letra las mismas imágenes de subtítulos que el antiguo script de imágenes de letra, para
+usarlas en iMovie; `lyrics-video compare` muestra un texto en muchas fuentes; `lyrics-video still` dibuja fotogramas
+del futuro vídeo (fondo, título, subtítulo, créditos y espectro) en tres diseños, `soft` por defecto. Los vídeos
+completos llegarán en fases posteriores. Consulta el
+[informe de aceptación de la fase 1](docs/working/PHASE1_ACCEPTANCE.md) (solo en inglés).
 
 ## Inicio rápido
 

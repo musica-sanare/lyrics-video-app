@@ -65,10 +65,9 @@ class SongFile(_Section):
     lyrics: Path = Path("lyrics.txt")
     audio: Path | None = None
     title: str = ""
-    subtitle: str = ""
     credits: list[str] = []
     background_image: Path | None = None
-    design: str | dict[str, Any] = "classic"
+    design: str | dict[str, Any] = "soft"
     """A design name or file, or a table with `name` and overrides of the design's parts."""
     fonts: FontSettings = FontSettings()
     spectrum: SpectrumSettings = SpectrumSettings()
@@ -102,7 +101,6 @@ class Song:
     compare_font_dirs: list[Path]
     audio: Path | None = None
     title: str = ""
-    subtitle: str = ""
     credits: tuple[str, ...] = ()
     background_image: Path | None = None
     default_font: Path | None = None
@@ -149,7 +147,6 @@ def load_song(path: Path) -> Song:
         compare_font_dirs=[resolve_path(p, base) for p in song.compare.font_dirs],
         audio=resolve_path(song.audio, base) if song.audio else None,
         title=song.title,
-        subtitle=song.subtitle,
         credits=tuple(song.credits),
         background_image=resolve_path(song.background_image, base) if song.background_image else None,
         default_font=resolve_path(song.fonts.default, base) if song.fonts.default else None,
@@ -165,7 +162,7 @@ def _design_name(value: str | dict[str, Any]) -> tuple[str, dict[str, Any]]:
     if isinstance(value, str):
         return value, {}
     overrides = dict(value)
-    return overrides.pop("name", "classic"), overrides
+    return overrides.pop("name", "soft"), overrides
 
 
 def song_design(song_path: Path, name: str, overrides: dict[str, Any]) -> Design:

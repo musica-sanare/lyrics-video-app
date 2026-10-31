@@ -24,8 +24,8 @@ def test_stills_are_written_per_time(tmp_path, sans_font, capsys):
     assert main(["still", str(song), "--time", "0.5", "1.25", "--caption", "2"]) == EXIT_OK
 
     stills = tmp_path / "stills"
-    assert sorted(p.name for p in stills.iterdir()) == ["classic_0.5s.png", "classic_1.25s.png"]
-    image = Image.open(stills / "classic_1.25s.png")
+    assert sorted(p.name for p in stills.iterdir()) == ["soft_0.5s.png", "soft_1.25s.png"]
+    image = Image.open(stills / "soft_1.25s.png")
     assert image.size == (480, 270)
     assert "Wrote 2 image(s)" in capsys.readouterr().out
 
@@ -35,7 +35,7 @@ def test_without_a_caption_the_band_is_not_drawn(tmp_path, sans_font):
 
     assert main(["still", str(song), "--time", "1.5", "--no-caption"]) == EXIT_OK
 
-    corner = np.asarray(Image.open(tmp_path / "stills/classic_1.5s.png"))[-2, -2]
+    corner = np.asarray(Image.open(tmp_path / "stills/soft_1.5s.png"))[-2, -2]
     assert corner.tolist() == [30, 60, 90]
 
 

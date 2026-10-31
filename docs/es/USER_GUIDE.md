@@ -1,4 +1,4 @@
-<!-- source: docs/en/USER_GUIDE.md blob 517778fd4a7bdef2a55c879358818038d0f4fbc1 -->
+<!-- source: docs/en/USER_GUIDE.md blob 0e372f0f243123ad4af358d4d4e08869f26bff52 -->
 [English](../en/USER_GUIDE.md) | [日本語](../ja/USER_GUIDE.md) | Español · [Índice de la documentación](README.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/USER_GUIDE.md). Si hay diferencias, prevalece la versión en inglés.
@@ -106,39 +106,39 @@ Un fotograma se compone de estas partes, de abajo arriba:
 | Parte | Contenido |
 |---|---|
 | Fondo | `background_image`, escalada para cubrir el encuadre y recortada, nunca estirada; negro sin imagen |
-| Título | `title` y `subtitle`, dibujados por la aplicación |
+| Título | `title`, dibujado por la aplicación |
 | Subtítulo | El subtítulo del momento, con fundido de entrada y de salida |
 | Créditos | Las líneas de `credits`, durante los primeros y los últimos segundos de la canción, sobre el encuadre oscurecido |
 | Espectro | Dibujado por audio-spectrum-app con el preset y los ajustes de `[spectrum]` |
 
-El aspecto de las partes es un **diseño**. Los diseños incluidos:
+El aspecto de las partes es un **diseño**. Los diseños incluidos (`soft` es el predeterminado):
 
 | Diseño | Título | Subtítulo | Créditos |
 |---|---|---|---|
-| `classic` | Grande, arriba en el centro | Una franja opaca a lo largo del borde inferior, dibujada con las reglas de las imágenes de subtítulos antiguas | Centrados sobre el encuadre oscurecido |
 | `soft` | Pequeño, arriba a la izquierda, con una línea fina | Sobre una sombra suave que sube desde abajo | Pequeños, abajo a la derecha |
+| `classic` | Grande, arriba en el centro | Una franja opaca a lo largo del borde inferior, dibujada con las reglas de las imágenes de subtítulos antiguas | Centrados sobre el encuadre oscurecido |
 | `panel` | Con letras espaciadas, arriba en el centro | En un recuadro redondeado de vidrio esmerilado cerca del borde inferior (el fondo desenfocado detrás) | Centrados, en el mismo tipo de recuadro |
 
-En todos los diseños los subtítulos van alineados a la izquierda y tienen como mucho dos filas, como ahora. Elige un diseño con `design = "classic"`, o un archivo de diseño propio con
+En todos los diseños los subtítulos van alineados a la izquierda y tienen como mucho dos filas, como ahora. Elige un diseño con `design = "soft"`, o un archivo de diseño propio con
 `design = "my-design.toml"`. Para cambiar valores sueltos, escribe una tabla `[design]` con el `name` del diseño y las
 partes que cambian:
 
 ```toml
 [design]
-name = "classic"
+name = "soft"
 
 [design.title]
 font = "~/path/to/title-font.otf"   # el título con otra fuente que fonts.default
-size = 96
+size = 64
 
 [design.caption]
-band_color = "#101820"
+size = 56
 ```
 
 | Parte | Claves (tamaños en píxeles de un encuadre de 1080 píxeles de alto; se escalan con la altura del vídeo) |
 |---|---|
 | `background` | `focus` (`[x, y]` de 0 a 1, el punto que queda a la vista al recortar), `dim` (0 a 1), `blur` |
-| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `subtitle_size`, `color`, `margin`, `gap`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `shadow` |
+| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `color`, `margin`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `shadow` |
 | `caption` | `style` (`"band"`, `"gradient"`, `"panel"`), `align` (`"left"`), `font`, `text_color`, `fade_seconds`; franja: `band_color`, `band_opacity`, `band_height`; sombra y recuadro: `size` (tamaño de letra máximo), `line_spacing`, `margin_x`, `margin_bottom`, `gradient`, `panel`, `shadow` |
 | `credits` | `enabled`, `font`, `size`, `color`, `line_spacing`, `position` (`"center"`, `"bottom-right"`), `margin_x`, `margin_bottom`, `dim`, `panel`, `show_seconds`, `fade_seconds`, `shadow` |
 | `spectrum` | `set`: ajustes del preset aplicados antes de `[spectrum] set` del archivo de la canción |
@@ -158,9 +158,9 @@ opcionales excepto `captions.font` para `captions` y `audio` para `still`.
 | `lyrics` | `"lyrics.txt"` | El archivo de letra |
 | `audio` | ninguno | La canción, para el espectro (`still`) |
 | `background_image` | ninguno | La imagen de fondo del vídeo |
-| `title`, `subtitle` | `""` | El título y una línea debajo |
-| `credits` | `[]` | Líneas de créditos |
-| `design` | `"classic"` | Un nombre o archivo de diseño, o una tabla `[design]` con `name` y ajustes (sección 5) |
+| `title` | `""` | El título de la canción, en una línea |
+| `credits` | `[]` | Líneas de créditos, por ejemplo `["by Your Name"]` |
+| `design` | `"soft"` | Un nombre o archivo de diseño, o una tabla `[design]` con `name` y ajustes (sección 5) |
 | `fonts.default` | ninguno | La fuente de cada parte del vídeo que no indique la suya |
 | `spectrum.preset` | `"default"` | Un nombre o archivo de preset de audio-spectrum-app |
 | `spectrum.set` | `[]` | Ajustes del preset, como `--set` de audio-spectrum-app |

@@ -1,4 +1,4 @@
-<!-- source: README.md blob 2bbd3d0c5ee2624824a27b84400655341c022eb5 -->
+<!-- source: README.md blob 0d8d19a5a9e88e731b58037667f8222835a7ee4c -->
 [English](README.md) | 日本語 | [Español](README.es.md)
 
 > この文書は[英語版](README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -9,11 +9,11 @@
 クレジット、そして [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムを、
 曲の音声とともに 1 本の動画にします。動画編集ソフトで字幕画像を重ねていた手作業を置き換えるものです。
 
-**状況:** Phase 1（デザイン）を進行中。`lyrics-video captions` が歌詞ファイルから旧歌詞画像スクリプトと同じ字幕画像を
-作り（iMovie 用）、`lyrics-video compare` がテキストを多くのフォントで並べて見せ、`lyrics-video still` が将来の動画の
-フレーム（背景、曲名、字幕、クレジット、スペクトラム）を、見比べられる 3 つのデザインで描きます。動画全体の書き出しは後のフェーズで
-加わります。[Phase 0 acceptance](docs/working/PHASE0_ACCEPTANCE.md) と [Phase 1 plan](docs/working/PHASE1_PLAN.md)
-（どちらも英語のみ）を参照してください。
+**状況:** Phase 1（デザイン）が完成し、オーナーの受け入れ待ちです。`lyrics-video captions` が歌詞ファイルから旧歌詞画像
+スクリプトと同じ字幕画像を作り（iMovie 用）、`lyrics-video compare` がテキストを多くのフォントで並べて見せ、
+`lyrics-video still` が将来の動画のフレーム（背景、曲名、字幕、クレジット、スペクトラム）を 3 つのデザイン（既定は `soft`）で
+描きます。動画全体の書き出しは後のフェーズで加わります。[Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md)（英語のみ）
+を参照してください。
 
 ## クイックスタート
 
