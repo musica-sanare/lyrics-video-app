@@ -1,0 +1,21 @@
+# A song file for lyrics-video. Copy it next to your song in work/ (for example work/my-song/song.toml);
+# real song files are ignored by Git. Paths are relative to this file; "~" means your home folder.
+
+# One caption per line; ";" splits a caption into two rows. Empty lines are skipped but still count in file names.
+lyrics = "lyrics.txt"
+
+[captions]
+output_dir = "captions"          # lyrics_<line index>.png are written here
+# size = [1440, 232]             # width, height; by default the background image's size, or 1440 x 232
+background = "#000000"           # "#RRGGBB", or an image whose center pixel is the color (an old sample PNG)
+text_color = "#FFFFFF"           # same
+font = "~/path/to/your-font.otf" # a font file outside the repository
+font_index = 0                   # face in a .ttc collection
+separator = ";"
+file_prefix = "lyrics"
+
+[compare]
+text = "compare.txt"             # a line or two to try in every font
+output_dir = "compare"
+fonts = ["/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc", "/System/Library/Fonts/ヒラギノ明朝 ProN.ttc"]
+font_dirs = []                   # every .ttf, .otf, .ttc and .otc in these folders is added

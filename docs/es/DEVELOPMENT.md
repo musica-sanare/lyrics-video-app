@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob b511d034d978d85813301132bfececc1bd48b98d -->
+<!-- source: docs/en/DEVELOPMENT.md blob 2852382f0dd281c6b0607f5e07f07d041ccad412 -->
 [English](../en/DEVELOPMENT.md) | [日本語](../ja/DEVELOPMENT.md) | Español · [Índice de la documentación](README.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/DEVELOPMENT.md). Si hay diferencias, prevalece la versión en inglés.
@@ -34,7 +34,11 @@ uv run pytest
 
 | Archivo | Cubre |
 |---|---|
-| `test_cli.py` | La versión de la orden y su ejecución como módulo |
+| `test_lyrics.py` | Archivos de letra: índices de línea, filas, separadores, errores |
+| `test_config.py` | El archivo de la canción: valores por defecto, rutas, colores de imágenes de muestra, validación, los ejemplos |
+| `test_fonts.py` | Reunir archivos de fuente y sus etiquetas |
+| `test_caption_image.py` | Imágenes de subtítulos: los mismos píxeles que una transcripción del script antiguo, tamaños, disposición |
+| `test_cli.py` | `captions` y `compare`: nombres de archivo, sobrescritura, ningún archivo tras un error, fuentes desde la línea de órdenes |
 | `test_spectrum_dependency.py` | audio-spectrum-app está instalado; se dibuja un fotograma sobre un fondo (backdrop) suministrado |
 
 ## 3. Archivos locales

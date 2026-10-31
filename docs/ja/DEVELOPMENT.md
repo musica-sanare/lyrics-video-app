@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob b511d034d978d85813301132bfececc1bd48b98d -->
+<!-- source: docs/en/DEVELOPMENT.md blob 2852382f0dd281c6b0607f5e07f07d041ccad412 -->
 [English](../en/DEVELOPMENT.md) | 日本語 | [Español](../es/DEVELOPMENT.md) · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/DEVELOPMENT.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -32,7 +32,11 @@ uv run pytest
 
 | ファイル | 対象 |
 |---|---|
-| `test_cli.py` | コマンドのバージョン表示とモジュールとしての起動 |
+| `test_lyrics.py` | 歌詞ファイル：行番号、行の分割、区切り文字、エラー |
+| `test_config.py` | 曲ファイル：既定値、パス、見本画像からの色、検証、例のファイル |
+| `test_fonts.py` | フォントファイルの収集と表示名 |
+| `test_caption_image.py` | 字幕画像：旧スクリプトを書き写したものと同じピクセルになること、大きさ、配置 |
+| `test_cli.py` | `captions` と `compare`：ファイル名、上書き、エラー時にファイルを残さないこと、コマンドラインからのフォント指定 |
 | `test_spectrum_dependency.py` | audio-spectrum-app が入っていること、渡した背景（backdrop）の上に静止画が描かれること |
 
 ## 3. ローカルのファイル

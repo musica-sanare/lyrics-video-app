@@ -8,6 +8,7 @@ How the offline lyrics video maker is set up, designed and developed, and the re
 
 | Document | Description |
 |---|---|
+| [User guide](USER_GUIDE.md) | Setup, the `captions` and `compare` commands, the song file, moving from the old lyrics image script. |
 | [Development](DEVELOPMENT.md) | Setup, tests, conventions and the rules that keep the repository safe to publish. |
 
 ## Working docs (English only)

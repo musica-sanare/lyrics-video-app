@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob bd10c4eb953665dc45c05b4fce837a22f89ede5a -->
+<!-- source: docs/en/README.md blob 368f513d3a0b29bd81b54e145e313fd4e8014055 -->
 [English](../en/README.md) | [日本語](../ja/README.md) | Español · [README del repositorio](../../README.es.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/README.md). Si hay diferencias, prevalece la versión en inglés.
@@ -11,6 +11,7 @@ Cómo se instala, se diseña y se desarrolla el creador de vídeos con letra sin
 
 | Documento | Descripción |
 |---|---|
+| [Guía de uso](USER_GUIDE.md) | Instalación, las órdenes `captions` y `compare`, el archivo de la canción, el cambio desde el antiguo script de imágenes de letra. |
 | [Desarrollo](DEVELOPMENT.md) | Instalación, pruebas, convenciones y las reglas que mantienen el repositorio listo para publicarse. |
 
 ## Documentos de trabajo (solo en inglés)

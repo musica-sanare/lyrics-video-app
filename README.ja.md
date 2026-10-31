@@ -1,4 +1,4 @@
-<!-- source: README.md blob 08b24fae74baa6c53c8b1bb7c2a44429c7dda7b7 -->
+<!-- source: README.md blob decdd241df1aa63651407711b8dbe801f30965fd -->
 [English](README.md) | 日本語 | [Español](README.es.md)
 
 > この文書は[英語版](README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -9,7 +9,8 @@
 クレジット、そして [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムを、
 曲の音声とともに 1 本の動画にします。動画編集ソフトで字幕画像を重ねていた手作業を置き換えるものです。
 
-**状況:** Phase 0（土台づくり）。コマンドの枠組みができたところで、次は歌詞ファイルから字幕画像を作る機能です。
+**状況:** Phase 0。`lyrics-video captions` が歌詞ファイルから旧歌詞画像スクリプトと同じ字幕画像を作り（iMovie 用）、
+`lyrics-video compare` がテキストを多くのフォントで並べて見せます。動画全体の書き出しは後のフェーズで加わります。
 [Phase 0 plan](docs/working/PHASE0_PLAN.md)（英語のみ）を参照してください。
 
 ## クイックスタート
@@ -19,12 +20,16 @@ audio-spectrum-app をこのリポジトリの隣（`../audio-spectrum-app`）�
 ```bash
 brew install uv ffmpeg
 uv sync
-uv run lyrics-video --version
-uv run pytest
+mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # フォント、色、歌詞ファイルを設定する
+uv run lyrics-video captions work/my-song/song.toml         # 字幕 1 行につき 1 枚の PNG
+uv run lyrics-video compare work/my-song/song.toml          # 比較用テキストを複数のフォントで
 ```
+
+テストは `uv run pytest` で実行します。
 
 ## ドキュメント
 
+- [ユーザーガイド](docs/ja/USER_GUIDE.md)：セットアップ、コマンド、曲ファイル、旧スクリプトからの移行
 - [開発](docs/ja/DEVELOPMENT.md)：セットアップ、テスト、規約
 - [ドキュメント目次](docs/ja/README.md)：設計判断や各フェーズの記録を含む全文書
 

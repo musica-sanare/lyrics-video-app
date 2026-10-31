@@ -29,7 +29,11 @@ uv run pytest
 
 | File | Covers |
 |---|---|
-| `test_cli.py` | The command's version and module entry point |
+| `test_lyrics.py` | Lyrics files: line indexes, rows, separators, errors |
+| `test_config.py` | The song file: defaults, paths, colors from sample images, validation, the examples |
+| `test_fonts.py` | Collecting font files and their labels |
+| `test_caption_image.py` | Caption images: the same pixels as a transcription of the old script, sizes, layout |
+| `test_cli.py` | `captions` and `compare`: file names, overwriting, no files on errors, fonts from the command line |
 | `test_spectrum_dependency.py` | audio-spectrum-app is installed; a still is drawn over a supplied backdrop |
 
 ## 3. Local files

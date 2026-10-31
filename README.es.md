@@ -1,4 +1,4 @@
-<!-- source: README.md blob 08b24fae74baa6c53c8b1bb7c2a44429c7dda7b7 -->
+<!-- source: README.md blob decdd241df1aa63651407711b8dbe801f30965fd -->
 [English](README.md) | [日本語](README.ja.md) | Español
 
 > Este documento es una traducción de la [versión en inglés](README.md). Si hay diferencias, prevalece la versión en inglés.
@@ -10,8 +10,10 @@ canción, subtítulos con la letra que aparecen y desaparecen en la parte inferi
 dibujado por [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), con el audio de la canción.
 Sustituye un proceso manual en el que se superponían imágenes de subtítulos en un editor de vídeo.
 
-**Estado:** Fase 0 (base). La orden ya está preparada; lo siguiente es crear las imágenes de subtítulos a partir de
-un archivo de letra. Consulta el [plan de la fase 0](docs/working/PHASE0_PLAN.md) (solo en inglés).
+**Estado:** Fase 0. `lyrics-video captions` crea a partir de un archivo de letra las mismas imágenes de subtítulos
+que el antiguo script de imágenes de letra, para usarlas en iMovie, y `lyrics-video compare` muestra un texto en
+muchas fuentes. Los vídeos completos llegarán en fases posteriores. Consulta el
+[plan de la fase 0](docs/working/PHASE0_PLAN.md) (solo en inglés).
 
 ## Inicio rápido
 
@@ -20,12 +22,16 @@ audio-spectrum-app debe estar descargado junto a este repositorio (`../audio-spe
 ```bash
 brew install uv ffmpeg
 uv sync
-uv run lyrics-video --version
-uv run pytest
+mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # después elige la fuente, los colores y la letra
+uv run lyrics-video captions work/my-song/song.toml         # un PNG por línea de subtítulo
+uv run lyrics-video compare work/my-song/song.toml          # el texto de comparación en varias fuentes
 ```
+
+Ejecuta `uv run pytest` para las pruebas.
 
 ## Documentación
 
+- [Guía de uso](docs/es/USER_GUIDE.md): instalación, las órdenes, el archivo de la canción y el cambio desde el script antiguo
 - [Desarrollo](docs/es/DEVELOPMENT.md): instalación, pruebas y convenciones
 - [Índice de la documentación](docs/es/README.md): todos los documentos, incluidas las decisiones y los registros de cada fase
 
