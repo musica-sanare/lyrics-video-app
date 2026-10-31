@@ -7,7 +7,7 @@ captions that fade in and out at the bottom, credits, and an audio spectrum draw
 [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), with the song's audio. It replaces a manual
 workflow of caption images layered in a video editor.
 
-**Status:** Phase 1 (design) delivered, waiting for the owner's acceptance. `lyrics-video captions` makes the
+**Status:** Phase 1 (design) accepted. `lyrics-video captions` makes the
 caption images of the old lyrics image script from a lyrics file, for use in iMovie; `lyrics-video compare` shows a
 text in many fonts; `lyrics-video still` renders frames of the future video (background, title, caption, credits and
 spectrum) in three designs, `soft` by default. Whole videos come in later phases. See the

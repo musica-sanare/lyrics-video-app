@@ -1,4 +1,4 @@
-<!-- source: README.md blob 0d8d19a5a9e88e731b58037667f8222835a7ee4c -->
+<!-- source: README.md blob 26dba1fed53b37c294f70349c23bb346496fea17 -->
 [English](README.md) | 日本語 | [Español](README.es.md)
 
 > この文書は[英語版](README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -9,7 +9,7 @@
 クレジット、そして [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムを、
 曲の音声とともに 1 本の動画にします。動画編集ソフトで字幕画像を重ねていた手作業を置き換えるものです。
 
-**状況:** Phase 1（デザイン）が完成し、オーナーの受け入れ待ちです。`lyrics-video captions` が歌詞ファイルから旧歌詞画像
+**状況:** Phase 1（デザイン）は受け入れ済みです。`lyrics-video captions` が歌詞ファイルから旧歌詞画像
 スクリプトと同じ字幕画像を作り（iMovie 用）、`lyrics-video compare` がテキストを多くのフォントで並べて見せ、
 `lyrics-video still` が将来の動画のフレーム（背景、曲名、字幕、クレジット、スペクトラム）を 3 つのデザイン（既定は `soft`）で
 描きます。動画全体の書き出しは後のフェーズで加わります。[Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md)（英語のみ）

@@ -2,7 +2,7 @@
 
 # Phase 1 acceptance: the design of a lyrics video as configurable parts
 
-Status: delivered on 2026-10-31, waiting for the owner's acceptance (要確認 P1-1). Version 0.1.0.
+Status: accepted by the owner on 2026-10-31. Version 0.1.0.
 
 Plan: [PHASE1_PLAN.md](PHASE1_PLAN.md). Machine: Apple M1, Python 3.13, Pillow 13.0.0, audio-spectrum-app 0.5.0.
 
@@ -13,7 +13,7 @@ Plan: [PHASE1_PLAN.md](PHASE1_PLAN.md). Machine: Apple M1, Python 3.13, Pillow 1
 | 0. Plan | `7ef7a33` | Approved plan with the owner's answers |
 | 1. Frame model | `cc3076e` | Parts and designs, layers drawn once per process, `LyricsBackdrop`, the `still` command, the `classic` design |
 | 2. Designs | `8266ea1` | `soft` and `panel`, title letter spacing and rule, credits positions and panels, several designs and a comparison sheet in `still`, `tools/time_backdrop.py`, ADR-004 |
-| 3. Choice | this commit | `soft` as the default design, the title as one line without a subtitle, this report |
+| 3. Choice | `9078f46` | `soft` as the default design, the title as one line without a subtitle, this report |
 
 ## 2. The owner's choice
 
@@ -56,7 +56,8 @@ once per worker the first time it appears (a few milliseconds per caption).
 
 ## 5. Repository safety
 
-- `gitleaks git --redact -v .` (gitleaks 8.30.1) over the whole history before this commit: no leaks found.
+- `gitleaks git --redact -v .` (gitleaks 8.30.1) over the whole history before the acceptance commit: no leaks
+  found. Repeated after `9078f46`: no leaks found.
 - History and tracked files searched for home paths, e-mail addresses, the owner's song, photo and font names:
   none. Stills, the song, photo and fonts stay in `work/`.
 - Built-in design files are tracked through a `.gitignore` exception for `src/lyrics_video/designs/*.toml`; every
@@ -71,7 +72,7 @@ once per worker the first time it appears (a few milliseconds per caption).
 
 ## 7. Open items
 
-- 要確認 P1-1: accept Phase 1.
+- P1-1: Phase 1 was accepted by the owner on 2026-10-31.
 - An architecture document (planned to start in Phase 1 by the Phase 0 plan) is not written yet; it is proposed for
   Phase 2, when timing adds the next module chain.
 - Next: Phase 2, timing of the lyrics (tap-to-sync and fine adjustment, stored next to the lyrics), planned in
