@@ -2,8 +2,31 @@ English | [日本語](../ja/USER_GUIDE.md) | [Español](../es/USER_GUIDE.md) · 
 
 # User guide
 
-How to set up lyrics-video-app, make caption images for a song and look at frames of its video. Whole videos come
-in later phases.
+How to set up lyrics-video-app, make caption images for a song and look at frames of its video. It is for anyone
+making a lyrics video with the app. Whole videos come in later phases.
+
+Each song has a folder with a song file. Three commands read it and write images into folders next to it:
+
+```mermaid
+flowchart LR
+  song["song.toml"]
+  lyrics["lyrics.txt"]
+  comparetxt["compare.txt"]
+  media["Background image and audio"]
+  captions["captions"]
+  compare["compare"]
+  still["still"]
+  outCaptions["captions/: one PNG per caption"]
+  outCompare["compare/: each font, contact sheet"]
+  outStills["stills/: video frames"]
+  song --> captions & compare & still
+  lyrics --> captions & still
+  comparetxt --> compare
+  media --> still
+  captions --> outCaptions
+  compare --> outCompare
+  still --> outStills
+```
 
 ## 1. Setup
 
@@ -42,20 +65,22 @@ Start from the examples: copy `examples/song.example.toml` to `work/my-song/song
 uv run lyrics-video captions work/my-song/song.toml
 ```
 
-Writes one PNG per caption into the output folder (`captions/` next to the song file by default), named
-`lyrics_<line index>.png`, where the line index counts from 0 and includes empty lines. Each image is a band in the
+Writes one PNG per caption into the output folder (`captions/` next to the song file by default). Files are named
+`lyrics_<line index>.png`; the line index counts from 0 and includes empty lines. Each image is a band in the
 background color with the caption in the text color, left-aligned:
 
-- The font size starts at 80 and shrinks in steps of 2 until every row fits with a margin of 50 px in each
+- The font size starts at 80. It shrinks in steps of 2 until every row fits with a margin of 50 px in each
   direction. Both rows of a caption use the same size.
 - One row is centered vertically; two rows sit in the upper and lower halves.
 
-These are the rules of the old lyrics image script, so the images can be used in iMovie as before: the background
-image fills the frame and each caption image goes at the bottom, full width, with fades.
+These are the rules of the old lyrics image script, so the images can be used in iMovie as before. The background
+image fills the frame, and each caption image goes at the bottom, full width, with fades.
 
-Existing images are never replaced silently: if any output file exists, nothing is written and the files are listed.
-Add `--overwrite` to replace them. If the new lyrics have fewer lines, delete the old folder first so no stale images
-remain.
+Existing images are never replaced silently:
+
+- If any output file exists, nothing is written and the files are listed.
+- Add `--overwrite` to replace them.
+- If the new lyrics have fewer lines, delete the old folder first so no stale images remain.
 
 ## 4. Choosing a font: `compare`
 
@@ -64,34 +89,51 @@ uv run lyrics-video compare work/my-song/song.toml
 uv run lyrics-video compare work/my-song/song.toml --font-dir ~/path/to/fonts --font /System/Library/Fonts/ヒラギノ明朝\ ProN.ttc
 ```
 
-Draws every line of the comparison text (`compare.txt`) in every font, with the song's size and colors, into the
-comparison folder (`compare/` by default):
+Draws every line of the comparison text (`compare.txt`) in every font, with the song's size and colors. The images
+go into the comparison folder (`compare/` by default):
 
 - `<font file name>_<line index>.png` for each font and line;
 - `contact_sheet.png`: the first line in all fonts, one under the other, each under its font's name.
 
-The fonts are `compare.fonts` and every font file in `compare.font_dirs` (searched in subfolders too). `--font` and
-`--font-dir` (each repeatable) replace both lists for one run. Font files are `.ttf`, `.otf`, `.ttc` and `.otc`; the
-first face of a collection is used. `--overwrite` works as for `captions`.
+Which fonts are used:
 
-## 5. Video stills and designs: `still`
+- The fonts are `compare.fonts` and every font file in `compare.font_dirs` (searched in subfolders too).
+- `--font` and `--font-dir` (each repeatable) replace both lists for one run.
+- Font files are `.ttf`, `.otf`, `.ttc` and `.otc`; the first face of a collection is used.
+
+`--overwrite` works as for `captions`.
+
+## 5. Video stills: `still`
 
 ```bash
 uv run lyrics-video still work/my-song/song.toml --time 3 62.5 --caption 4
 ```
 
-Writes the frames the video will show at the given times (seconds of the song) into `stills/` next to the song file,
-named `<design>_<time>s.png`: the background image, the title, a caption, the credits and the spectrum of that moment
-on top, exactly as the video will have them. Until the lyrics have timing, a still shows one caption: the line given
-by `--caption` (the line index, counted as in the caption image names), the first caption by default, or none with
-`--no-caption`. `--overwrite` works as for `captions`.
+Writes the frames the video will show at the given times (seconds of the song) into `stills/` next to the song file.
+Files are named `<design>_<time>s.png`. Each still has the background image, the title, a caption, the credits and
+the spectrum of that moment on top, exactly as the video will have them.
 
-To compare designs, name them with `--design`; the song file's design overrides (for example a title font) apply to
+Until the lyrics have timing, a still shows one caption:
+
+- the line given by `--caption` (the line index, counted as in the caption image names);
+- the first caption by default;
+- none with `--no-caption`.
+
+`--overwrite` works as for `captions`.
+
+To compare designs, name them with `--design`. The song file's design overrides (for example a title font) apply to
 each, and `compare_<time>s.png` shows them one under the other at half size:
 
 ```bash
 uv run lyrics-video still work/my-song/song.toml --time 62.5 --design classic soft panel
 ```
+
+## 6. Designs
+
+How the parts of a frame look is a **design**. Choose one with `design = "soft"` in the song file, or a design file
+of your own with `design = "my-design.toml"`.
+
+### Parts of a frame
 
 A frame is made of these parts, from bottom to top:
 
@@ -103,7 +145,9 @@ A frame is made of these parts, from bottom to top:
 | Credits | The `credits` lines, shown over the first and last seconds of the song, over a darkened frame |
 | Spectrum | Drawn by audio-spectrum-app with the `[spectrum]` preset and overrides |
 
-How the parts look is a **design**. The built-in designs (`soft` is the default):
+### Built-in designs
+
+`soft` is the default.
 
 | Design | Title | Caption | Credits |
 |---|---|---|---|
@@ -111,8 +155,11 @@ How the parts look is a **design**. The built-in designs (`soft` is the default)
 | `classic` | Large, top center | An opaque band along the bottom edge, drawn with the rules of the old caption images | Centered over a darkened frame |
 | `panel` | Letter-spaced, top center | In a frosted rounded box near the bottom (the background blurred behind it) | Centered, in the same kind of box |
 
-Captions are left-aligned with up to two rows in every design, as today. Choose a design with `design = "soft"`, or a design file of your own with `design = "my-design.toml"`. To change single
-values, write a `[design]` table with the design's `name` and the parts to change:
+Captions are left-aligned with up to two rows in every design, as today.
+
+### Changing single values
+
+Write a `[design]` table with the design's `name` and the parts to change:
 
 ```toml
 [design]
@@ -126,7 +173,13 @@ size = 64
 size = 56
 ```
 
-| Part | Keys (sizes in pixels of a 1080-pixel-high frame; they scale with the video height) |
+Every part uses `fonts.default` unless it names its own `font`. Colors are `"#RRGGBB"`.
+
+### Design keys
+
+Sizes are in pixels of a 1080-pixel-high frame; they scale with the video height.
+
+| Part | Keys |
 |---|---|
 | `background` | `focus` (`[x, y]` from 0 to 1, the point kept in view when cropping), `dim` (0 to 1), `blur` |
 | `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `color`, `margin`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `shadow` |
@@ -137,9 +190,7 @@ size = 56
 | `gradient` (in `caption`) | `height`, `color`, `opacity` (at the bottom edge) |
 | `panel` (in `caption`, `credits`) | `color`, `opacity` (of the tint), `blur` (of the picture behind), `radius`, `padding` (`[x, y]`) |
 
-Every part uses `fonts.default` unless it names its own `font`. Colors are `"#RRGGBB"`.
-
-## 6. The song file
+## 7. The song file
 
 A TOML file. Paths are relative to the song file; `~` is the home folder. Every key is optional except
 `captions.font` for `captions` and `audio` for `still`.
@@ -151,7 +202,7 @@ A TOML file. Paths are relative to the song file; `~` is the home folder. Every 
 | `background_image` | none | The background image of the video |
 | `title` | `""` | The song title, one line |
 | `credits` | `[]` | Lines of credits, for example `["by Your Name"]` |
-| `design` | `"soft"` | A design name or file, or a `[design]` table with `name` and overrides (section 5) |
+| `design` | `"soft"` | A design name or file, or a `[design]` table with `name` and overrides (section 6) |
 | `fonts.default` | none | The font of every part of the video that does not name its own |
 | `spectrum.preset` | `"default"` | An audio-spectrum-app preset name or preset file |
 | `spectrum.set` | `[]` | Preset overrides, like audio-spectrum-app's `--set` |
@@ -172,7 +223,10 @@ A TOML file. Paths are relative to the song file; `~` is the home folder. Every 
 Fonts are not part of this repository and are never copied into it; the song file only points to them. Real song
 files stay in `work/` or outside the repository.
 
-## 7. Moving from the old lyrics image script
+## 8. Moving from the old lyrics image script
+
+Instead of the old prompt (0 or 1), choose the command: `captions` or `compare`. The old `conf.toml` keys map to the
+song file like this:
 
 | Old `conf.toml` | Song file |
 |---|---|
@@ -186,18 +240,16 @@ files stay in `work/` or outside the repository.
 | `prefix.prefix_image_num` | `captions.file_prefix` |
 | `margin.margin_text_x`, `margin_text_y` | Fixed at 50 |
 
-Instead of the old prompt (0 or 1), choose the command: `captions` or `compare`.
-
 Differences from the old script:
 
 - The same inputs give the same sizes, colors, font sizes, layout and file names. Glyphs may sit about 1 px apart
   in places, from changes in the font libraries; the images look the same.
-- A comparison image is named after the whole font file name (`my-font-2.04_0.png`, where the old script cut the
-  name at the first dot), and the contact sheet is new.
-- Existing images are not overwritten without `--overwrite`, and an error in a song file, lyrics file or font
-  writes no images.
+- A comparison image is named after the whole font file name (`my-font-2.04_0.png`; the old script cut the name at
+  the first dot). The contact sheet is new.
+- Existing images are not overwritten without `--overwrite`. An error in a song file, lyrics file or font writes no
+  images.
 
-## 8. Errors
+## 9. Errors
 
 | Exit code | Meaning |
 |---|---|
@@ -206,4 +258,4 @@ Differences from the old script:
 | 2 | Wrong command-line usage |
 
 Errors name the file and, for the lyrics, the line number. All images are drawn before any is written, so these
-errors write nothing; each file is written completely or not at all.
+errors write nothing. Each file is written completely or not at all.

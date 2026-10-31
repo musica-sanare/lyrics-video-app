@@ -1,12 +1,36 @@
-<!-- source: docs/en/USER_GUIDE.md blob 0e372f0f243123ad4af358d4d4e08869f26bff52 -->
+<!-- source: docs/en/USER_GUIDE.md blob 1f5c7067fc3f361327d4d03f3707f5b6e0346d5d -->
 [English](../en/USER_GUIDE.md) | [日本語](../ja/USER_GUIDE.md) | Español · [Índice de la documentación](README.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/USER_GUIDE.md). Si hay diferencias, prevalece la versión en inglés.
 
 # Guía de uso
 
-Cómo instalar lyrics-video-app, crear las imágenes de subtítulos de una canción y ver fotogramas de su vídeo. Los
-vídeos completos llegarán en fases posteriores.
+Cómo instalar lyrics-video-app, crear las imágenes de subtítulos de una canción y ver fotogramas de su vídeo. Es para
+quien crea un vídeo con letra con la aplicación. Los vídeos completos llegarán en fases posteriores.
+
+Cada canción tiene una carpeta con un archivo de canción. Tres órdenes lo leen y escriben imágenes en carpetas junto
+a él:
+
+```mermaid
+flowchart LR
+  song["song.toml"]
+  lyrics["lyrics.txt"]
+  comparetxt["compare.txt"]
+  media["Imagen de fondo y audio"]
+  captions["captions"]
+  compare["compare"]
+  still["still"]
+  outCaptions["captions/: un PNG por subtítulo"]
+  outCompare["compare/: cada fuente, hoja de contactos"]
+  outStills["stills/: fotogramas del vídeo"]
+  song --> captions & compare & still
+  lyrics --> captions & still
+  comparetxt --> compare
+  media --> still
+  captions --> outCaptions
+  compare --> outCompare
+  still --> outStills
+```
 
 ## 1. Instalación
 
@@ -46,20 +70,22 @@ Empieza por los ejemplos: copia `examples/song.example.toml` a `work/my-song/son
 uv run lyrics-video captions work/my-song/song.toml
 ```
 
-Escribe un PNG por subtítulo en la carpeta de salida (por defecto `captions/`, junto al archivo de la canción), con
-el nombre `lyrics_<índice de línea>.png`, donde el índice empieza en 0 e incluye las líneas vacías. Cada imagen es
+Escribe un PNG por subtítulo en la carpeta de salida (por defecto `captions/`, junto al archivo de la canción). Los
+archivos se llaman `lyrics_<índice de línea>.png`; el índice empieza en 0 e incluye las líneas vacías. Cada imagen es
 una franja del color de fondo con el subtítulo en el color del texto, alineado a la izquierda:
 
-- El tamaño de letra empieza en 80 y baja de 2 en 2 hasta que todas las filas caben con un margen de 50 px en cada
+- El tamaño de letra empieza en 80. Baja de 2 en 2 hasta que todas las filas caben con un margen de 50 px en cada
   dirección. Las dos filas de un subtítulo usan el mismo tamaño.
 - Una fila se centra en vertical; dos filas ocupan la mitad superior y la inferior.
 
-Son las reglas del antiguo script de imágenes de letra, así que las imágenes se pueden usar en iMovie como antes: la
-imagen de fondo llena el encuadre y cada imagen de subtítulo va abajo del todo, a lo ancho, con fundidos.
+Son las reglas del antiguo script de imágenes de letra, así que las imágenes se pueden usar en iMovie como antes. La
+imagen de fondo llena el encuadre, y cada imagen de subtítulo va abajo del todo, a lo ancho, con fundidos.
 
-Las imágenes existentes nunca se reemplazan sin avisar: si existe algún archivo de salida, no se escribe nada y se
-muestra la lista. Añade `--overwrite` para reemplazarlos. Si la nueva letra tiene menos líneas, borra antes la
-carpeta antigua para que no queden imágenes obsoletas.
+Las imágenes existentes nunca se reemplazan sin avisar:
+
+- Si existe algún archivo de salida, no se escribe nada y se muestra la lista.
+- Añade `--overwrite` para reemplazarlos.
+- Si la nueva letra tiene menos líneas, borra antes la carpeta antigua para que no queden imágenes obsoletas.
 
 ## 4. Elegir una fuente: `compare`
 
@@ -69,37 +95,52 @@ uv run lyrics-video compare work/my-song/song.toml --font-dir ~/path/to/fonts --
 ```
 
 Dibuja cada línea del texto de comparación (`compare.txt`) en cada fuente, con el tamaño y los colores de la
-canción, en la carpeta de comparación (por defecto `compare/`):
+canción. Las imágenes van a la carpeta de comparación (por defecto `compare/`):
 
 - `<nombre del archivo de fuente>_<índice de línea>.png` para cada fuente y línea;
 - `contact_sheet.png`: la primera línea en todas las fuentes, una debajo de otra, cada una bajo el nombre de su
   fuente.
 
-Las fuentes son `compare.fonts` y todos los archivos de fuente de `compare.font_dirs` (también en subcarpetas).
-`--font` y `--font-dir` (se pueden repetir) reemplazan ambas listas en esa ejecución. Los archivos de fuente son
-`.ttf`, `.otf`, `.ttc` y `.otc`; de una colección se usa la primera cara. `--overwrite` funciona igual que en
-`captions`.
+Qué fuentes se usan:
 
-## 5. Fotogramas del vídeo y diseños: `still`
+- Las fuentes son `compare.fonts` y todos los archivos de fuente de `compare.font_dirs` (también en subcarpetas).
+- `--font` y `--font-dir` (se pueden repetir) reemplazan ambas listas en esa ejecución.
+- Los archivos de fuente son `.ttf`, `.otf`, `.ttc` y `.otc`; de una colección se usa la primera cara.
+
+`--overwrite` funciona igual que en `captions`.
+
+## 5. Fotogramas del vídeo: `still`
 
 ```bash
 uv run lyrics-video still work/my-song/song.toml --time 3 62.5 --caption 4
 ```
 
 Escribe los fotogramas que mostrará el vídeo en los instantes indicados (segundos de la canción) en `stills/`, junto
-al archivo de la canción, con el nombre `<diseño>_<instante>s.png`: la imagen de fondo, el título, un subtítulo, los
-créditos y el espectro de ese momento encima, exactamente como los tendrá el vídeo. Hasta que la letra tenga tiempos,
-un fotograma muestra un solo subtítulo: la línea indicada con `--caption` (el índice de línea, contado como en los
-nombres de las imágenes de subtítulos), el primer subtítulo por defecto, o ninguno con `--no-caption`. `--overwrite`
-funciona igual que en `captions`.
+al archivo de la canción. Los archivos se llaman `<diseño>_<instante>s.png`. Cada fotograma tiene la imagen de fondo,
+el título, un subtítulo, los créditos y el espectro de ese momento encima, exactamente como los tendrá el vídeo.
 
-Para comparar diseños, nómbralos con `--design`; los ajustes de diseño del archivo de la canción (por ejemplo, la
+Hasta que la letra tenga tiempos, un fotograma muestra un solo subtítulo:
+
+- la línea indicada con `--caption` (el índice de línea, contado como en los nombres de las imágenes de subtítulos);
+- el primer subtítulo por defecto;
+- ninguno con `--no-caption`.
+
+`--overwrite` funciona igual que en `captions`.
+
+Para comparar diseños, nómbralos con `--design`. Los ajustes de diseño del archivo de la canción (por ejemplo, la
 fuente del título) se aplican a cada uno, y `compare_<instante>s.png` los muestra uno debajo de otro a la mitad de
 tamaño:
 
 ```bash
 uv run lyrics-video still work/my-song/song.toml --time 62.5 --design classic soft panel
 ```
+
+## 6. Diseños
+
+El aspecto de las partes de un fotograma es un **diseño**. Elige uno con `design = "soft"` en el archivo de la
+canción, o un archivo de diseño propio con `design = "my-design.toml"`.
+
+### Partes de un fotograma
 
 Un fotograma se compone de estas partes, de abajo arriba:
 
@@ -111,7 +152,9 @@ Un fotograma se compone de estas partes, de abajo arriba:
 | Créditos | Las líneas de `credits`, durante los primeros y los últimos segundos de la canción, sobre el encuadre oscurecido |
 | Espectro | Dibujado por audio-spectrum-app con el preset y los ajustes de `[spectrum]` |
 
-El aspecto de las partes es un **diseño**. Los diseños incluidos (`soft` es el predeterminado):
+### Diseños incluidos
+
+`soft` es el predeterminado.
 
 | Diseño | Título | Subtítulo | Créditos |
 |---|---|---|---|
@@ -119,9 +162,11 @@ El aspecto de las partes es un **diseño**. Los diseños incluidos (`soft` es el
 | `classic` | Grande, arriba en el centro | Una franja opaca a lo largo del borde inferior, dibujada con las reglas de las imágenes de subtítulos antiguas | Centrados sobre el encuadre oscurecido |
 | `panel` | Con letras espaciadas, arriba en el centro | En un recuadro redondeado de vidrio esmerilado cerca del borde inferior (el fondo desenfocado detrás) | Centrados, en el mismo tipo de recuadro |
 
-En todos los diseños los subtítulos van alineados a la izquierda y tienen como mucho dos filas, como ahora. Elige un diseño con `design = "soft"`, o un archivo de diseño propio con
-`design = "my-design.toml"`. Para cambiar valores sueltos, escribe una tabla `[design]` con el `name` del diseño y las
-partes que cambian:
+En todos los diseños los subtítulos van alineados a la izquierda y tienen como mucho dos filas, como ahora.
+
+### Cambiar valores sueltos
+
+Escribe una tabla `[design]` con el `name` del diseño y las partes que cambian:
 
 ```toml
 [design]
@@ -135,7 +180,13 @@ size = 64
 size = 56
 ```
 
-| Parte | Claves (tamaños en píxeles de un encuadre de 1080 píxeles de alto; se escalan con la altura del vídeo) |
+Cada parte usa `fonts.default` salvo que indique su propia `font`. Los colores se escriben `"#RRGGBB"`.
+
+### Claves de diseño
+
+Los tamaños están en píxeles de un encuadre de 1080 píxeles de alto; se escalan con la altura del vídeo.
+
+| Parte | Claves |
 |---|---|
 | `background` | `focus` (`[x, y]` de 0 a 1, el punto que queda a la vista al recortar), `dim` (0 a 1), `blur` |
 | `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `color`, `margin`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `shadow` |
@@ -146,9 +197,7 @@ size = 56
 | `gradient` (en `caption`) | `height`, `color`, `opacity` (en el borde inferior) |
 | `panel` (en `caption`, `credits`) | `color`, `opacity` (del tinte), `blur` (de la imagen de detrás), `radius`, `padding` (`[x, y]`) |
 
-Cada parte usa `fonts.default` salvo que indique su propia `font`. Los colores se escriben `"#RRGGBB"`.
-
-## 6. El archivo de la canción
+## 7. El archivo de la canción
 
 Un archivo TOML. Las rutas son relativas al archivo de la canción; `~` es la carpeta personal. Todas las claves son
 opcionales excepto `captions.font` para `captions` y `audio` para `still`.
@@ -160,7 +209,7 @@ opcionales excepto `captions.font` para `captions` y `audio` para `still`.
 | `background_image` | ninguno | La imagen de fondo del vídeo |
 | `title` | `""` | El título de la canción, en una línea |
 | `credits` | `[]` | Líneas de créditos, por ejemplo `["by Your Name"]` |
-| `design` | `"soft"` | Un nombre o archivo de diseño, o una tabla `[design]` con `name` y ajustes (sección 5) |
+| `design` | `"soft"` | Un nombre o archivo de diseño, o una tabla `[design]` con `name` y ajustes (sección 6) |
 | `fonts.default` | ninguno | La fuente de cada parte del vídeo que no indique la suya |
 | `spectrum.preset` | `"default"` | Un nombre o archivo de preset de audio-spectrum-app |
 | `spectrum.set` | `[]` | Ajustes del preset, como `--set` de audio-spectrum-app |
@@ -181,7 +230,10 @@ opcionales excepto `captions.font` para `captions` y `audio` para `still`.
 Las fuentes no forman parte de este repositorio y nunca se copian en él; el archivo de la canción solo indica dónde
 están. Los archivos reales de cada canción se quedan en `work/` o fuera del repositorio.
 
-## 7. Cambiar desde el antiguo script de imágenes de letra
+## 8. Cambiar desde el antiguo script de imágenes de letra
+
+En lugar de la antigua pregunta (0 o 1), elige la orden: `captions` o `compare`. Las claves del `conf.toml` antiguo
+corresponden así a las del archivo de la canción:
 
 | `conf.toml` antiguo | Archivo de la canción |
 |---|---|
@@ -195,19 +247,17 @@ están. Los archivos reales de cada canción se quedan en `work/` o fuera del re
 | `prefix.prefix_image_num` | `captions.file_prefix` |
 | `margin.margin_text_x`, `margin_text_y` | Fijos en 50 |
 
-En lugar de la antigua pregunta (0 o 1), elige la orden: `captions` o `compare`.
-
 Diferencias con el script antiguo:
 
 - Las mismas entradas dan los mismos tamaños, colores, tamaños de letra, disposición y nombres de archivo. En algunos
   sitios los caracteres pueden quedar a 1 px de distancia por cambios en las bibliotecas de fuentes; las imágenes se
   ven iguales.
-- Una imagen de comparación lleva el nombre completo del archivo de fuente (`my-font-2.04_0.png`, donde el script
-  antiguo cortaba el nombre en el primer punto), y la hoja de contactos es nueva.
-- Las imágenes existentes no se sobrescriben sin `--overwrite`, y un error en el archivo de la canción, el de la
-  letra o una fuente no escribe ninguna imagen.
+- Una imagen de comparación lleva el nombre completo del archivo de fuente (`my-font-2.04_0.png`; el script antiguo
+  cortaba el nombre en el primer punto). La hoja de contactos es nueva.
+- Las imágenes existentes no se sobrescriben sin `--overwrite`. Un error en el archivo de la canción, el de la letra
+  o una fuente no escribe ninguna imagen.
 
-## 8. Errores
+## 9. Errores
 
 | Código de salida | Significado |
 |---|---|
@@ -216,4 +266,4 @@ Diferencias con el script antiguo:
 | 2 | Uso incorrecto de la línea de órdenes |
 
 Los errores indican el archivo y, en la letra, el número de línea. Todas las imágenes se dibujan antes de escribir
-ninguna, así que estos errores no escriben nada; cada archivo se escribe completo o no se escribe.
+ninguna, así que estos errores no escriben nada. Cada archivo se escribe completo o no se escribe.
