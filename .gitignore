@@ -1,0 +1,45 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local inputs and outputs: songs, lyrics, background images, fonts and rendered videos never enter the repository
+/work/
+*.wav
+*.aif
+*.aiff
+*.flac
+*.mp3
+*.m4a
+*.mp4
+*.mov
+*.m4v
+*.mkv
+*.ttf
+*.otf
+*.ttc
+*.otc
+*.dfont
+*.woff
+*.woff2
+*.png
+*.jpg
+*.jpeg
+*.heic
+*.webp
+*.lrc
+
+# Local configuration and secrets (commit only *.example.* files)
+.env
+.env.*
+*.toml
+!pyproject.toml
+!*.example.toml
+
+# macOS
+.DS_Store
+
+# Local tool configuration
+.claude/
+CLAUDE.local.md
