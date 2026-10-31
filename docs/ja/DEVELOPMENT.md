@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob 6b545881af35dc53c2737649226081e3d4a6035d -->
+<!-- source: docs/en/DEVELOPMENT.md blob 39f8fe98f0bc052611d725c25051a7931c7fb7d8 -->
 [English](../en/DEVELOPMENT.md) | 日本語 | [Español](../es/DEVELOPMENT.md) · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/DEVELOPMENT.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -12,7 +12,7 @@ lyrics-video-app のコードを扱うためのセットアップ、確認方法
 
 ```bash
 brew install uv ffmpeg
-git clone <audio-spectrum-app のリポジトリ> ../audio-spectrum-app   # 最初に一度だけ、このリポジトリの隣に
+git clone https://github.com/musica-sanare/audio-spectrum-app ../audio-spectrum-app   # 最初に一度だけ、このリポジトリの隣に
 uv sync
 ```
 

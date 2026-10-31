@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob 6b545881af35dc53c2737649226081e3d4a6035d -->
+<!-- source: docs/en/DEVELOPMENT.md blob 39f8fe98f0bc052611d725c25051a7931c7fb7d8 -->
 [English](../en/DEVELOPMENT.md) | [日本語](../ja/DEVELOPMENT.md) | Español · [Índice de la documentación](README.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/DEVELOPMENT.md). Si hay diferencias, prevalece la versión en inglés.
@@ -12,7 +12,7 @@ código o la documentación. Para usar la aplicación con una canción, consulta
 
 ```bash
 brew install uv ffmpeg
-git clone <repositorio de audio-spectrum-app> ../audio-spectrum-app   # una vez, junto a este repositorio
+git clone https://github.com/musica-sanare/audio-spectrum-app ../audio-spectrum-app   # una vez, junto a este repositorio
 uv sync
 ```
 

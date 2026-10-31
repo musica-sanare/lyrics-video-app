@@ -1,4 +1,4 @@
-<!-- source: README.md blob 2b328ea50aad2609a3ad9291acd4ae0ef56d188f -->
+<!-- source: README.md blob 22c6f362d3ee0595049c3d1409d6eb905412dfb3 -->
 [English](README.md) | [日本語](README.ja.md) | Español
 
 > Este documento es una traducción de la [versión en inglés](README.md). Si hay diferencias, prevalece la versión en inglés.
@@ -10,8 +10,10 @@ el título de la canción, subtítulos con la letra que aparecen y desaparecen e
 espectro de audio dibujado por [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), con el audio
 de la canción. Sustituye un proceso manual en el que se superponían imágenes de subtítulos en un editor de vídeo.
 
-**Estado:** fase 1 (diseño) aceptada. Los vídeos completos llegarán en fases posteriores. Consulta el
-[informe de aceptación de la fase 1](docs/working/PHASE1_ACCEPTANCE.md) (solo en inglés).
+**Estado:** fase 1 (diseño) aceptada. La fase 2 (los tiempos de la letra) está planificada y aprobada; su
+implementación aún no ha empezado. Los vídeos completos llegarán en fases posteriores. Consulta el
+[informe de aceptación de la fase 1](docs/working/PHASE1_ACCEPTANCE.md) y el
+[plan de la fase 2](docs/working/PHASE2_PLAN.md) (ambos solo en inglés).
 
 ## Qué hace hoy
 

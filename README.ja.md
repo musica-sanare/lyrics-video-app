@@ -1,4 +1,4 @@
-<!-- source: README.md blob 2b328ea50aad2609a3ad9291acd4ae0ef56d188f -->
+<!-- source: README.md blob 22c6f362d3ee0595049c3d1409d6eb905412dfb3 -->
 [English](README.md) | 日本語 | [Español](README.es.md)
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -9,8 +9,9 @@
 クレジット、[audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムと、
 曲の音声でできている。動画編集ソフトで字幕画像を重ねていた手作業を、これで置き換える。
 
-**状況：** Phase 1（デザイン）は受け入れ済み。動画全体の書き出しは後のフェーズで加わる。詳しくは
-[Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md)（英語のみ）を参照。
+**状況：** Phase 1（デザイン）は受け入れ済み。Phase 2（歌詞のタイミング）は計画が承認済みで、実装はまだ始めていない。
+動画全体の書き出しは後のフェーズで加わる。詳しくは [Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md) と
+[Phase 2 plan](docs/working/PHASE2_PLAN.md)（いずれも英語のみ）を参照。
 
 ## 今できること
 

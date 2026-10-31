@@ -7,8 +7,9 @@ title, lyrics captions that fade in and out at the bottom, credits, and an audio
 [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), with the song's audio. It replaces a manual
 workflow of caption images layered in a video editor.
 
-**Status:** Phase 1 (design) accepted. Whole videos come in later phases. See the
-[Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md).
+**Status:** Phase 1 (design) accepted. Phase 2 (timing of the lyrics) is planned and approved; its implementation
+has not started. Whole videos come in later phases. See the [Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md)
+and the [Phase 2 plan](docs/working/PHASE2_PLAN.md).
 
 ## What it does today
 

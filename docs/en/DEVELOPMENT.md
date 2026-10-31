@@ -9,7 +9,7 @@ To use the app on a song instead, see the [User guide](USER_GUIDE.md).
 
 ```bash
 brew install uv ffmpeg
-git clone <audio-spectrum-app repository> ../audio-spectrum-app   # once, next to this repository
+git clone https://github.com/musica-sanare/audio-spectrum-app ../audio-spectrum-app   # once, next to this repository
 uv sync
 ```
 
