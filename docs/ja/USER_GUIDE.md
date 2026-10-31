@@ -1,11 +1,11 @@
-<!-- source: docs/en/USER_GUIDE.md blob 82244399ede201698d939c247572ba471ac753dd -->
+<!-- source: docs/en/USER_GUIDE.md blob 01640a9b6aeb8404821a419ee846696023a98f3f -->
 [English](../en/USER_GUIDE.md) | 日本語 | [Español](../es/USER_GUIDE.md) · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/USER_GUIDE.md)の翻訳です。内容が異なる場合は英語版が優先されます。
 
 # ユーザーガイド
 
-lyrics-video-app のセットアップと、曲の字幕画像の作り方です。動画全体の書き出しは後のフェーズで加わります。
+lyrics-video-app のセットアップ、曲の字幕画像の作り方、動画のフレームの確認方法です。動画全体の書き出しは後のフェーズで加わります。
 
 ## 1. セットアップ
 
@@ -74,14 +74,72 @@ uv run lyrics-video compare work/my-song/song.toml --font-dir ~/path/to/fonts --
 `--font` と `--font-dir`（どちらも繰り返し指定可）を付けると、その回だけ両方の一覧を置き換えます。フォントファイルは
 `.ttf`、`.otf`、`.ttc`、`.otc` で、コレクションは最初のフェイスを使います。`--overwrite` は `captions` と同じです。
 
-## 5. 曲ファイル
+## 5. 動画の静止画とデザイン：`still`
+
+```bash
+uv run lyrics-video still work/my-song/song.toml --time 3 62.5 --caption 4
+```
+
+指定した時刻（曲の秒数）に動画が映すフレームを、曲ファイルの隣の `stills/` に `<デザイン>_<時刻>s.png` として書き出します。
+背景画像、曲名、字幕、クレジット、その時点のスペクトラムを重ねたもので、動画のフレームとまったく同じです。歌詞に
+タイミングが付くまでは、静止画には字幕を 1 つだけ表示します。`--caption` で行番号（字幕画像の名前と同じ数え方）を指定し、
+省略すると最初の字幕、`--no-caption` で字幕なしになります。`--overwrite` は `captions` と同じです。
+
+フレームは下から順に次の部品でできています。
+
+| 部品 | 内容 |
+|---|---|
+| 背景 | `background_image`。画面を覆うように拡大して切り取り、引き伸ばしません。画像がなければ黒 |
+| 曲名 | `title` と `subtitle`。アプリが描きます |
+| 字幕 | その時点の字幕。フェードイン・アウトします |
+| クレジット | `credits` の各行。曲の最初と最後の数秒に、暗くした画面の上に表示します |
+| スペクトラム | `[spectrum]` のプリセットと上書き設定で audio-spectrum-app が描きます |
+
+部品の見た目をまとめたものが**デザイン**です。組み込みのデザインは `classic` で、曲名を上部中央に大きく、字幕を
+旧字幕画像の決まりで画面下端の不透明な帯に、クレジットを中央に置きます。`design = "classic"` で選ぶか、自分のデザイン
+ファイルを `design = "my-design.toml"` で指定します。一部の値だけ変えるには、デザインの `name` と変えたい部品を
+`[design]` テーブルに書きます。
+
+```toml
+[design]
+name = "classic"
+
+[design.title]
+font = "~/path/to/title-font.otf"   # 曲名だけ fonts.default と別のフォントにする
+size = 96
+
+[design.caption]
+band_color = "#101820"
+```
+
+| 部品 | キー（大きさは高さ 1080 ピクセルの画面でのピクセル数で、動画の高さに合わせて拡大縮小します） |
+|---|---|
+| `background` | `focus`（`[x, y]`、0〜1。切り取るときに残す位置）、`dim`（0〜1）、`blur` |
+| `title` | `enabled`、`position`（`"top-center"`、`"top-left"`）、`font`、`size`、`subtitle_size`、`color`、`margin`、`gap`、`shadow` |
+| `caption` | `style`（`"band"`）、`align`（`"left"`）、`font`、`text_color`、`band_color`、`band_opacity`、`band_height`、`fade_seconds` |
+| `credits` | `enabled`、`font`、`size`、`color`、`line_spacing`、`dim`、`show_seconds`、`fade_seconds`、`shadow` |
+| `spectrum` | `set`：曲ファイルの `[spectrum] set` より先に適用するプリセットの上書き |
+| `shadow`（`title`、`credits` の中） | `blur`（0 で影なし）、`offset`、`color`、`opacity` |
+
+どの部品も、自分の `font` を指定しない限り `fonts.default` を使います。色は `"#RRGGBB"` で書きます。
+
+## 6. 曲ファイル
 
 TOML ファイルです。パスは曲ファイルからの相対パスで、`~` はホームフォルダです。`captions` で使う `captions.font`
-以外のキーはすべて省略できます。
+と `still` で使う `audio` 以外のキーはすべて省略できます。
 
 | キー | 既定値 | 意味 |
 |---|---|---|
 | `lyrics` | `"lyrics.txt"` | 歌詞ファイル |
+| `audio` | なし | 曲の音声（スペクトラム用、`still`） |
+| `background_image` | なし | 動画の背景画像 |
+| `title`、`subtitle` | `""` | 曲名と、その下の 1 行 |
+| `credits` | `[]` | クレジットの各行 |
+| `design` | `"classic"` | デザイン名かデザインファイル、または `name` と上書きを書いた `[design]` テーブル（5 節） |
+| `fonts.default` | なし | 自分のフォントを指定しない、動画のすべての部品のフォント |
+| `spectrum.preset` | `"default"` | audio-spectrum-app のプリセット名かプリセットファイル |
+| `spectrum.set` | `[]` | プリセットの上書き（audio-spectrum-app の `--set` と同じ） |
+| `video.width`、`video.height`、`video.fps` | `1920`、`1080`、`30` | フレームの大きさとフレームレート |
 | `captions.output_dir` | `"captions"` | 字幕画像の出力先 |
 | `captions.size` | 背景画像の大きさ、なければ `[1440, 232]` | 各画像の幅と高さ |
 | `captions.background` | `"#000000"` | 背景色：`"#RRGGBB"`、または中心のピクセルの色を使う画像ファイル |
@@ -98,7 +156,7 @@ TOML ファイルです。パスは曲ファイルからの相対パスで、`~`
 フォントはこのリポジトリに含まれず、コピーもされません。曲ファイルはその場所を指すだけです。実際の曲ファイルは
 `work/` かリポジトリの外に置きます。
 
-## 6. 旧歌詞画像スクリプトからの移行
+## 7. 旧歌詞画像スクリプトからの移行
 
 | 旧 `conf.toml` | 曲ファイル |
 |---|---|
@@ -123,12 +181,12 @@ TOML ファイルです。パスは曲ファイルからの相対パスで、`~`
 - `--overwrite` なしでは既存の画像を上書きしません。曲ファイル、歌詞ファイル、フォントにエラーがあると、画像は
   1 枚も書き出されません。
 
-## 7. エラー
+## 8. エラー
 
 | 終了コード | 意味 |
 |---|---|
 | 0 | 完了 |
-| 1 | 失敗。理由は標準エラー出力のメッセージに出ます（曲ファイル、歌詞ファイル、フォント、収まらない字幕、既存の出力） |
+| 1 | 失敗。理由は標準エラー出力のメッセージに出ます（曲ファイル、歌詞ファイル、フォント、画像、曲、収まらない字幕、既存の出力） |
 | 2 | コマンドラインの使い方の誤り |
 
 エラーにはファイル名と、歌詞の場合は行番号が出ます。すべての画像を描き終えてから書き出すので、これらのエラーでは何も

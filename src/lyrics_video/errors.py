@@ -23,3 +23,7 @@ class CaptionError(LyricsVideoError):
 
 class OutputExistsError(LyricsVideoError):
     """Output files exist and overwriting was not allowed."""
+
+
+class SpectrumError(LyricsVideoError):
+    """audio-spectrum-app failed: the song cannot be decoded, a preset is invalid, a time is outside the song."""

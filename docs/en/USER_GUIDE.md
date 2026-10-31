@@ -2,7 +2,8 @@ English | [日本語](../ja/USER_GUIDE.md) | [Español](../es/USER_GUIDE.md) · 
 
 # User guide
 
-How to set up lyrics-video-app and make caption images for a song. Whole videos come in later phases.
+How to set up lyrics-video-app, make caption images for a song and look at frames of its video. Whole videos come
+in later phases.
 
 ## 1. Setup
 
@@ -73,14 +74,73 @@ The fonts are `compare.fonts` and every font file in `compare.font_dirs` (search
 `--font-dir` (each repeatable) replace both lists for one run. Font files are `.ttf`, `.otf`, `.ttc` and `.otc`; the
 first face of a collection is used. `--overwrite` works as for `captions`.
 
-## 5. The song file
+## 5. Video stills and designs: `still`
+
+```bash
+uv run lyrics-video still work/my-song/song.toml --time 3 62.5 --caption 4
+```
+
+Writes the frames the video will show at the given times (seconds of the song) into `stills/` next to the song file,
+named `<design>_<time>s.png`: the background image, the title, a caption, the credits and the spectrum of that moment
+on top, exactly as the video will have them. Until the lyrics have timing, a still shows one caption: the line given
+by `--caption` (the line index, counted as in the caption image names), the first caption by default, or none with
+`--no-caption`. `--overwrite` works as for `captions`.
+
+A frame is made of these parts, from bottom to top:
+
+| Part | Content |
+|---|---|
+| Background | `background_image`, scaled to cover the frame and cropped, never stretched; black without an image |
+| Title | `title` and `subtitle`, drawn by the app |
+| Caption | The caption of the moment, fading in and out |
+| Credits | The `credits` lines, shown over the first and last seconds of the song, over a darkened frame |
+| Spectrum | Drawn by audio-spectrum-app with the `[spectrum]` preset and overrides |
+
+How the parts look is a **design**. The built-in design is `classic`: the title large at the top center, captions in
+an opaque band along the bottom edge drawn with the rules of the old caption images, credits centered. Choose a
+design with `design = "classic"`, or a design file of your own with `design = "my-design.toml"`. To change single
+values, write a `[design]` table with the design's `name` and the parts to change:
+
+```toml
+[design]
+name = "classic"
+
+[design.title]
+font = "~/path/to/title-font.otf"   # the title in another font than fonts.default
+size = 96
+
+[design.caption]
+band_color = "#101820"
+```
+
+| Part | Keys (sizes in pixels of a 1080-pixel-high frame; they scale with the video height) |
+|---|---|
+| `background` | `focus` (`[x, y]` from 0 to 1, the point kept in view when cropping), `dim` (0 to 1), `blur` |
+| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `subtitle_size`, `color`, `margin`, `gap`, `shadow` |
+| `caption` | `style` (`"band"`), `align` (`"left"`), `font`, `text_color`, `band_color`, `band_opacity`, `band_height`, `fade_seconds` |
+| `credits` | `enabled`, `font`, `size`, `color`, `line_spacing`, `dim`, `show_seconds`, `fade_seconds`, `shadow` |
+| `spectrum` | `set`: preset overrides applied before the song file's `[spectrum] set` |
+| `shadow` (in `title`, `credits`) | `blur` (0 = no shadow), `offset`, `color`, `opacity` |
+
+Every part uses `fonts.default` unless it names its own `font`. Colors are `"#RRGGBB"`.
+
+## 6. The song file
 
 A TOML file. Paths are relative to the song file; `~` is the home folder. Every key is optional except
-`captions.font` for `captions`.
+`captions.font` for `captions` and `audio` for `still`.
 
 | Key | Default | Meaning |
 |---|---|---|
 | `lyrics` | `"lyrics.txt"` | The lyrics file |
+| `audio` | none | The song, for the spectrum (`still`) |
+| `background_image` | none | The background image of the video |
+| `title`, `subtitle` | `""` | The title and a line under it |
+| `credits` | `[]` | Lines of credits |
+| `design` | `"classic"` | A design name or file, or a `[design]` table with `name` and overrides (section 5) |
+| `fonts.default` | none | The font of every part of the video that does not name its own |
+| `spectrum.preset` | `"default"` | An audio-spectrum-app preset name or preset file |
+| `spectrum.set` | `[]` | Preset overrides, like audio-spectrum-app's `--set` |
+| `video.width`, `video.height`, `video.fps` | `1920`, `1080`, `30` | Frame size and rate |
 | `captions.output_dir` | `"captions"` | Folder for the caption images |
 | `captions.size` | size of the background image, else `[1440, 232]` | Width and height of each image |
 | `captions.background` | `"#000000"` | Background color: `"#RRGGBB"`, or an image file whose center pixel is the color |
@@ -97,7 +157,7 @@ A TOML file. Paths are relative to the song file; `~` is the home folder. Every 
 Fonts are not part of this repository and are never copied into it; the song file only points to them. Real song
 files stay in `work/` or outside the repository.
 
-## 6. Moving from the old lyrics image script
+## 7. Moving from the old lyrics image script
 
 | Old `conf.toml` | Song file |
 |---|---|
@@ -122,12 +182,12 @@ Differences from the old script:
 - Existing images are not overwritten without `--overwrite`, and an error in a song file, lyrics file or font
   writes no images.
 
-## 7. Errors
+## 8. Errors
 
 | Exit code | Meaning |
 |---|---|
 | 0 | Done |
-| 1 | Failed; the message on stderr says why (song file, lyrics file, font, a caption that does not fit, existing output) |
+| 1 | Failed; the message on stderr says why (song file, lyrics file, font, image, song, a caption that does not fit, existing output) |
 | 2 | Wrong command-line usage |
 
 Errors name the file and, for the lyrics, the line number. All images are drawn before any is written, so these

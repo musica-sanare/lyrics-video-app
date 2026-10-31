@@ -2,7 +2,8 @@
 
 The rules are kept exactly, including their quirks, so new images match the old ones (ADR-002): the font size starts
 at 80 and shrinks in steps of 2 until every row fits with a margin; text is left-aligned; two rows are centered on
-the quarter lines; both rows are placed with the height of the first row.
+the quarter lines; both rows are placed with the height of the first row. With `scale`, every length (start size,
+step, margins, left edge) is multiplied, so the same caption can be drawn for a band of another height.
 """
 
 from dataclasses import dataclass
@@ -38,25 +39,30 @@ def _measure(draw: ImageDraw.ImageDraw, text: str, font: ImageFont.FreeTypeFont)
 
 
 def fit_font_size(
-    draw: ImageDraw.ImageDraw, image_size: tuple[int, int], rows: tuple[str, ...], font: CaptionFont
+    draw: ImageDraw.ImageDraw,
+    image_size: tuple[int, int],
+    rows: tuple[str, ...],
+    font: CaptionFont,
+    scale: float = 1.0,
 ) -> int:
     width, height = image_size
-    size = START_SIZE
+    size = round(START_SIZE * scale)
+    step = max(1, round(SIZE_STEP * scale))
     for row in rows:
         while True:
             row_width, row_height = _measure(draw, row, font.at(size))
-            if row_width + FIT_MARGIN_X < width and row_height + FIT_MARGIN_Y < height:
+            if row_width + FIT_MARGIN_X * scale < width and row_height + FIT_MARGIN_Y * scale < height:
                 break
-            size -= SIZE_STEP
+            size -= step
             if size <= 0:
                 raise CaptionError(f"{row!r} does not fit in {width} x {height} at any font size")
     return size
 
 
-def draw_caption(rows: tuple[str, ...], look: CaptionLook, font: CaptionFont) -> Image.Image:
+def draw_caption(rows: tuple[str, ...], look: CaptionLook, font: CaptionFont, scale: float = 1.0) -> Image.Image:
     image = Image.new("RGB", look.size, look.background)
     draw = ImageDraw.Draw(image)
-    size = fit_font_size(draw, image.size, rows, font)
+    size = fit_font_size(draw, image.size, rows, font, scale)
     face = font.at(size)
     _, first_height = _measure(draw, rows[0], face)
     if len(rows) == 1:
@@ -64,5 +70,5 @@ def draw_caption(rows: tuple[str, ...], look: CaptionLook, font: CaptionFont) ->
     else:
         positions = [image.height / 4 - first_height / 2, image.height * 3 / 4 - first_height / 2]
     for row, top in zip(rows, positions, strict=True):
-        draw.text((LEFT, top), row, fill=look.text_color, font=face, spacing=LINE_SPACING)
+        draw.text((LEFT * scale, top), row, fill=look.text_color, font=face, spacing=LINE_SPACING)
     return image

@@ -4,6 +4,35 @@
 # One caption per line; ";" splits a caption into two rows. Empty lines are skipped but still count in file names.
 lyrics = "lyrics.txt"
 
+# The video (stills for now: `lyrics-video still`).
+audio = "song.wav"                     # the song, for the spectrum
+background_image = "background.jpg"    # covers the frame and is cropped, never stretched
+title = "Song Title"
+subtitle = "Artist"
+credits = ["Music & Lyrics: Your Name", "Vocals: Someone", "Illustration: Someone Else"]
+design = "classic"                     # a built-in design, or a design file
+
+[fonts]
+default = "~/path/to/your-font.otf"    # every part of the video uses it unless it names its own
+
+# Overrides of the design, part by part. Use a [design] table with `name` instead of `design = "..."` above:
+# [design]
+# name = "classic"
+# [design.title]
+# font = "~/path/to/title-font.otf"
+# [design.caption]
+# band_color = "#101820"
+
+[spectrum]
+preset = "default"                     # an audio-spectrum-app preset name, or a preset file
+set = []                               # overrides like its --set, for example ["look.baseline_y=0.45"]
+
+[video]
+width = 1920
+height = 1080
+fps = 30
+
+# The caption images of the old lyrics image script (`lyrics-video captions`).
 [captions]
 output_dir = "captions"          # lyrics_<line index>.png are written here
 # size = [1440, 232]             # width, height; by default the background image's size, or 1440 x 232

@@ -7,9 +7,11 @@ captions that fade in and out at the bottom, credits, and an audio spectrum draw
 [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), with the song's audio. It replaces a manual
 workflow of caption images layered in a video editor.
 
-**Status:** Phase 0. `lyrics-video captions` makes the caption images of the old lyrics image script from a lyrics
-file, for use in iMovie, and `lyrics-video compare` shows a text in many fonts. Whole videos come in later phases.
-Phase 0 is accepted: see the [Phase 0 acceptance](docs/working/PHASE0_ACCEPTANCE.md).
+**Status:** Phase 1 (design) in progress. `lyrics-video captions` makes the caption images of the old lyrics image
+script from a lyrics file, for use in iMovie; `lyrics-video compare` shows a text in many fonts; `lyrics-video still`
+renders frames of the future video (background, title, caption, credits and spectrum) in the `classic` design. Whole
+videos come in later phases. See the [Phase 0 acceptance](docs/working/PHASE0_ACCEPTANCE.md) and the
+[Phase 1 plan](docs/working/PHASE1_PLAN.md).
 
 ## Quick start
 
@@ -21,6 +23,7 @@ uv sync
 mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # then set the font, colors and lyrics file
 uv run lyrics-video captions work/my-song/song.toml         # one PNG per caption line
 uv run lyrics-video compare work/my-song/song.toml          # the comparison text in several fonts
+uv run lyrics-video still work/my-song/song.toml --time 60  # frames of the video at chosen times
 ```
 
 Run `uv run pytest` for the tests.

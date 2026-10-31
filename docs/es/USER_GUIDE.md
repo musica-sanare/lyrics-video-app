@@ -1,12 +1,12 @@
-<!-- source: docs/en/USER_GUIDE.md blob 82244399ede201698d939c247572ba471ac753dd -->
+<!-- source: docs/en/USER_GUIDE.md blob 01640a9b6aeb8404821a419ee846696023a98f3f -->
 [English](../en/USER_GUIDE.md) | [日本語](../ja/USER_GUIDE.md) | Español · [Índice de la documentación](README.md)
 
 > Este documento es una traducción de la [versión en inglés](../en/USER_GUIDE.md). Si hay diferencias, prevalece la versión en inglés.
 
 # Guía de uso
 
-Cómo instalar lyrics-video-app y crear las imágenes de subtítulos de una canción. Los vídeos completos llegarán en
-fases posteriores.
+Cómo instalar lyrics-video-app, crear las imágenes de subtítulos de una canción y ver fotogramas de su vídeo. Los
+vídeos completos llegarán en fases posteriores.
 
 ## 1. Instalación
 
@@ -80,14 +80,75 @@ Las fuentes son `compare.fonts` y todos los archivos de fuente de `compare.font_
 `.ttf`, `.otf`, `.ttc` y `.otc`; de una colección se usa la primera cara. `--overwrite` funciona igual que en
 `captions`.
 
-## 5. El archivo de la canción
+## 5. Fotogramas del vídeo y diseños: `still`
+
+```bash
+uv run lyrics-video still work/my-song/song.toml --time 3 62.5 --caption 4
+```
+
+Escribe los fotogramas que mostrará el vídeo en los instantes indicados (segundos de la canción) en `stills/`, junto
+al archivo de la canción, con el nombre `<diseño>_<instante>s.png`: la imagen de fondo, el título, un subtítulo, los
+créditos y el espectro de ese momento encima, exactamente como los tendrá el vídeo. Hasta que la letra tenga tiempos,
+un fotograma muestra un solo subtítulo: la línea indicada con `--caption` (el índice de línea, contado como en los
+nombres de las imágenes de subtítulos), el primer subtítulo por defecto, o ninguno con `--no-caption`. `--overwrite`
+funciona igual que en `captions`.
+
+Un fotograma se compone de estas partes, de abajo arriba:
+
+| Parte | Contenido |
+|---|---|
+| Fondo | `background_image`, escalada para cubrir el encuadre y recortada, nunca estirada; negro sin imagen |
+| Título | `title` y `subtitle`, dibujados por la aplicación |
+| Subtítulo | El subtítulo del momento, con fundido de entrada y de salida |
+| Créditos | Las líneas de `credits`, durante los primeros y los últimos segundos de la canción, sobre el encuadre oscurecido |
+| Espectro | Dibujado por audio-spectrum-app con el preset y los ajustes de `[spectrum]` |
+
+El aspecto de las partes es un **diseño**. El diseño incluido es `classic`: el título grande arriba en el centro, los
+subtítulos en una franja opaca a lo largo del borde inferior dibujados con las reglas de las imágenes de subtítulos
+antiguas y los créditos centrados. Elige un diseño con `design = "classic"`, o un archivo de diseño propio con
+`design = "my-design.toml"`. Para cambiar valores sueltos, escribe una tabla `[design]` con el `name` del diseño y las
+partes que cambian:
+
+```toml
+[design]
+name = "classic"
+
+[design.title]
+font = "~/path/to/title-font.otf"   # el título con otra fuente que fonts.default
+size = 96
+
+[design.caption]
+band_color = "#101820"
+```
+
+| Parte | Claves (tamaños en píxeles de un encuadre de 1080 píxeles de alto; se escalan con la altura del vídeo) |
+|---|---|
+| `background` | `focus` (`[x, y]` de 0 a 1, el punto que queda a la vista al recortar), `dim` (0 a 1), `blur` |
+| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `subtitle_size`, `color`, `margin`, `gap`, `shadow` |
+| `caption` | `style` (`"band"`), `align` (`"left"`), `font`, `text_color`, `band_color`, `band_opacity`, `band_height`, `fade_seconds` |
+| `credits` | `enabled`, `font`, `size`, `color`, `line_spacing`, `dim`, `show_seconds`, `fade_seconds`, `shadow` |
+| `spectrum` | `set`: ajustes del preset aplicados antes de `[spectrum] set` del archivo de la canción |
+| `shadow` (en `title`, `credits`) | `blur` (0 = sin sombra), `offset`, `color`, `opacity` |
+
+Cada parte usa `fonts.default` salvo que indique su propia `font`. Los colores se escriben `"#RRGGBB"`.
+
+## 6. El archivo de la canción
 
 Un archivo TOML. Las rutas son relativas al archivo de la canción; `~` es la carpeta personal. Todas las claves son
-opcionales excepto `captions.font` para `captions`.
+opcionales excepto `captions.font` para `captions` y `audio` para `still`.
 
 | Clave | Valor por defecto | Significado |
 |---|---|---|
 | `lyrics` | `"lyrics.txt"` | El archivo de letra |
+| `audio` | ninguno | La canción, para el espectro (`still`) |
+| `background_image` | ninguno | La imagen de fondo del vídeo |
+| `title`, `subtitle` | `""` | El título y una línea debajo |
+| `credits` | `[]` | Líneas de créditos |
+| `design` | `"classic"` | Un nombre o archivo de diseño, o una tabla `[design]` con `name` y ajustes (sección 5) |
+| `fonts.default` | ninguno | La fuente de cada parte del vídeo que no indique la suya |
+| `spectrum.preset` | `"default"` | Un nombre o archivo de preset de audio-spectrum-app |
+| `spectrum.set` | `[]` | Ajustes del preset, como `--set` de audio-spectrum-app |
+| `video.width`, `video.height`, `video.fps` | `1920`, `1080`, `30` | Tamaño y frecuencia de los fotogramas |
 | `captions.output_dir` | `"captions"` | Carpeta de las imágenes de subtítulos |
 | `captions.size` | tamaño de la imagen de fondo; si no, `[1440, 232]` | Ancho y alto de cada imagen |
 | `captions.background` | `"#000000"` | Color de fondo: `"#RRGGBB"`, o un archivo de imagen cuyo píxel central da el color |
@@ -104,7 +165,7 @@ opcionales excepto `captions.font` para `captions`.
 Las fuentes no forman parte de este repositorio y nunca se copian en él; el archivo de la canción solo indica dónde
 están. Los archivos reales de cada canción se quedan en `work/` o fuera del repositorio.
 
-## 6. Cambiar desde el antiguo script de imágenes de letra
+## 7. Cambiar desde el antiguo script de imágenes de letra
 
 | `conf.toml` antiguo | Archivo de la canción |
 |---|---|
@@ -130,12 +191,12 @@ Diferencias con el script antiguo:
 - Las imágenes existentes no se sobrescriben sin `--overwrite`, y un error en el archivo de la canción, el de la
   letra o una fuente no escribe ninguna imagen.
 
-## 7. Errores
+## 8. Errores
 
 | Código de salida | Significado |
 |---|---|
 | 0 | Hecho |
-| 1 | Error; el mensaje en stderr explica el motivo (archivo de la canción, archivo de letra, fuente, un subtítulo que no cabe, salida existente) |
+| 1 | Error; el mensaje en stderr explica el motivo (archivo de la canción, archivo de letra, fuente, imagen, canción, un subtítulo que no cabe, salida existente) |
 | 2 | Uso incorrecto de la línea de órdenes |
 
 Los errores indican el archivo y, en la letra, el número de línea. Todas las imágenes se dibujan antes de escribir

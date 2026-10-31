@@ -36,6 +36,7 @@ __pycache__/
 *.toml
 !pyproject.toml
 !*.example.toml
+!src/lyrics_video/designs/*.toml
 
 # macOS
 .DS_Store

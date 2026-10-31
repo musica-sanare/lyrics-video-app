@@ -1,4 +1,4 @@
-<!-- source: README.md blob 4dd19aaf5edcf1280df49df2c65b02861a7e1156 -->
+<!-- source: README.md blob 0f8064ca67f9b65fd25759fc419e7a9355cec444 -->
 [English](README.md) | 日本語 | [Español](README.es.md)
 
 > この文書は[英語版](README.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -9,9 +9,11 @@
 クレジット、そして [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムを、
 曲の音声とともに 1 本の動画にします。動画編集ソフトで字幕画像を重ねていた手作業を置き換えるものです。
 
-**状況:** Phase 0。`lyrics-video captions` が歌詞ファイルから旧歌詞画像スクリプトと同じ字幕画像を作り（iMovie 用）、
-`lyrics-video compare` がテキストを多くのフォントで並べて見せます。動画全体の書き出しは後のフェーズで加わります。
-Phase 0 は受け入れ済みです。[Phase 0 acceptance](docs/working/PHASE0_ACCEPTANCE.md)（英語のみ）を参照してください。
+**状況:** Phase 1（デザイン）を進行中。`lyrics-video captions` が歌詞ファイルから旧歌詞画像スクリプトと同じ字幕画像を
+作り（iMovie 用）、`lyrics-video compare` がテキストを多くのフォントで並べて見せ、`lyrics-video still` が将来の動画の
+フレーム（背景、曲名、字幕、クレジット、スペクトラム）を `classic` デザインで描きます。動画全体の書き出しは後のフェーズで
+加わります。[Phase 0 acceptance](docs/working/PHASE0_ACCEPTANCE.md) と [Phase 1 plan](docs/working/PHASE1_PLAN.md)
+（どちらも英語のみ）を参照してください。
 
 ## クイックスタート
 
@@ -23,6 +25,7 @@ uv sync
 mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # フォント、色、歌詞ファイルを設定する
 uv run lyrics-video captions work/my-song/song.toml         # 字幕 1 行につき 1 枚の PNG
 uv run lyrics-video compare work/my-song/song.toml          # 比較用テキストを複数のフォントで
+uv run lyrics-video still work/my-song/song.toml --time 60  # 指定した時刻の動画のフレーム
 ```
 
 テストは `uv run pytest` で実行します。

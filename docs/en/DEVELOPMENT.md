@@ -34,6 +34,10 @@ uv run pytest
 | `test_fonts.py` | Collecting font files and their labels |
 | `test_caption_image.py` | Caption images: the same pixels as a transcription of the old script, sizes, layout |
 | `test_cli.py` | `captions` and `compare`: file names, overwriting, no files on errors, fonts from the command line |
+| `test_design.py` | Built-in designs, overrides, design files, invalid values |
+| `test_layers.py` | Background cover and crop (never stretched), focus, dim and blur; title, caption band and credits layers; blending |
+| `test_backdrop.py` | Fades, captions and credits by time, pickling and other processes, a still equals the backdrop under the spectrum |
+| `test_still.py` | The `still` command: file names, captions, design and spectrum from the song file, errors |
 | `test_spectrum_dependency.py` | audio-spectrum-app is installed; a still is drawn over a supplied backdrop |
 
 ## 3. Local files

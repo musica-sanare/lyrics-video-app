@@ -2,12 +2,15 @@
 
 import re
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, ValidationError
+from typing import Any
 
+from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt, ValidationError
+
+from lyrics_video.design import Design, load_design
 from lyrics_video.errors import ConfigError
 
 DEFAULT_CAPTION_SIZE = (1440, 232)
@@ -40,8 +43,36 @@ class CompareSettings(_Section):
     font_dirs: list[Path] = []
 
 
+class FontSettings(_Section):
+    default: Path | None = None
+    """The font of every part of the video that does not name its own."""
+
+
+class SpectrumSettings(_Section):
+    preset: str = "default"
+    """An audio-spectrum-app preset: a name, or a path to a preset file."""
+    set: list[str] = []
+    """Overrides like audio-spectrum-app's `--set`, applied after the design's."""
+
+
+class VideoSettings(_Section):
+    width: PositiveInt = 1920
+    height: PositiveInt = 1080
+    fps: PositiveFloat = 30.0
+
+
 class SongFile(_Section):
     lyrics: Path = Path("lyrics.txt")
+    audio: Path | None = None
+    title: str = ""
+    subtitle: str = ""
+    credits: list[str] = []
+    background_image: Path | None = None
+    design: str | dict[str, Any] = "classic"
+    """A design name or file, or a table with `name` and overrides of the design's parts."""
+    fonts: FontSettings = FontSettings()
+    spectrum: SpectrumSettings = SpectrumSettings()
+    video: VideoSettings = VideoSettings()
     captions: CaptionSettings = CaptionSettings()
     compare: CompareSettings = CompareSettings()
 
@@ -69,6 +100,16 @@ class Song:
     compare_dir: Path
     compare_fonts: list[Path]
     compare_font_dirs: list[Path]
+    audio: Path | None = None
+    title: str = ""
+    subtitle: str = ""
+    credits: tuple[str, ...] = ()
+    background_image: Path | None = None
+    default_font: Path | None = None
+    design: Design | None = None
+    spectrum_preset: str = "default"
+    spectrum_set: tuple[str, ...] = ()
+    video: VideoSettings = field(default_factory=VideoSettings)
 
 
 def resolve_path(value: Path, base: Path) -> Path:
@@ -105,7 +146,41 @@ def load_song(path: Path) -> Song:
         compare_dir=resolve_path(song.compare.output_dir, base),
         compare_fonts=[resolve_path(p, base) for p in song.compare.fonts],
         compare_font_dirs=[resolve_path(p, base) for p in song.compare.font_dirs],
+        audio=resolve_path(song.audio, base) if song.audio else None,
+        title=song.title,
+        subtitle=song.subtitle,
+        credits=tuple(song.credits),
+        background_image=resolve_path(song.background_image, base) if song.background_image else None,
+        default_font=resolve_path(song.fonts.default, base) if song.fonts.default else None,
+        design=_design(song.design, base, path),
+        spectrum_preset=_preset_name_or_path(song.spectrum.preset, base),
+        spectrum_set=tuple(song.spectrum.set),
+        video=song.video,
     )
+
+
+def _design(value: str | dict[str, Any], base: Path, song_path: Path) -> Design:
+    if isinstance(value, str):
+        name, overrides = value, {}
+    else:
+        overrides = dict(value)
+        name = overrides.pop("name", "classic")
+    try:
+        design = load_design(name, overrides, base)
+    except ConfigError as error:
+        raise ConfigError(f"{song_path}: {error}") from None
+    fonts = {
+        part: getattr(design, part).model_copy(update={"font": resolve_path(getattr(design, part).font, base)})
+        for part in ("title", "caption", "credits")
+        if getattr(design, part).font is not None
+    }
+    return design.model_copy(update=fonts)
+
+
+def _preset_name_or_path(value: str, base: Path) -> str:
+    if value.endswith(".toml"):
+        return str(resolve_path(Path(value), base))
+    return value
 
 
 def _color(value: str, base: Path, key: str, song_path: Path) -> tuple[RGB, tuple[int, int] | None]:

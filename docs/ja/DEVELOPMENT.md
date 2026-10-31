@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob cb5449d0911a95444d6c0a9a83bc0bc56037a6ef -->
+<!-- source: docs/en/DEVELOPMENT.md blob 6baa9c1744876da630051cfe7148bf45d215e8bc -->
 [English](../en/DEVELOPMENT.md) | 日本語 | [Español](../es/DEVELOPMENT.md) · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/DEVELOPMENT.md)の翻訳です。内容が異なる場合は英語版が優先されます。
@@ -37,6 +37,10 @@ uv run pytest
 | `test_fonts.py` | フォントファイルの収集と表示名 |
 | `test_caption_image.py` | 字幕画像：旧スクリプトを書き写したものと同じピクセルになること、大きさ、配置 |
 | `test_cli.py` | `captions` と `compare`：ファイル名、上書き、エラー時にファイルを残さないこと、コマンドラインからのフォント指定 |
+| `test_design.py` | 組み込みデザイン、上書き、デザインファイル、不正な値 |
+| `test_layers.py` | 背景の拡大と切り取り（引き伸ばさない）、focus、dim、blur。曲名・字幕の帯・クレジットの層、重ね合わせ |
+| `test_backdrop.py` | フェード、時刻ごとの字幕とクレジット、pickle と別プロセス、静止画がスペクトラムの下の backdrop と一致すること |
+| `test_still.py` | `still` コマンド：ファイル名、字幕、曲ファイルからのデザインとスペクトラム、エラー |
 | `test_spectrum_dependency.py` | audio-spectrum-app が入っていること、渡した背景（backdrop）の上に静止画が描かれること |
 
 ## 3. ローカルのファイル
