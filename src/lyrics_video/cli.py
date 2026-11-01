@@ -55,7 +55,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--design",
         nargs="+",
         metavar="NAME",
-        help="designs to draw instead of the song file's (built-in names or files); with several, also a comparison",
+        help=(
+            "designs to draw instead of the song file's (built-in or saved names, or files); with several, also a "
+            "comparison"
+        ),
     )
     still.add_argument("--overwrite", action="store_true", help="replace existing images")
 
@@ -75,7 +78,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--start", type=_non_negative, default=0.0, metavar="SECONDS", help="render only part of the song, from here"
     )
     render_parser.add_argument("--duration", type=_positive, metavar="SECONDS", help="the length of that part")
-    render_parser.add_argument("--design", metavar="NAME", help="another design (a built-in name or a file)")
+    render_parser.add_argument("--design", metavar="NAME", help="another design (a built-in or saved name, or a file)")
     render_parser.add_argument(
         "--workers", type=_non_negative_int, default=0, help="render processes; 0 picks them automatically"
     )

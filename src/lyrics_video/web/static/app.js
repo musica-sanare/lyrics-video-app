@@ -900,6 +900,38 @@ function fontSelect(id, path) {
   return `<select class="font" id="${id}">${options.join("")}</select>`;
 }
 
+// The whole look as it is on the page becomes a user design that any song can name; the page then offers to use it.
+async function saveAsDesign(overwrite = false, name = null) {
+  // Suggest the current name only when it is a user design: built-in names and design files cannot be saved over.
+  const current = state.design.name;
+  const suggested = state.design.builtins.includes(current) || current.endsWith(".toml") ? "" : current;
+  name ??= prompt(t("design.save_as_prompt"), suggested);
+  if (!name?.trim()) return;
+  name = name.trim();
+  try {
+    const result = await (await api("/api/design/save-as", { name, design: designPayload(), overwrite })).json();
+    state.design.bases[result.name] = result.base;
+    setStatus(t("design.saved_as", { name: result.name }));
+    if (confirm(t("design.use_now", { name: result.name }))) {
+      state.design.name = result.name;
+      state.design.overrides = {};
+      designChanged(true);
+    } else showDesign();
+  } catch (error) {
+    if (error.code === "output_exists" && !overwrite) {
+      if (confirm(t("design.replace", { name }))) return saveAsDesign(true, name);
+    } else showError(error);
+  }
+}
+
+async function showDesignFolder() {
+  try {
+    await api("/api/design/folder", {});
+  } catch (error) {
+    showError(error);
+  }
+}
+
 function onDesignInput(event) {
   const row = event.target.closest(".field");
   if (!row) return;
@@ -1366,6 +1398,8 @@ async function start() {
   $("clear-time").addEventListener("click", clearTime);
   $("select-all").addEventListener("click", selectAll);
   $("error-close").addEventListener("click", () => ($("error").hidden = true));
+  $("design-save-as").addEventListener("click", () => saveAsDesign());
+  $("design-folder").addEventListener("click", showDesignFolder);
   $("design-fields").addEventListener("input", onDesignInput);
   $("design-fields").addEventListener("change", onDesignChange);
   $("design-fields").addEventListener("click", onDesignReset);

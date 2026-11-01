@@ -125,3 +125,12 @@ def test_timing_errors(tmp_path, sans_font, capsys):
     assert main(["still", str(song), "--time", "1"]) == EXIT_FAILED
     assert "[00:05.00] is after the end of the song" in capsys.readouterr().err
     assert not (tmp_path / "stills").exists()
+
+
+def test_a_user_design_by_name(tmp_path, sans_font, user_designs):
+    song = make_song(tmp_path, sans_font)
+    (user_designs / "mine.toml").write_text('name = "mine"\n[caption]\nstyle = "panel"\n', encoding="utf-8")
+
+    assert main(["still", str(song), "--time", "1", "--design", "mine"]) == EXIT_OK
+
+    assert (tmp_path / "stills" / "mine_1s.png").exists()

@@ -9,8 +9,8 @@ import tomlkit
 from audio_spectrum import AudioSpectrumError, Preset, load_preset, override_preset, preset_to_toml
 from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt, ValidationError
 
-from lyrics_video.design import Design, load_design
-from lyrics_video.errors import ConfigError
+from lyrics_video.design import Design, check_design_name, load_design, user_design_folder
+from lyrics_video.errors import ConfigError, OutputExistsError
 from lyrics_video.output import write_text
 
 # Sections of the caption image commands, removed in version 0.2.0 (Phase 3 plan, "Removing captions and compare").
@@ -200,6 +200,41 @@ def write_design(path: Path, name: str, overrides: dict[str, Any]) -> Song:
     song = parse_song(new_text, path)
     write_text(path, new_text, backup=True)
     return song
+
+
+def save_user_design(song: Song, design: Design, name: str, overwrite: bool = False) -> Path:
+    """Save `design` (as drawn for `song`) as the user design `name`, which any song file can then name.
+
+    Only keys that differ from the defaults are written. Font and preset files become absolute paths (with `~` for
+    the home folder), so the design works from any song folder. Replacing a design needs `overwrite` and keeps the
+    previous file as `.bak`.
+    """
+    check_design_name(name)
+    path = user_design_folder() / f"{name}.toml"
+    if path.exists() and not overwrite:
+        raise OutputExistsError(f"the design {name!r} exists")
+    data = design.model_dump(mode="json", exclude_defaults=True)
+    data["name"] = name
+    preset = design.spectrum.preset
+    if preset and preset.endswith(".toml"):
+        data["spectrum"]["preset"] = _preset_name_or_path(preset, song.path.parent)
+    text = tomlkit.dumps(_portable(data))
+    Design.model_validate(tomllib.loads(text))  # what is written reads back as a design
+    path.parent.mkdir(parents=True, exist_ok=True)
+    write_text(path, text, backup=True)
+    return path
+
+
+def _portable(value: Any, key: str = "") -> Any:
+    """Colors as `#RRGGBB` and paths under the home folder with `~`, as people write them in design files."""
+    if isinstance(value, dict):
+        return {item: _portable(inner, item) for item, inner in value.items()}
+    if (key == "color" or key.endswith("_color")) and isinstance(value, list) and len(value) == 3:
+        return "#" + "".join(f"{channel:02X}" for channel in value)
+    if isinstance(value, str) and key in {"font", "preset"}:
+        home = str(Path.home())
+        return "~" + value[len(home):] if value.startswith(home + "/") else value
+    return value
 
 
 def _table(data: dict[str, Any]) -> tomlkit.items.Table:

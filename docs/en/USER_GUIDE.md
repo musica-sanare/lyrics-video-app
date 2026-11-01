@@ -117,6 +117,8 @@ listens on `127.0.0.1` and refuses other web pages. Stop it with `Ctrl+C` in the
      sizes, fonts, bold and italic, boxes behind the title and credits, shadows, and the caption timing (lead, fade,
      change between lines). A changed setting is shown in bold; ↺ takes it back to the design's value.
    - The font list holds the fonts of this Mac and of the folders of the fonts your song file names.
+   - Save as design: saves the whole look as it is on the page, spectrum included, under a name that any song can
+     use ("Named designs" in section 6). The page then offers to use it for this song.
    - Spectrum: choose an audio-spectrum-app preset (the built-in ones and your saved ones) and change its position,
      height, side margin, style, bar width, colors (one color or a gradient of two to four), glow and analysis (bands,
      frequencies, level, rise and fall). Analysis settings take about half a second each and apply when you release
@@ -278,6 +280,27 @@ A frame is made of these parts, from bottom to top:
 
 Captions are left-aligned with up to two rows in every design, as today.
 
+### Named designs
+
+Save the look of one song and use it for others: "Save as design" in the Design mode of the `sync` page writes the
+whole look as it is on the page (built-in design, changes and spectrum) under a name you choose. Any song file then
+uses it like a built-in design:
+
+```toml
+design = "Summer Rain"
+```
+
+- Named designs live in `~/Library/Application Support/lyrics-video/designs/`, one TOML file each, in the same form
+  as a design file. "Show designs folder" opens it in the Finder, where you rename or delete them.
+- `still --design` and `render --design` accept the names too, and the page lists them next to the built-in designs.
+- A name can be any file name, Japanese included, except a built-in design's; it cannot contain `/` or `:`, start
+  with a dot or end with `.toml`. Saving under an existing name asks first and keeps the previous file as `.bak`.
+- Fonts and preset files are named by their full paths, so the design works from any song folder. They are not
+  copied: on another Mac the same files must exist. Parts without their own font use the song file's
+  `fonts.default`.
+- A name is looked up among the built-in designs first, then the named designs, then as a file next to the song
+  file.
+
 ### Changing single values
 
 Change them in the Design mode of the `sync` page (section 4), or write a `[design]` table with the design's `name`
@@ -367,7 +390,7 @@ A TOML file. Paths are relative to the song file; `~` is the home folder. Every 
 | `background_image` | none | The background image of the video |
 | `title` | `""` | The song title, one line |
 | `credits` | `[]` | Lines of credits, for example `["by Your Name"]` |
-| `design` | `"soft"` | A design name or file, or a `[design]` table with `name` and overrides (section 6) |
+| `design` | `"soft"` | A design name (built-in or saved) or design file, or a `[design]` table with `name` and overrides (section 6) |
 | `fonts.default` | none | The font of every part of the video that does not name its own |
 | `spectrum.preset` | the design's, else `"default"` | An audio-spectrum-app preset name or preset file; wins over the design's |
 | `spectrum.set` | `[]` | Preset overrides, like audio-spectrum-app's `--set`, applied after the design's changes |

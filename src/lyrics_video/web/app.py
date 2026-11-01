@@ -21,9 +21,9 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from lyrics_video.backdrop import LyricsBackdrop, timed_captions
-from lyrics_video.config import Song, preset_values, song_design, spectrum_preset, write_design
-from lyrics_video.design import Design, builtin_design_names
-from lyrics_video.errors import ConfigError, LyricsVideoError
+from lyrics_video.config import Song, preset_values, save_user_design, song_design, spectrum_preset, write_design
+from lyrics_video.design import Design, builtin_design_names, user_design_folder, user_design_names
+from lyrics_video.errors import ConfigError, LyricsVideoError, OutputExistsError
 from lyrics_video.fonts import FONT_FOLDERS, font_faces
 from lyrics_video.lyrics import read_lyrics
 from lyrics_video.render import PreparedRender, default_output, prepare_preview, prepare_render, preview_size, render
@@ -55,6 +55,14 @@ class DesignRequest(BaseModel):
 
     name: str
     overrides: dict[str, Any] = {}
+
+
+class SaveAsRequest(BaseModel):
+    """Save the page's design as a user design `name`; replacing one needs `overwrite`."""
+
+    name: str
+    design: DesignRequest
+    overwrite: bool = False
 
 
 class PreviewRequest(TimingRequest):
@@ -211,7 +219,7 @@ class SyncSession:
 
     def design_state(self) -> dict:
         """The song file's design, and the values of each design the page can start from (to show what changed)."""
-        names = builtin_design_names()
+        names = [*builtin_design_names(), *user_design_names()]
         if self.song.design_name not in names:
             names.append(self.song.design_name)
         bases = {name: self._design(DesignRequest(name=name)).model_dump(mode="json") for name in names}
@@ -219,6 +227,7 @@ class SyncSession:
             "name": self.song.design_name,
             "overrides": self.song.design_overrides,
             "bases": bases,
+            "builtins": builtin_design_names(),
             "spectrum": self.spectrum_state(bases),
         }
 
@@ -273,6 +282,13 @@ class SyncSession:
             self.preset = self._preset_for(song.design)
             self.backdrop.set_design(song.design)
         return {"song_file": song.path.name}
+
+    def save_as(self, request: SaveAsRequest) -> dict:
+        """Save the page's design, saved in the song file or not, as a user design; returns its values as a base."""
+        design = self._design(request.design)
+        self._preset_for(design)
+        save_user_design(self.song, design, request.name, request.overwrite)
+        return {"name": request.name, "base": self._design(DesignRequest(name=request.name)).model_dump(mode="json")}
 
     def lines(self, request: TimingRequest) -> list[TimedLine]:
         lines = [TimedLine(tuple(line.rows), line.start, line.end) for line in request.lines]
@@ -381,6 +397,8 @@ def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> Fas
     async def app_error(request: Request, error: LyricsVideoError):
         if isinstance(error, (RenderBusyError, RenderOutputExistsError)):
             return _error(409, error.code, str(error))
+        if isinstance(error, OutputExistsError):
+            return _error(409, "output_exists", str(error))
         if isinstance(error, PreviewMissingError):
             return _error(404, error.code, str(error))
         return _error(400, type(error).__name__, str(error))
@@ -430,6 +448,17 @@ def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> Fas
     @app.post("/api/design")
     def save_design(request: DesignRequest) -> dict:
         return session.save_design(request)
+
+    @app.post("/api/design/save-as")
+    def save_as(request: SaveAsRequest) -> dict:
+        return session.save_as(request)
+
+    @app.post("/api/design/folder")
+    def show_design_folder() -> dict:
+        folder = user_design_folder()
+        folder.mkdir(parents=True, exist_ok=True)
+        subprocess.run(["open", str(folder)], check=False)
+        return {}
 
     @app.get("/api/fonts")
     def fonts() -> list[dict]:

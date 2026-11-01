@@ -1,6 +1,6 @@
 import pytest
 
-from lyrics_video.design import builtin_design_names, load_design, scale_for
+from lyrics_video.design import builtin_design_names, check_design_name, load_design, scale_for, user_design_names
 from lyrics_video.errors import ConfigError
 
 
@@ -108,3 +108,27 @@ def test_spectrum_changes_become_preset_overrides():
         "fx.glow_strength=0.5",
     ]
     assert load_design("soft").spectrum.overrides() == []
+
+
+# --- User designs --------------------------------------------------------------------------------------------------
+
+
+def test_a_user_design_is_found_by_name(user_designs, tmp_path):
+    (user_designs / "夏の雨.toml").write_text('name = "夏の雨"\n[title]\nbold = true\n', encoding="utf-8")
+    (user_designs / "夏の雨.toml.bak").write_text("", encoding="utf-8")
+    (tmp_path / "夏の雨").write_text("[title]\nsize = 10\n", encoding="utf-8")
+
+    assert user_design_names() == ["夏の雨"]
+    assert load_design("夏の雨", base=tmp_path).title.bold, "the user design, not the file of the same name"
+    assert load_design("夏の雨", {"title": {"italic": True}}).title.italic
+
+
+@pytest.mark.parametrize("name", ["", " mine", "a/b", "a:b", ".hidden", "mine.toml", "soft", "x" * 201])
+def test_names_a_user_design_cannot_have(name):
+    with pytest.raises(ConfigError, match="cannot be a design name"):
+        check_design_name(name)
+
+
+def test_names_a_user_design_can_have():
+    for name in ("mine", "夏の雨", "Summer Rain 2026", "a.b-c_d"):
+        check_design_name(name)

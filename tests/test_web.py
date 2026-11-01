@@ -599,3 +599,46 @@ def test_the_preview_uses_the_unsaved_spectrum(render_client, monkeypatch):
     wait_for_render(render_client)
 
     assert started[0].job.preset.look.max_height == 0.5
+
+
+# --- Named designs -------------------------------------------------------------------------------------------------
+
+
+def test_saving_the_page_design_as_a_named_design(client, song, user_designs):
+    response = post(client, "/api/design/save-as", {"name": "夏の雨", "design": BOLD_TITLE})
+
+    assert response.json()["name"] == "夏の雨"
+    assert response.json()["base"]["title"]["bold"] is True
+    assert (user_designs / "夏の雨.toml").exists()
+    assert "夏の雨" not in song.read_text(encoding="utf-8"), "the song file changes only on Save"
+    design = get(client, "/api/song").json()["design"]
+    assert "夏の雨" in design["bases"] and design["builtins"] == ["classic", "panel", "soft"]
+
+
+def test_a_named_design_is_replaced_only_when_asked(client, user_designs):
+    post(client, "/api/design/save-as", {"name": "mine", "design": BOLD_TITLE})
+
+    refused = post(client, "/api/design/save-as", {"name": "mine", "design": TALL_SPECTRUM})
+    allowed = post(client, "/api/design/save-as", {"name": "mine", "design": TALL_SPECTRUM, "overwrite": True})
+
+    assert (refused.status_code, refused.json()["code"]) == (409, "output_exists")
+    assert allowed.status_code == 200 and allowed.json()["base"]["spectrum"]["look"] == {"max_height": 0.5}
+    assert (user_designs / "mine.toml.bak").exists()
+
+
+@pytest.mark.parametrize("name", ["soft", "a/b", ""])
+def test_names_a_named_design_cannot_have(client, user_designs, name):
+    response = post(client, "/api/design/save-as", {"name": name, "design": BOLD_TITLE})
+
+    assert response.status_code == 400
+    assert list(user_designs.iterdir()) == []
+
+
+def test_the_designs_folder_opens_in_the_finder(client, user_designs, monkeypatch):
+    opened = []
+    monkeypatch.setattr(web_app.subprocess, "run", lambda command, check: opened.append(command))
+    user_designs.rmdir()
+
+    post(client, "/api/design/folder", {})
+
+    assert opened == [["open", str(user_designs)]] and user_designs.is_dir()

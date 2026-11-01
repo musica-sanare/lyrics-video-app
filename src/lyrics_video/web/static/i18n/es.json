@@ -132,6 +132,12 @@
   "design_value.bars": "Barras",
   "design_value.blocks": "Bloques",
   "design_value.solid": "Un color",
-  "design_value.frequency": "Degradado"
+  "design_value.frequency": "Degradado",
+  "design.save_as": "Guardar como diseño…",
+  "design.folder": "Mostrar la carpeta de diseños",
+  "design.save_as_prompt": "Nombre del nuevo diseño (cualquier canción puede usarlo con este nombre):",
+  "design.replace": "El diseño {name} ya existe. ¿Reemplazarlo?",
+  "design.saved_as": "Diseño {name} guardado",
+  "design.use_now": "Diseño {name} guardado. ¿Usarlo para esta canción? Guardar lo escribe en el archivo de la canción."
  }
 }

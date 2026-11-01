@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob 6140f6ef74b2dc2df9b57cbdc306bf8bc53e45fe -->
+<!-- source: docs/en/ARCHITECTURE.md blob f6caeb81bae8375e8a8bb529bfea27f5bda83c95 -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -66,7 +66,7 @@ sequenceDiagram
   P-->>C: スペクトラムを重ねたフレーム
 ```
 
-1. `config.load_song` が曲ファイルを読み、デザインを決める。デザインは組み込みの名前かファイルで、曲ファイルの `[design]` の上書きをその上に重ねる。
+1. `config.load_song` が曲ファイルを読み、デザインを決める。デザインは組み込みの名前、ユーザーフォルダの名前付きデザイン、またはファイルで、曲ファイルの `[design]` の上書きをその上に重ねる。
    `config.spectrum_preset` は曲ファイルとデザインからスペクトラムのプリセットを組み立てる。`still`、`render`、プレビュー、ページのすべてがこれを使い、
    `load_song` も一度呼ぶので、プリセットのキーが間違っていればすぐに失敗する。
 2. `timing.read_lrc` がタイミングファイルを読み、`backdrop.timed_captions` がその行を `TimedCaption` に変える。
@@ -114,6 +114,8 @@ flowchart LR
   page -->|"POST /api/render、GET /api/render"| server
   server --> files
   server --> temp["一時フォルダの preview.mp4"]
+  page -->|"POST /api/design/save-as"| server
+  server --> designs["名前付きデザインのフォルダ"]
 ```
 
 - `SyncSession` は曲を一度だけデコードし、`Preview` と `LyricsBackdrop` を 1 つずつ持つ。静止画を描く前に backdrop の字幕を差し替える
@@ -123,6 +125,10 @@ flowchart LR
   縮小済みの背景画像はそのまま使う。`/api/song` は元にできる各デザインの値に加え、スペクトラムの元にできる各プリセットの値（`config.preset_values`）と、
   曲ファイル自身の `[spectrum]` の指定も送る。そのためページは変えた設定を示せる。`/api/fonts` は macOS の
   フォントフォルダと、曲ファイルのフォントがあるフォルダの書体を一覧にする（`fonts.font_faces`）。一覧はセッションごとに一度だけ作る。
+- 「デザインとして保存」（`POST /api/design/save-as`）は、ページのデザイン（保存前でもよい）を名前付きデザインとしてユーザーフォルダ
+  （`design.user_design_folder`、テストでは `$LYRICS_VIDEO_DESIGN_DIR`）に書く（`config.save_user_design`）。既定値と違うキーだけを書き、
+  フォントとプリセットのファイルは絶対パスにするので、どの曲のフォルダからでも使える。`design.load_design` は名前を、組み込みのデザイン、
+  名前付きデザイン、ファイルの順に探す。
 - ページは `/api/audio` から範囲リクエストで曲を再生し、キーを押した時点の audio 要素の時刻を記録する。波形用に同じ音声をブラウザでもデコードする。
 - 編集はすべてページのメモリに置く。書き込むのは保存のときだけで、タイミングファイルと、デザインを変えたときは曲ファイル
   （`config.write_design`）に書く。`[design]` テーブルを `tomlkit` で差し替えるので、ファイルのほかの部分とコメントは残る。

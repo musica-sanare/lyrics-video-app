@@ -1,10 +1,12 @@
 """Designs: how the parts of a frame look. Sizes are in pixels of a 1080-pixel-high frame and scale with the height.
 
-A design is a built-in name (a TOML file in `designs/`) or a path to a TOML file, with overrides from the song file's
-`[design]` section merged over it.
+A design is a built-in name (a TOML file in `designs/`), the name of a user design (a TOML file in the user folder,
+saved from the sync page), or a path to a TOML file, with overrides from the song file's `[design]` section merged
+over it.
 """
 
 import json
+import os
 import re
 import tomllib
 from importlib import resources
@@ -16,6 +18,8 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, ValidationEr
 from lyrics_video.errors import ConfigError
 
 REFERENCE_HEIGHT = 1080
+USER_DESIGN_ENVIRONMENT = "LYRICS_VIDEO_DESIGN_DIR"
+USER_DESIGN_FOLDER = Path("~/Library/Application Support/lyrics-video/designs")
 HEX_COLOR = re.compile(r"#([0-9a-fA-F]{6})")
 
 
@@ -203,17 +207,52 @@ def builtin_design_names() -> list[str]:
     return sorted(item.name.removesuffix(".toml") for item in folder.iterdir() if item.name.endswith(".toml"))
 
 
+def user_design_folder() -> Path:
+    """Where saved designs live: the folder in $LYRICS_VIDEO_DESIGN_DIR, or the app's folder in Application Support."""
+    configured = os.environ.get(USER_DESIGN_ENVIRONMENT)
+    return Path(configured).expanduser() if configured else USER_DESIGN_FOLDER.expanduser()
+
+
+def user_design_names() -> list[str]:
+    folder = user_design_folder()
+    if not folder.is_dir():
+        return []
+    return sorted(item.stem for item in folder.iterdir() if item.suffix == ".toml" and not item.name.startswith("."))
+
+
+def check_design_name(name: str) -> None:
+    """A name a user design can have: a file name that is not a built-in design's and does not look like a path."""
+    problem = None
+    if not name.strip() or name != name.strip():
+        problem = "it is empty or starts or ends with a space"
+    elif "/" in name or ":" in name or name.startswith("."):
+        problem = "it contains / or : or starts with a dot"
+    elif name.lower().endswith(".toml"):
+        problem = "it ends with .toml, which names a design file"
+    elif len(name.encode("utf-8")) > 200:
+        problem = "it is too long"
+    elif name in builtin_design_names():
+        problem = "it is a built-in design's name"
+    if problem:
+        raise ConfigError(f"{name!r} cannot be a design name: {problem}")
+
+
 def load_design(name_or_path: str, overrides: dict[str, Any] | None = None, base: Path = Path(".")) -> Design:
-    """A built-in design by name, or a design file (relative to `base`), with `overrides` merged over it."""
+    """A built-in design by name, a user design by name, or a design file (relative to `base`), with `overrides`
+    merged over it."""
     if name_or_path in builtin_design_names():
         text = (resources.files("lyrics_video") / "designs" / f"{name_or_path}.toml").read_text(encoding="utf-8")
         source = f"design {name_or_path!r}"
+    elif name_or_path in user_design_names():
+        path = user_design_folder() / f"{name_or_path}.toml"
+        text = path.read_text(encoding="utf-8")
+        source = str(path)
     else:
         path = Path(name_or_path).expanduser()
         path = path if path.is_absolute() else base / path
         if not path.is_file():
-            known = ", ".join(builtin_design_names())
-            raise ConfigError(f"unknown design {name_or_path!r}: not a built-in design ({known}) and no file at {path}")
+            known = ", ".join([*builtin_design_names(), *user_design_names()])
+            raise ConfigError(f"unknown design {name_or_path!r}: not a design name ({known}) and no file at {path}")
         text = path.read_text(encoding="utf-8")
         source = str(path)
     try:

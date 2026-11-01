@@ -132,6 +132,12 @@
   "design_value.bars": "棒",
   "design_value.blocks": "ブロック",
   "design_value.solid": "単色",
-  "design_value.frequency": "グラデーション"
+  "design_value.frequency": "グラデーション",
+  "design.save_as": "デザインとして保存…",
+  "design.folder": "デザインのフォルダを表示",
+  "design.save_as_prompt": "新しいデザインの名前（どの曲からもこの名前で使えます）:",
+  "design.replace": "デザイン {name} はすでにあります。置き換えますか？",
+  "design.saved_as": "デザイン {name} を保存しました",
+  "design.use_now": "デザイン {name} を保存しました。この曲に使いますか？ 保存すると曲ファイルに書き込みます。"
  }
 }

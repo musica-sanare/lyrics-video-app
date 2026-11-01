@@ -27,3 +27,11 @@ def serif_font() -> Path:
 @pytest.fixture
 def latin_collection() -> Path:
     return _require(LATIN)
+
+
+@pytest.fixture(autouse=True)
+def user_designs(tmp_path_factory, monkeypatch) -> Path:
+    """Every test gets its own empty folder of user designs, never the owner's."""
+    folder = tmp_path_factory.mktemp("designs")
+    monkeypatch.setenv("LYRICS_VIDEO_DESIGN_DIR", str(folder))
+    return folder

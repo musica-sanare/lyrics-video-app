@@ -4,8 +4,9 @@ from pathlib import Path
 import pytest
 from audio_spectrum import load_preset, override_preset
 
-from lyrics_video.config import load_song, spectrum_preset, write_design
-from lyrics_video.errors import ConfigError
+from lyrics_video.config import load_song, save_user_design, song_design, spectrum_preset, write_design
+from lyrics_video.design import load_design
+from lyrics_video.errors import ConfigError, OutputExistsError
 from lyrics_video.lyrics import read_lyrics
 
 EXAMPLES = Path(__file__).parent.parent / "examples"
@@ -184,3 +185,50 @@ def test_wrong_spectrum_changes_fail_when_the_song_file_loads(tmp_path, table, m
         load_song(path)
 
     assert str(path) in str(error.value)
+
+
+# --- User designs --------------------------------------------------------------------------------------------------
+
+
+def test_saving_a_user_design_for_other_songs(tmp_path, user_designs):
+    (tmp_path / "one").mkdir()
+    (tmp_path / "one" / "preset.toml").write_text('name = "mine"\nforeground = "#FF0000"\n', encoding="utf-8")
+    song = load_song(write_song(tmp_path / "one", ""))
+    font = Path.home() / "fonts" / "title.otf"
+    design = song_design(
+        song.path,
+        "soft",
+        {"title": {"font": str(font), "bold": True, "color": "#FFD84A"}, "spectrum": {"preset": "preset.toml", "look": {"max_height": 0.4}}},
+    )
+
+    path = save_user_design(song, design, "夏の雨")
+
+    data = tomllib.loads(path.read_text(encoding="utf-8"))
+    assert path == user_designs / "夏の雨.toml"
+    assert data["title"]["font"] == "~/fonts/title.otf" and data["title"]["color"] == "#FFD84A"
+    assert data["spectrum"]["preset"] == str(tmp_path / "one" / "preset.toml")
+    assert "caption" not in data or "text_color" not in data["caption"], "defaults are left out"
+    (tmp_path / "two").mkdir()
+    other = load_song(write_song(tmp_path / "two", 'design = "夏の雨"\n'))
+    absolute = design.spectrum.model_copy(update={"preset": str(tmp_path / "one" / "preset.toml")})
+    assert other.design == design.model_copy(update={"name": "夏の雨", "spectrum": absolute})
+    assert spectrum_preset(other).foreground == (255, 0, 0)
+
+
+def test_a_user_design_is_replaced_only_when_asked(tmp_path, user_designs):
+    song = load_song(write_song(tmp_path, ""))
+    save_user_design(song, load_design("soft"), "mine")
+
+    with pytest.raises(OutputExistsError, match="'mine' exists"):
+        save_user_design(song, load_design("panel"), "mine")
+    save_user_design(song, load_design("panel"), "mine", overwrite=True)
+
+    assert load_design("mine").caption.style == "panel"
+    assert "gradient" in (user_designs / "mine.toml.bak").read_text(encoding="utf-8")
+
+
+def test_built_in_names_are_not_saved(tmp_path, user_designs):
+    with pytest.raises(ConfigError, match="built-in"):
+        save_user_design(load_song(write_song(tmp_path, "")), load_design("soft"), "soft")
+
+    assert list(user_designs.iterdir()) == []

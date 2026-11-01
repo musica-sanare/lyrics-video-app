@@ -66,10 +66,10 @@ sequenceDiagram
   P-->>C: the frame with the spectrum on top
 ```
 
-1. `config.load_song` reads the song file and resolves the design (a built-in name or a file, with the song file's
-   `[design]` overrides merged over it). `config.spectrum_preset` builds the spectrum's preset from the song file and
-   the design; `still`, `render`, the preview and the page all use it, and `load_song` calls it once so a wrong preset
-   key fails at once.
+1. `config.load_song` reads the song file and resolves the design (a built-in name, a named design in the user folder,
+   or a file, with the song file's `[design]` overrides merged over it). `config.spectrum_preset` builds the spectrum's
+   preset from the song file and the design; `still`, `render`, the preview and the page all use it, and `load_song`
+   calls it once so a wrong preset key fails at once.
 2. `timing.read_lrc` reads the timing file; `backdrop.timed_captions` turns its lines into `TimedCaption`s. A caption
    ends at a pause, at the next caption's start or at the end of the song.
 3. `LyricsBackdrop` gets the design, the captions and the song's duration. `prepare` draws everything that never
@@ -121,6 +121,8 @@ flowchart LR
   page -->|"POST /api/render, GET /api/render"| server
   server --> files
   server --> temp["preview.mp4 in a temporary folder"]
+  page -->|"POST /api/design/save-as"| server
+  server --> designs["Named designs folder"]
 ```
 
 - `SyncSession` decodes the song once, keeps one `Preview` and one `LyricsBackdrop`, and replaces the backdrop's
@@ -132,6 +134,11 @@ flowchart LR
   from (`config.preset_values`) with what the song file's own `[spectrum]` sets, so the page shows what changed;
   `/api/fonts` lists the faces of the macOS font folders and of the folders of the song file's fonts
   (`fonts.font_faces`), once per session.
+- "Save as design" (`POST /api/design/save-as`) writes the page's design, saved or not, as a named design
+  (`config.save_user_design`) into the user folder (`design.user_design_folder`, `$LYRICS_VIDEO_DESIGN_DIR` in
+  tests). Only keys that differ from the defaults are written, with font and preset files as absolute paths, so the
+  design works from any song folder. `design.load_design` finds a name among the built-in designs, then the named
+  designs, then as a file.
 - The page plays the song from `/api/audio` with range requests and records key presses at the audio element's time.
   It decodes the same audio in the browser for the waveform.
 - The page keeps all edits in memory. Only Save writes: the timing file, and for a changed design the song file
