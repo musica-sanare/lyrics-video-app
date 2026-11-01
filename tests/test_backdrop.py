@@ -199,7 +199,7 @@ def test_errors_surface_when_preparing(tmp_path):
 
 def test_two_captions_are_blended_during_a_crossfade(tmp_path, sans_font):
     captions = [TimedCaption(2.0, 4.0, ("一行目",)), TimedCaption(4.0, 6.0, ("二行目",))]
-    backdrop = make_backdrop(tmp_path, sans_font, captions=captions)
+    backdrop = make_backdrop(tmp_path, sans_font, captions=captions, caption={"transition": "crossfade"})
     prepared = backdrop._prepared_for(WIDTH, HEIGHT)
     [(_, old), (_, new)] = backdrop.caption_opacities(3.95)
     expected = prepared.base.copy()

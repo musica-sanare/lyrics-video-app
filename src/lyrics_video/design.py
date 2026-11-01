@@ -105,9 +105,9 @@ class CaptionStyle(_Part):
     lead_seconds: Seconds = 0.2
     """How long before its sung time a caption starts to appear."""
     fade_seconds: Seconds = 0.3
-    transition: Literal["crossfade", "sequential"] = "crossfade"
-    """Between captions sung back to back: "crossfade" fades the old one out while the new one fades in;
-    "sequential" fades the old one out first, then the new one in."""
+    transition: Literal["sequential", "crossfade"] = "sequential"
+    """Between captions sung back to back: "sequential" fades the old one out first, then the new one in, so their
+    texts never overlap; "crossfade" fades the old one out while the new one fades in."""
     band_color: Color = (0, 0, 0)
     band_opacity: Fraction = 1.0
     band_height: Pixels = Field(default=309.0, gt=0)

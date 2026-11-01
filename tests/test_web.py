@@ -97,7 +97,7 @@ def test_first_load_takes_the_lines_from_the_lyrics(client):
     assert (data["timing_exists"], data["timing_configured"], data["changes"]) == (False, True, [])
     assert (data["timing_file"], data["lyrics_file"], data["title"]) == ("lyrics.lrc", "lyrics.txt", "Title")
     assert data["duration"] == pytest.approx(3.0)
-    assert (data["lead"], data["fade"], data["transition"]) == (0.2, 0.3, "crossfade")
+    assert (data["lead"], data["fade"], data["transition"]) == (0.2, 0.3, "sequential")
 
 
 def test_saving_writes_the_timing_and_keeps_a_backup(client, song):

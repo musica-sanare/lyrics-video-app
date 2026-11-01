@@ -214,7 +214,7 @@ again:
 |---|---|---|
 | `caption.lead_seconds` | `0.2` | A caption starts to appear this long before it is sung, so the eye is ready |
 | `caption.fade_seconds` | `0.3` | How long a caption takes to fade in or out |
-| `caption.transition` | `"crossfade"` | Between captions sung back to back: `"crossfade"` fades the old caption out while the new one fades in; `"sequential"` fades the old one out first, then the new one in |
+| `caption.transition` | `"sequential"` | Between captions sung back to back: `"sequential"` fades the old caption out first, then the new one in, so the two texts never overlap; `"crossfade"` fades the old one out while the new one fades in |
 
 At a pause, the caption starts to fade out at its end time. Captions shorter than two fades fade faster.
 
@@ -273,7 +273,7 @@ Sizes are in pixels of a 1080-pixel-high frame; they scale with the video height
 |---|---|
 | `background` | `focus` (`[x, y]` from 0 to 1, the point kept in view when cropping), `dim` (0 to 1), `blur` |
 | `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `color`, `margin`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `shadow` |
-| `caption` | `style` (`"band"`, `"gradient"`, `"panel"`), `align` (`"left"`), `font`, `text_color`, `lead_seconds`, `fade_seconds`, `transition` (`"crossfade"`, `"sequential"`); band: `band_color`, `band_opacity`, `band_height`; gradient and panel: `size` (largest font size), `line_spacing`, `margin_x`, `margin_bottom`, `gradient`, `panel`, `shadow` |
+| `caption` | `style` (`"band"`, `"gradient"`, `"panel"`), `align` (`"left"`), `font`, `text_color`, `lead_seconds`, `fade_seconds`, `transition` (`"sequential"`, `"crossfade"`); band: `band_color`, `band_opacity`, `band_height`; gradient and panel: `size` (largest font size), `line_spacing`, `margin_x`, `margin_bottom`, `gradient`, `panel`, `shadow` |
 | `credits` | `enabled`, `font`, `size`, `color`, `line_spacing`, `position` (`"center"`, `"bottom-right"`), `margin_x`, `margin_bottom`, `dim`, `panel`, `show_seconds`, `fade_seconds`, `shadow` |
 | `spectrum` | `set`: preset overrides applied before the song file's `[spectrum] set` |
 | `shadow` (in `title`, `caption`, `credits`) | `blur` (0 = no shadow), `offset`, `color`, `opacity` |

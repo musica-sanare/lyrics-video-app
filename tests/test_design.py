@@ -54,7 +54,7 @@ def test_sizes_scale_with_the_frame_height():
 def test_caption_timing_settings():
     caption = load_design("soft").caption
 
-    assert (caption.lead_seconds, caption.fade_seconds, caption.transition) == (0.2, 0.3, "crossfade")
+    assert (caption.lead_seconds, caption.fade_seconds, caption.transition) == (0.2, 0.3, "sequential")
     with pytest.raises(ConfigError, match="design.caption.transition"):
         load_design("soft", {"caption": {"transition": "wipe"}})
     with pytest.raises(ConfigError, match="design.caption.lead_seconds"):

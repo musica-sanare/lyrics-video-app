@@ -1,4 +1,4 @@
-<!-- source: docs/en/USER_GUIDE.md blob 8b7c70fa0eaf450aa148cae50968ae1d6c2670fe -->
+<!-- source: docs/en/USER_GUIDE.md blob 69abee431419bb7208c629c51ce6391f310d025e -->
 [English](../en/USER_GUIDE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/USER_GUIDE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -208,7 +208,7 @@ uv run lyrics-video sync work/my-song/song.toml
 |---|---|---|
 | `caption.lead_seconds` | `0.2` | 歌い始めのこの秒数前から字幕が現れ始める。目が先に字幕をとらえられる |
 | `caption.fade_seconds` | `0.3` | 字幕のフェードイン・アウトにかかる秒数 |
-| `caption.transition` | `"crossfade"` | 続けて歌う字幕の切り替え方。`"crossfade"` は古い字幕が消えていくのと同時に新しい字幕が現れる。`"sequential"` は古い字幕が消えきってから新しい字幕が現れる |
+| `caption.transition` | `"sequential"` | 続けて歌う字幕の切り替え方。`"sequential"` は古い字幕が消えきってから新しい字幕が現れるので、2 つの文字が重ならない。`"crossfade"` は古い字幕が消えていくのと同時に新しい字幕が現れる |
 
 歌が途切れるところでは、終わりの時刻から字幕が消え始める。フェード 2 回分より短い字幕は、そのぶん速くフェードする。
 
@@ -267,7 +267,7 @@ size = 56
 |---|---|
 | `background` | `focus`（`[x, y]`、0〜1。切り取るときに残す位置）、`dim`（0〜1）、`blur` |
 | `title` | `enabled`、`position`（`"top-center"`、`"top-left"`）、`font`、`size`、`color`、`margin`、`letter_spacing`、`rule`、`rule_thickness`、`rule_gap`、`shadow` |
-| `caption` | `style`（`"band"`、`"gradient"`、`"panel"`）、`align`（`"left"`）、`font`、`text_color`、`lead_seconds`、`fade_seconds`、`transition`（`"crossfade"`、`"sequential"`）。帯：`band_color`、`band_opacity`、`band_height`。陰と枠：`size`（最大の文字の大きさ）、`line_spacing`、`margin_x`、`margin_bottom`、`gradient`、`panel`、`shadow` |
+| `caption` | `style`（`"band"`、`"gradient"`、`"panel"`）、`align`（`"left"`）、`font`、`text_color`、`lead_seconds`、`fade_seconds`、`transition`（`"sequential"`、`"crossfade"`）。帯：`band_color`、`band_opacity`、`band_height`。陰と枠：`size`（最大の文字の大きさ）、`line_spacing`、`margin_x`、`margin_bottom`、`gradient`、`panel`、`shadow` |
 | `credits` | `enabled`、`font`、`size`、`color`、`line_spacing`、`position`（`"center"`、`"bottom-right"`）、`margin_x`、`margin_bottom`、`dim`、`panel`、`show_seconds`、`fade_seconds`、`shadow` |
 | `spectrum` | `set`：曲ファイルの `[spectrum] set` より先に適用するプリセットの上書き |
 | `shadow`（`title`、`caption`、`credits` の中） | `blur`（0 で影なし）、`offset`、`color`、`opacity` |
