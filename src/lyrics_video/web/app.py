@@ -12,7 +12,7 @@ import threading
 import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from audio_spectrum import AudioSpectrumError, Cancelled, Preview, builtin_preset_names, user_preset_names
 from fastapi import FastAPI, Request
@@ -22,15 +22,18 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from lyrics_video.backdrop import LyricsBackdrop, timed_captions
-from lyrics_video.app_files import add_recent, recent_songs
+from lyrics_video.app_files import add_recent, read_settings, recent_songs, remember
 from lyrics_video.config import (
     Song,
+    create_song,
     load_song,
+    missing_files,
     preset_values,
     save_user_design,
     song_design,
     spectrum_preset,
     write_design,
+    write_song_settings,
 )
 from lyrics_video.design import Design, builtin_design_names, user_design_folder, user_design_names
 from lyrics_video.errors import ConfigError, LyricsVideoError, OutputExistsError
@@ -109,12 +112,56 @@ class NoSongError(LyricsVideoError):
     code = "no_song"
 
 
+class MissingFilesError(LyricsVideoError):
+    """Files the song file names do not exist; the page lets the owner choose them again."""
+
+    code = "missing_files"
+
+    def __init__(self, path: Path, missing: dict[str, str]):
+        super().__init__(f"{path.name}: {len(missing)} file(s) not found")
+        self.path = path
+        self.missing = missing
+
+
+class NewSongRequest(BaseModel):
+    audio: str = Field(min_length=1)
+    background_image: str = Field(min_length=1)
+    lyrics: str = Field(min_length=1)
+    title: str = ""
+    credits: list[str] = []
+    design: str = "soft"
+    font: str | None = None
+    folder: str | None = None
+    """Where the song file goes; next to the audio when missing."""
+
+
+class SettingsRequest(BaseModel):
+    """Song file settings to change; settings left out stay as they are. `font` None removes `fonts.default`."""
+
+    title: str | None = None
+    credits: list[str] | None = None
+    audio: str | None = None
+    background_image: str | None = None
+    lyrics: str | None = None
+    font: str | None = None
+
+
+class RepairRequest(BaseModel):
+    path: str = Field(min_length=1)
+    settings: SettingsRequest
+
+
+class ChooseRequest(BaseModel):
+    kind: Literal["song", "audio", "image", "lyrics", "font", "folder"]
+    prompt: str = Field(default="", max_length=dialogs.MAX_PROMPT)
+
+
+class RevealRequest(BaseModel):
+    key: Literal["audio", "background_image", "lyrics"]
+
+
 class OpenRequest(BaseModel):
     path: str = Field(min_length=1)
-
-
-class DialogRequest(BaseModel):
-    prompt: str = Field(default="", max_length=dialogs.MAX_PROMPT)
 
 
 class QuitRequest(BaseModel):
@@ -241,6 +288,7 @@ class SyncSession:
             "lead": style.lead_seconds,
             "fade": style.fade_seconds,
             "transition": style.transition,
+            "settings": self.settings(),
             "preview": {"width": width, "height": height, "fps": fps},
             "design": self.design_state(),
             "lines": [dataclasses.asdict(line) for line in merged.lines],
@@ -289,17 +337,20 @@ class SyncSession:
         if self.fonts is None:
             design = self.song.design
             named = [self.song.default_font, design.title.font, design.caption.font, design.credits.font]
-            folders = [*FONT_FOLDERS, *{font.parent for font in named if font is not None}]
-            home = Path.home()
-            self.fonts = [
-                {
-                    "path": f"~/{face.path.relative_to(home)}" if face.path.is_relative_to(home) else str(face.path),
-                    "face": face.face,
-                    "name": f"{face.family} {face.style}".strip(),
-                }
-                for face in font_faces(folders)
-            ]
+            self.fonts = font_list([font.parent for font in named if font is not None])
         return self.fonts
+
+    def settings(self) -> dict:
+        """The song file's title, credits, files and font, for the Song mode."""
+        song = self.song
+        files = {key: str(getattr(song, key)) if getattr(song, key) else None for key in ("audio", "background_image")}
+        return {
+            "title": song.title,
+            "credits": list(song.credits),
+            **files,
+            "lyrics": str(song.lyrics),
+            "font": str(song.default_font) if song.default_font else None,
+        }
 
     def save_design(self, request: DesignRequest) -> dict:
         """Write the design into the song file's `[design]` (keeping a `.bak`); the session then uses the saved file."""
@@ -406,6 +457,19 @@ class SyncSession:
         return buffer.getvalue()
 
 
+def font_list(extra_folders: list[Path]) -> list[dict]:
+    """The faces of the font files in macOS's font folders and in `extra_folders`, with paths as `~/...`."""
+    home = Path.home()
+    return [
+        {
+            "path": f"~/{face.path.relative_to(home)}" if face.path.is_relative_to(home) else str(face.path),
+            "face": face.face,
+            "name": f"{face.family} {face.style}".strip(),
+        }
+        for face in font_faces([*FONT_FOLDERS, *dict.fromkeys(extra_folders)])
+    ]
+
+
 class Songs:
     """The song open on the page, if any: one at a time, replaced when the page opens another.
 
@@ -416,6 +480,7 @@ class Songs:
         self.session = session
         self.lock = threading.Lock()
         self.last_request = time.monotonic()
+        self.fonts: list[dict] | None = None
         if session is not None:
             add_recent(session.song.path, session.song.title)
 
@@ -429,12 +494,49 @@ class Songs:
         with self.lock:
             if self.session is not None and self.session.render.running():
                 raise RenderBusyError("a video is being rendered; open another song after it is done or cancelled")
-            session = SyncSession(load_song(path))
+            song = load_song(path)
+            missing = missing_files(song)
+            if missing:
+                raise MissingFilesError(song.path, missing)
+            session = SyncSession(song)
             session.load()
             old, self.session = self.session, session
             if old is not None:
                 old.close()
             add_recent(session.song.path, session.song.title)
+
+    def font_list(self) -> list[dict]:
+        """The open song's font list, or macOS's fonts when no song is open (for a new song)."""
+        if self.session is not None:
+            return self.session.font_list()
+        if self.fonts is None:
+            self.fonts = font_list([])
+        return self.fonts
+
+    def create(self, request: "NewSongRequest") -> None:
+        """Write a new song file next to the audio (or in the chosen folder), then open it."""
+        audio = Path(request.audio).expanduser()
+        folder = Path(request.folder).expanduser() if request.folder else audio.parent
+        font = Path(request.font).expanduser() if request.font else None
+        create_song(
+            folder / f"{audio.stem}.toml",
+            audio,
+            Path(request.background_image).expanduser(),
+            Path(request.lyrics).expanduser(),
+            request.title.strip() or audio.stem,
+            [line.strip() for line in request.credits if line.strip()],
+            request.design,
+            font,
+        )
+        remember(last_design=request.design, last_font=request.font)
+        self.open(folder / f"{audio.stem}.toml")
+
+    def change(self, path: Path, values: dict) -> None:
+        """Write new settings into a song file, then open it (again): a new audio file needs decoding anyway."""
+        if self.rendering():
+            raise RenderBusyError("a video is being rendered; change the song after it is done or cancelled")
+        write_song_settings(path, values)
+        self.open(path)
 
     def state(self) -> dict:
         """The open song and the recent songs, for the start page."""
@@ -463,10 +565,10 @@ def create_app(
     token: str,
     allowed_hosts: set[str],
     stop: Callable[[], None] = lambda: None,
-    choose_file: Callable[..., Path | None] = dialogs.choose_file,
+    choose: Callable[[str, str], Path | None] = dialogs.choose,
 ) -> FastAPI:
     """The page and its API. `songs` holds the open song (a session alone opens that song); `stop` stops the server
-    (for Quit); `choose_file` shows the Finder's dialog (replaced in tests)."""
+    (for Quit); `choose` shows the Finder's dialogs by kind (replaced in tests)."""
     if isinstance(songs, SyncSession):
         songs = Songs(songs)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
@@ -488,6 +590,9 @@ def create_app(
 
     @app.exception_handler(LyricsVideoError)
     async def app_error(request: Request, error: LyricsVideoError):
+        if isinstance(error, MissingFilesError):
+            body = {"code": error.code, "message": str(error), "path": str(error.path), "missing": error.missing}
+            return JSONResponse(body, status_code=409)
         if isinstance(error, (RenderBusyError, RenderOutputExistsError)):
             return _error(409, error.code, str(error))
         if isinstance(error, OutputExistsError):
@@ -515,10 +620,40 @@ def create_app(
         songs.open(Path(request.path).expanduser())
         return songs.state()
 
-    @app.post("/api/songs/choose")
-    def choose_song(request: DialogRequest) -> dict:
-        chosen = choose_file(request.prompt, ("toml",))
+    @app.post("/api/choose")
+    def choose_path(request: ChooseRequest) -> dict:
+        chosen = choose(request.kind, request.prompt)
         return {"path": str(chosen) if chosen else None}
+
+    @app.get("/api/designs")
+    def design_names() -> dict:
+        names = [*builtin_design_names(), *user_design_names()]
+        settings = read_settings()
+        last = settings.get("last_design")
+        return {"names": names, "last": last if last in names else "soft", "last_font": settings.get("last_font")}
+
+    @app.post("/api/songs/new")
+    def new_song(request: NewSongRequest) -> dict:
+        songs.create(request)
+        return songs.state()
+
+    @app.post("/api/songs/repair")
+    def repair_song(request: RepairRequest) -> dict:
+        songs.change(Path(request.path).expanduser(), request.settings.model_dump(exclude_unset=True))
+        return songs.state()
+
+    @app.post("/api/song/settings")
+    def change_song(request: SettingsRequest) -> dict:
+        songs.change(songs.current().song.path, request.model_dump(exclude_unset=True))
+        return songs.state()
+
+    @app.post("/api/song/reveal")
+    def reveal_file(request: RevealRequest) -> dict:
+        path = getattr(songs.current().song, request.key)
+        if path is None or not path.exists():
+            raise ConfigError(f"the {request.key} file does not exist")
+        subprocess.run(["open", "-R", str(path)], check=False)
+        return {}
 
     @app.post("/api/quit")
     def quit_app(request: QuitRequest) -> dict:
@@ -579,7 +714,7 @@ def create_app(
 
     @app.get("/api/fonts")
     def fonts() -> list[dict]:
-        return songs.current().font_list()
+        return songs.font_list()
 
     @app.get(PREVIEW_ROUTE)
     def preview_video() -> FileResponse:

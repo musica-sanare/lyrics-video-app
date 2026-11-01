@@ -130,6 +130,12 @@ flowchart LR
   start page (recent songs from `app_files`, Open song… through `web/dialogs.py`, which runs macOS's `choose file` with
   `osascript`). Opening another song loads it first, then closes the old session; it is refused while a render runs.
   Every API request records the time in `Songs.last_request`.
+- New songs and the Song mode write song files through `config`: `create_song` writes a new one that names the
+  chosen files where they are (`path_in_song_file`), after reading the lyrics; `write_song_settings` changes the
+  title, credits, files and default font with `tomlkit`, keeping the rest. Both load the new text before writing.
+  `Songs.open` refuses a song whose files are missing (`config.missing_files`, 409 `missing_files` with the list), and
+  the page offers to choose them again (`/api/songs/repair`). The page's dialogs go through one route, `/api/choose`,
+  by kind (`dialogs.KINDS`: song, audio, image, lyrics, font, folder).
 - `lyrics-video start` runs the server without a song in app mode: it records its port and token in
   `server.json` in the app's folder (`app_files`, written through a temporary file, so readable by the owner only),
   and a second `start` opens that server's page when it answers `/api/ping`. In app mode the server stops itself when

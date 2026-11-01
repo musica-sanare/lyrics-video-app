@@ -129,10 +129,12 @@ A form with:
 ### Song settings on the page
 
 - A "Song" mode next to Tap, Adjust and Design shows the title, credits, the three files (each with "Choose…" and
-  "Show in Finder") and the font. Changes are unsaved edits like the design's: the still shows them, Save writes them
-  into the song file with `tomlkit` (keeping comments), and a changed lyrics file is merged with the timing as today.
-- When a file of the song file is missing on opening, the page opens anyway in the Song mode, names the missing file
-  and offers "Choose…", instead of failing.
+  "Show in Finder") and the font. "Save and reopen the song" writes them into the song file with `tomlkit` (keeping
+  comments and a `.bak`) and opens the song again, and a changed lyrics file is merged with the timing as today.
+  Milestone 2 changed this from unsaved edits shown in the still: a new audio file needs decoding again anyway, and
+  reopening keeps one way to load a song.
+- When a file of the song file is missing on opening, the start page names the missing file and offers "Choose…";
+  the song file is updated and the song opens.
 
 ### Fonts in named designs (D1)
 

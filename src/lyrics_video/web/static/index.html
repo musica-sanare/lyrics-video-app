@@ -13,7 +13,7 @@
   <button id="play" class="song-only" type="button" data-i18n="play.play">Play</button>
   <span id="time" class="song-only">0:00.00 / 0:00.00</span>
   <span class="modes song-only">
-    <button id="mode-tap" type="button" class="on" data-i18n="mode.tap">Tap</button><button id="mode-adjust" type="button" data-i18n="mode.adjust">Adjust</button><button id="mode-design" type="button" data-i18n="mode.design">Design</button>
+    <button id="mode-tap" type="button" class="on" data-i18n="mode.tap">Tap</button><button id="mode-adjust" type="button" data-i18n="mode.adjust">Adjust</button><button id="mode-design" type="button" data-i18n="mode.design">Design</button><button id="mode-song" type="button" data-i18n="mode.song">Song</button>
   </span>
   <label class="song-only"><span data-i18n="offset.label">Reaction offset</span> <input id="offset" type="number" value="0" step="10"> ms</label>
   <button id="save" class="song-only" type="button" data-i18n="save.button">Save</button>
@@ -28,6 +28,7 @@
   <h2 data-i18n="songs.title">Songs</h2>
   <p id="home-current"></p>
   <div class="home-actions">
+    <button id="home-new" type="button" data-i18n="songs.new">New song…</button>
     <button id="home-open" type="button" data-i18n="songs.open">Open song…</button>
     <span class="note" data-i18n="songs.dialog_note">The Finder's dialog may open behind this window.</span>
   </div>
@@ -36,6 +37,22 @@
     <button id="home-path-open" type="button" data-i18n="songs.open_path">Open</button>
   </div>
   <div id="home-error" class="error" role="alert" hidden></div>
+  <form id="new-song" class="sheet" hidden>
+    <h3 data-i18n="new.title">New song</h3>
+    <div id="new-files"></div>
+    <div class="row"><label for="new-title" data-i18n="song.title">Title</label><input id="new-title" type="text"></div>
+    <div class="row"><label for="new-credits" data-i18n="song.credits">Credits (one per line)</label><textarea id="new-credits" rows="3"></textarea></div>
+    <div class="row"><label for="new-design" data-i18n="new.design">Design</label><select id="new-design"></select></div>
+    <div class="row"><label for="new-font" data-i18n="song.font">Font</label><select id="new-font" class="font"></select></div>
+    <div class="row"><label data-i18n="new.where">Song file</label><span><span id="new-where" class="path"></span> <button id="new-folder" type="button" data-i18n="new.change_folder">Change folder…</button></span></div>
+    <div class="row"><span></span><span><button id="new-create" type="submit" data-i18n="new.create">Create and open</button> <button id="new-cancel" type="button" data-i18n="new.cancel">Cancel</button></span></div>
+  </form>
+  <form id="repair" class="sheet" hidden>
+    <h3 data-i18n="repair.title">Files not found</h3>
+    <p id="repair-text"></p>
+    <div id="repair-files"></div>
+    <div class="row"><span></span><span><button id="repair-open" type="submit" data-i18n="repair.open">Open with these files</button> <button id="repair-cancel" type="button" data-i18n="new.cancel">Cancel</button></span></div>
+  </form>
   <h3 data-i18n="songs.recent">Recent songs</h3>
   <ul id="recent"></ul>
 </section>
@@ -81,6 +98,11 @@
       <span id="multi-info"></span>
     </div>
     <div id="help"></div>
+    <form id="song-settings" class="sheet" hidden>
+      <div id="song-fields"></div>
+      <div class="row"><span></span><span><button id="song-apply" type="submit" data-i18n="song.apply">Save and reopen the song</button></span></div>
+      <p class="note" data-i18n="song.note">Saving writes the song file (keeping a .bak) and opens the song again.</p>
+    </form>
     <div id="design" hidden>
       <div class="design-top">
         <label><span data-i18n="design.base">Design</span> <select id="design-base"></select></label>

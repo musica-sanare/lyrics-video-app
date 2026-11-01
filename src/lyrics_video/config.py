@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt, V
 
 from lyrics_video.design import Design, check_design_name, load_design, user_design_folder
 from lyrics_video.errors import ConfigError, OutputExistsError
+from lyrics_video.lyrics import read_lyrics
 from lyrics_video.output import write_text
 
 # Sections of the caption image commands, removed in version 0.2.0 (Phase 3 plan, "Removing captions and compare").
@@ -202,14 +203,120 @@ def write_design(path: Path, name: str, overrides: dict[str, Any]) -> Song:
     return song
 
 
+# The files a song file names, by key; the page lets the owner choose each again.
+SONG_FILES = ("audio", "background_image", "lyrics")
+# Top-level keys the page writes; the rest of the song file is kept as it is.
+SONG_SETTINGS = ("title", "credits", *SONG_FILES)
+
+
+def missing_files(song: Song) -> dict[str, str]:
+    """The files the song file names that do not exist, by key (`fonts.default` for the font)."""
+    files = {"audio": song.audio, "background_image": song.background_image, "lyrics": song.lyrics}
+    files["fonts.default"] = song.default_font
+    return {key: str(path) for key, path in files.items() if path is not None and not path.is_file()}
+
+
+def path_in_song_file(path: Path, folder: Path) -> str:
+    """How a song file in `folder` names `path`: relative inside the folder, else absolute with `~` for home."""
+    path = path.expanduser().resolve()
+    if path.is_relative_to(folder.resolve()):
+        return str(path.relative_to(folder.resolve()))
+    home = Path.home()
+    return f"~/{path.relative_to(home)}" if path.is_relative_to(home) else str(path)
+
+
+def create_song(
+    path: Path,
+    audio: Path,
+    background_image: Path,
+    lyrics: Path,
+    title: str,
+    credits: list[str],
+    design: str,
+    font: Path | None = None,
+) -> Song:
+    """Write a new song file at `path` that names the files where they are; nothing is copied.
+
+    The lyrics are read first, so a problem in them stops before anything is written. An existing song file is never
+    replaced. The timing file will be `<song file name>.lrc` next to it.
+    """
+    if path.exists():
+        raise OutputExistsError(f"{path} exists; choose another name or folder")
+    for key, file in (("audio", audio), ("background image", background_image), ("lyrics", lyrics)):
+        if not file.is_file():
+            raise ConfigError(f"the {key} file {file} does not exist")
+    read_lyrics(lyrics, ";")
+    folder = path.parent
+    document = tomlkit.document()
+    document.add(tomlkit.comment("A song file made by lyrics-video's New song page. Paths are relative to this file."))
+    document.add("title", title)
+    document.add("credits", credits)
+    document.add("audio", path_in_song_file(audio, folder))
+    document.add("background_image", path_in_song_file(background_image, folder))
+    document.add("lyrics", path_in_song_file(lyrics, folder))
+    document.add("timing", f"{path.stem}.lrc")
+    document.add("design", design)
+    if font is not None:
+        document.add(tomlkit.nl())
+        document.add("fonts", _table({"default": path_in_song_file(font, folder)}))
+    text = tomlkit.dumps(document)
+    song = parse_song(text, path)
+    folder.mkdir(parents=True, exist_ok=True)
+    write_text(path, text)
+    return song
+
+
+def write_song_settings(path: Path, values: dict[str, Any]) -> Song:
+    """Change the song file's title, credits, files (`SONG_SETTINGS`) and `font` (`fonts.default`, None to remove).
+
+    File paths are written as `path_in_song_file` names them. Everything else, comments included, stays; the new text
+    is loaded before it is written, and the previous file is kept as `.bak`.
+    """
+    text = path.read_text(encoding="utf-8")
+    document = tomlkit.parse(text)
+    missing = []
+    for key in SONG_SETTINGS:
+        if key not in values:
+            continue
+        value = values[key]
+        if key in SONG_FILES:
+            value = path_in_song_file(Path(value), path.parent)
+        if key in document:
+            document[key] = value
+        else:
+            missing.append(f"{key} = {tomlkit.item(value).as_string()}\n")
+    if "font" in values:
+        fonts = document.get("fonts")
+        if values["font"] is None:
+            if isinstance(fonts, dict):
+                fonts.pop("default", None)
+        elif isinstance(fonts, dict):
+            fonts["default"] = path_in_song_file(Path(values["font"]), path.parent)
+        else:
+            document.add("fonts", _table({"default": path_in_song_file(Path(values["font"]), path.parent)}))
+    # Top-level keys must come before the first table, so missing ones go at the top.
+    new_text = "".join(missing) + tomlkit.dumps(document)
+    song = parse_song(new_text, path)
+    write_text(path, new_text, backup=True)
+    return song
+
+
 def save_user_design(song: Song, design: Design, name: str, overwrite: bool = False) -> Path:
     """Save `design` (as drawn for `song`) as the user design `name`, which any song file can then name.
 
-    Only keys that differ from the defaults are written. Font and preset files become absolute paths (with `~` for
-    the home folder), so the design works from any song folder. Replacing a design needs `overwrite` and keeps the
+    Only keys that differ from the defaults are written. Text parts without a font of their own get the song's
+    `fonts.default`, so the design carries its fonts. Font and preset files become absolute paths (with `~` for the
+    home folder), so the design works from any song folder. Replacing a design needs `overwrite` and keeps the
     previous file as `.bak`.
     """
     check_design_name(name)
+    if song.default_font is not None:
+        fonts = {
+            part: getattr(design, part).model_copy(update={"font": song.default_font})
+            for part in ("title", "caption", "credits")
+            if getattr(design, part).font is None
+        }
+        design = design.model_copy(update=fonts)
     path = user_design_folder() / f"{name}.toml"
     if path.exists() and not overwrite:
         raise OutputExistsError(f"the design {name!r} exists")

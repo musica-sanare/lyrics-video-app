@@ -654,15 +654,15 @@ class Dialog:
         self.answer = answer
         self.asked = []
 
-    def __call__(self, prompt, extensions=()):
-        self.asked.append((prompt, extensions))
+    def __call__(self, kind, prompt):
+        self.asked.append((kind, prompt))
         return self.answer
 
 
 def app_client(songs=None, stop=None, dialog=None):
     stopped = []
     app = create_app(
-        songs or Songs(), TOKEN, {HOST}, stop=stop or (lambda: stopped.append(True)), choose_file=dialog or Dialog(None)
+        songs or Songs(), TOKEN, {HOST}, stop=stop or (lambda: stopped.append(True)), choose=dialog or Dialog(None)
     )
     client = TestClient(app)
     client.stopped = stopped
@@ -734,11 +734,13 @@ def test_choosing_a_song_file_in_the_finder(tmp_path):
     dialog = Dialog(chosen)
     client = app_client(dialog=dialog)
 
-    answer = post(client, "/api/songs/choose", {"prompt": "Choose a song"}).json()
-    cancelled = post(app_client(dialog=Dialog(None)), "/api/songs/choose", {"prompt": "Choose a song"}).json()
+    answer = post(client, "/api/choose", {"kind": "song", "prompt": "Choose a song"}).json()
+    cancelled = post(app_client(dialog=Dialog(None)), "/api/choose", {"kind": "song", "prompt": "Choose"}).json()
+    unknown = post(client, "/api/choose", {"kind": "anything", "prompt": "x"})
 
     assert answer == {"path": str(chosen)} and cancelled == {"path": None}
-    assert dialog.asked == [("Choose a song", ("toml",))]
+    assert dialog.asked == [("song", "Choose a song")]
+    assert unknown.status_code == 422
 
 
 def test_quitting(tmp_path):
@@ -767,7 +769,7 @@ def test_the_start_page_routes_need_the_token():
 
     assert client.get("/api/songs").status_code == 403
     assert client.get("/api/ping").status_code == 403
-    for path in ("/api/songs/open", "/api/songs/choose", "/api/quit"):
+    for path in ("/api/songs/open", "/api/choose", "/api/quit", "/api/songs/new", "/api/song/settings"):
         assert client.post(path, json={"path": "x"}).status_code == 403
 
 
@@ -779,3 +781,99 @@ def test_every_request_counts_as_the_page_being_open():
     get(client, "/api/ping")
 
     assert songs.last_request > 0.0
+
+
+# --- New songs, files not found, the Song mode ----------------------------------------------------------------------
+
+
+def new_song_files(folder: Path) -> dict:
+    folder.mkdir(parents=True, exist_ok=True)
+    write_sine(folder / "tone.wav", seconds=3.0)
+    Image.new("RGB", (640, 480), (30, 60, 90)).save(folder / "bg.png")
+    (folder / "words.txt").write_text(LYRICS, encoding="utf-8")
+    return {
+        "audio": str(folder / "tone.wav"),
+        "background_image": str(folder / "bg.png"),
+        "lyrics": str(folder / "words.txt"),
+    }
+
+
+def test_a_new_song_from_files_in_any_folder(tmp_path, sans_font):
+    client = app_client()
+    files = new_song_files(tmp_path / "music")
+
+    request = {**files, "title": "", "credits": ["by Me", " "], "design": "panel", "font": str(sans_font)}
+    state = post(client, "/api/songs/new", request).json()
+
+    assert state["current"]["title"] == "tone"
+    assert (tmp_path / "music" / "tone.toml").exists()
+    song = get(client, "/api/song").json()
+    assert song["settings"]["credits"] == ["by Me"] and song["timing_file"] == "tone.lrc"
+    assert get(client, "/api/designs").json()["last"] == "panel"
+    assert get(client, "/api/designs").json()["last_font"] == str(sans_font)
+
+
+def test_a_new_song_goes_to_the_chosen_folder_and_never_replaces_one(tmp_path, sans_font):
+    client = app_client()
+    files = new_song_files(tmp_path / "music")
+    (tmp_path / "songs").mkdir()
+    request = {**files, "folder": str(tmp_path / "songs"), "font": str(sans_font)}
+
+    post(client, "/api/songs/new", request)
+    again = post(client, "/api/songs/new", request)
+
+    assert (tmp_path / "songs" / "tone.toml").exists()
+    assert (again.status_code, again.json()["code"]) == (409, "output_exists")
+
+
+def test_missing_files_are_chosen_again(tmp_path, sans_font):
+    client = app_client()
+    files = new_song_files(tmp_path / "music")
+    post(client, "/api/songs/new", {**files, "font": str(sans_font)})
+    (tmp_path / "music" / "bg.png").rename(tmp_path / "moved.png")
+
+    refused = post(client, "/api/songs/open", {"path": str(tmp_path / "music" / "tone.toml")})
+    repaired = post(
+        client,
+        "/api/songs/repair",
+        {"path": refused.json()["path"], "settings": {"background_image": str(tmp_path / "moved.png")}},
+    )
+
+    assert (refused.status_code, refused.json()["code"]) == (409, "missing_files")
+    assert refused.json()["missing"] == {"background_image": str(tmp_path / "music" / "bg.png")}
+    assert repaired.status_code == 200
+    assert get(client, "/api/song").json()["settings"]["background_image"] == str((tmp_path / "moved.png").resolve())
+
+
+def test_changing_the_song_settings(client, song):
+    state = post(client, "/api/song/settings", {"title": "Renamed", "credits": ["one"]}).json()
+
+    assert state["current"]["title"] == "Renamed"
+    assert 'title = "Renamed"' in song.read_text(encoding="utf-8")
+    assert get(client, "/api/song").json()["settings"]["credits"] == ["one"]
+
+
+def test_no_song_settings_while_a_video_renders(render_client, song, held):
+    post(render_client, "/api/timing", {"lines": TIMED})
+    post(render_client, "/api/render", {})
+
+    response = post(render_client, "/api/song/settings", {"title": "Renamed"})
+
+    assert (response.status_code, response.json()["code"]) == (409, "busy")
+    assert "Renamed" not in song.read_text(encoding="utf-8")
+
+
+def test_show_a_song_file_in_the_finder(client, song, monkeypatch):
+    opened = []
+    monkeypatch.setattr(web_app.subprocess, "run", lambda command, check: opened.append(command))
+
+    post(client, "/api/song/reveal", {"key": "audio"})
+
+    assert opened == [["open", "-R", str(song.parent / "tone.wav")]]
+    assert post(client, "/api/song/reveal", {"key": "anything"}).status_code == 422
+
+
+def test_fonts_without_a_song(monkeypatch):
+    monkeypatch.setattr(web_app, "FONT_FOLDERS", ())
+
+    assert get(app_client(), "/api/fonts").json() == []

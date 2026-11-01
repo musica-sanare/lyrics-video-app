@@ -106,6 +106,7 @@ async function api(path, body) {
     const message = typeof detail.message === "string" ? detail.message : JSON.stringify(detail.detail ?? detail);
     const error = new Error(message);
     error.code = detail.code;
+    error.detail = detail;
     throw error;
   }
   return response;
@@ -1031,6 +1032,7 @@ function render() {
   const current = currentLine(now());
   const adjusting = state.mode === "adjust";
   const designing = state.mode === "design";
+  const songMode = state.mode === "song";
   $("rows").innerHTML = state.lines
     .map((line, i) => {
       const classes = [
@@ -1048,9 +1050,10 @@ function render() {
     })
     .join("");
   $("help").innerHTML = withKeys(t(adjusting ? "help.adjust" : "help.tap"));
-  $("help").hidden = designing;
-  $("zoom").hidden = designing;
+  $("help").hidden = designing || songMode;
+  $("zoom").hidden = designing || songMode;
   $("design").hidden = !designing;
+  $("song-settings").hidden = !songMode;
   $("multi-info").textContent = state.multi.size > 1 ? t("adjust.multi", { count: state.multi.size }) : "";
   $("save").classList.toggle("dirty", unsaved());
   $("save").disabled = renderingVideo();
@@ -1061,6 +1064,7 @@ function render() {
   $("mode-tap").classList.toggle("on", state.mode === "tap");
   $("mode-adjust").classList.toggle("on", adjusting);
   $("mode-design").classList.toggle("on", designing);
+  $("mode-song").classList.toggle("on", songMode);
   $("adjust").hidden = !adjusting;
   $("play").textContent = t(audio.paused ? "play.play" : "play.pause");
   draw();
@@ -1177,6 +1181,7 @@ function togglePlay() {
 function setMode(mode) {
   state.mode = mode;
   if (mode === "design") showDesign();
+  if (mode === "song") showSongSettings();
   render();
 }
 
@@ -1208,7 +1213,7 @@ document.addEventListener("keydown", (event) => {
   } else if (key === "Backspace") {
     event.preventDefault();
     undo();
-  } else if (state.mode === "design") {
+  } else if (state.mode === "design" || state.mode === "song") {
     if (key === " ") {
       event.preventDefault();
       togglePlay();
@@ -1409,16 +1414,191 @@ async function openSong(path) {
     state.design.dirty = false;
     location.reload();
   } catch (error) {
-    showHomeError(error);
+    if (error.code === "missing_files") {
+      document.body.classList.add("home");
+      $("home").hidden = false;
+      showRepair(error.detail);
+    } else showHomeError(error);
   }
 }
 
 async function chooseSong() {
   try {
-    const { path } = await (await api("/api/songs/choose", { prompt: t("songs.choose_prompt") })).json();
+    const path = await choosePath("song");
     if (path) await openSong(path);
   } catch (error) {
     showHomeError(error);
+  }
+}
+
+// The Finder's dialog, shown by the server on this Mac; null when cancelled.
+async function choosePath(kind) {
+  const { path } = await (await api("/api/choose", { kind, prompt: t(`choose.${kind}`) })).json();
+  return path;
+}
+
+// A file field: a path to type or paste, and Choose… for the Finder's dialog.
+const fileRow = (id, label, kind, value = "", reveal = null) =>
+  `<div class="row"><label for="${id}">${escapeHtml(label)}</label><span class="file">` +
+  `<input id="${id}" type="text" value="${escapeHtml(value ?? "")}" data-kind="${kind}">` +
+  `<button type="button" class="choose" data-for="${id}">${escapeHtml(t("song.choose"))}</button>` +
+  (reveal ? `<button type="button" class="reveal" data-key="${reveal}">${escapeHtml(t("render.reveal"))}</button>` : "") +
+  `</span></div>`;
+
+async function onChooseClick(event) {
+  const button = event.target.closest("button.choose");
+  if (!button) return;
+  const input = $(button.dataset.for);
+  try {
+    const path = await choosePath(input.dataset.kind);
+    if (path) {
+      input.value = shortPath(path);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  } catch (error) {
+    showError(error);
+  }
+}
+
+// Only face 0 of a font file can be the song's default font, so collections list their first face.
+function fontOptions(selected) {
+  const fonts = (state.fonts ?? []).filter((font) => font.face === 0);
+  const options = [`<option value="">${escapeHtml(t("song.font_none"))}</option>`];
+  let found = !selected;
+  for (const font of fonts) {
+    const same = selected && shortPath(selected) === font.path;
+    found ||= same;
+    options.push(`<option value="${escapeHtml(font.path)}" ${same ? "selected" : ""}>${escapeHtml(font.name)}</option>`);
+  }
+  if (!found) options.push(`<option value="${escapeHtml(shortPath(selected))}" selected>${escapeHtml(selected.split("/").at(-1))}</option>`);
+  return options.join("");
+}
+
+async function loadFonts() {
+  if (!state.fonts) state.fonts = await (await api("/api/fonts")).json();
+}
+
+// --- New song ----------------------------------------------------------------------------------------------------------
+
+async function showNewSong() {
+  $("repair").hidden = true;
+  $("home-error").hidden = true;
+  try {
+    const [designs] = await Promise.all([(await api("/api/designs")).json(), loadFonts()]);
+    $("new-files").innerHTML =
+      fileRow("new-audio", t("song.audio"), "audio") + fileRow("new-image", t("song.background_image"), "image") + fileRow("new-lyrics", t("song.lyrics"), "lyrics");
+    $("new-design").replaceChildren(...designs.names.map((name) => new Option(name, name, false, name === designs.last)));
+    $("new-font").innerHTML = fontOptions(designs.last_font);
+    state.newFolder = null;
+    $("new-title").value = "";
+    $("new-credits").value = "";
+    updateNewWhere();
+    $("new-song").hidden = false;
+  } catch (error) {
+    showHomeError(error);
+  }
+}
+
+const folderOf = (path) => path.split("/").slice(0, -1).join("/");
+const stemOf = (path) => path.split("/").at(-1).replace(/\.[^.]*$/, "");
+
+// The song file goes next to the audio unless another folder was chosen; the title starts as the audio's name.
+function updateNewWhere() {
+  const audio = $("new-audio")?.value.trim() ?? "";
+  if (audio && !$("new-title").value) $("new-title").placeholder = stemOf(audio);
+  $("new-where").textContent = audio ? `${state.newFolder ?? folderOf(audio)}/${stemOf(audio)}.toml` : t("new.where_hint");
+}
+
+async function createSong(event) {
+  event.preventDefault();
+  const value = (id) => $(id).value.trim();
+  try {
+    await api("/api/songs/new", {
+      audio: value("new-audio"),
+      background_image: value("new-image"),
+      lyrics: value("new-lyrics"),
+      title: value("new-title") || $("new-title").placeholder,
+      credits: $("new-credits").value.split("\n"),
+      design: $("new-design").value,
+      font: $("new-font").value || null,
+      folder: state.newFolder,
+    });
+    location.reload();
+  } catch (error) {
+    showHomeError(error);
+  }
+}
+
+// --- Files not found ---------------------------------------------------------------------------------------------------
+
+const SETTING_OF = { audio: "audio", background_image: "background_image", lyrics: "lyrics", "fonts.default": "font" };
+const KIND_OF = { audio: "audio", background_image: "image", lyrics: "lyrics", "fonts.default": "font" };
+
+function showRepair(detail) {
+  $("new-song").hidden = true;
+  state.repair = detail;
+  $("repair-text").textContent = t("repair.text", { file: shortPath(detail.path) });
+  $("repair-files").innerHTML = Object.entries(detail.missing)
+    .map(([key, path]) => fileRow(`repair-${key.replace(".", "-")}`, t(`song.${SETTING_OF[key]}`), KIND_OF[key], shortPath(path)))
+    .join("");
+  $("repair").hidden = false;
+}
+
+async function repairSong(event) {
+  event.preventDefault();
+  const settings = {};
+  for (const key of Object.keys(state.repair.missing)) settings[SETTING_OF[key]] = $(`repair-${key.replace(".", "-")}`).value.trim();
+  try {
+    await api("/api/songs/repair", { path: state.repair.path, settings });
+    location.reload();
+  } catch (error) {
+    showHomeError(error);
+  }
+}
+
+// --- The Song mode -----------------------------------------------------------------------------------------------------
+
+async function showSongSettings() {
+  const settings = state.song.settings;
+  await loadFonts().catch(showError);
+  $("song-fields").innerHTML =
+    `<div class="row"><label for="song-title-input">${escapeHtml(t("song.title"))}</label><input id="song-title-input" type="text" value="${escapeHtml(settings.title)}"></div>` +
+    `<div class="row"><label for="song-credits">${escapeHtml(t("song.credits"))}</label><textarea id="song-credits" rows="3">${escapeHtml(settings.credits.join("\n"))}</textarea></div>` +
+    fileRow("song-audio", t("song.audio"), "audio", shortPath(settings.audio ?? ""), "audio") +
+    fileRow("song-image", t("song.background_image"), "image", shortPath(settings.background_image ?? ""), "background_image") +
+    fileRow("song-lyrics", t("song.lyrics"), "lyrics", shortPath(settings.lyrics ?? ""), "lyrics") +
+    `<div class="row"><label for="song-font">${escapeHtml(t("song.font"))}</label><select id="song-font" class="font">${fontOptions(settings.font)}</select></div>`;
+}
+
+async function applySongSettings(event) {
+  event.preventDefault();
+  if (rendering()) return;
+  if (unsaved() && !confirm(t("song.discard"))) return;
+  const value = (id) => $(id).value.trim();
+  try {
+    await api("/api/song/settings", {
+      title: value("song-title-input"),
+      credits: $("song-credits").value.split("\n").map((line) => line.trim()).filter(Boolean),
+      audio: value("song-audio"),
+      background_image: value("song-image"),
+      lyrics: value("song-lyrics"),
+      font: $("song-font").value || null,
+    });
+    state.dirty = false;
+    state.design.dirty = false;
+    location.reload();
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function onRevealClick(event) {
+  const button = event.target.closest("button.reveal");
+  if (!button) return;
+  try {
+    await api("/api/song/reveal", { key: button.dataset.key });
+  } catch (error) {
+    showError(error);
   }
 }
 
@@ -1504,6 +1684,27 @@ async function start() {
   $("songs").addEventListener("click", showHome);
   $("quit").addEventListener("click", () => quitApp());
   $("home-open").addEventListener("click", chooseSong);
+  $("home-new").addEventListener("click", showNewSong);
+  $("new-cancel").addEventListener("click", () => ($("new-song").hidden = true));
+  $("new-song").addEventListener("submit", createSong);
+  $("new-song").addEventListener("input", updateNewWhere);
+  $("new-folder").addEventListener("click", async () => {
+    try {
+      const folder = await choosePath("folder");
+      if (folder) state.newFolder = folder.replace(/\/$/, "");
+      updateNewWhere();
+    } catch (error) {
+      showHomeError(error);
+    }
+  });
+  $("repair").addEventListener("submit", repairSong);
+  $("repair-cancel").addEventListener("click", () => ($("repair").hidden = true));
+  $("mode-song").addEventListener("click", () => setMode("song"));
+  $("song-settings").addEventListener("submit", applySongSettings);
+  for (const area of [$("new-song"), $("repair"), $("song-settings")]) {
+    area.addEventListener("click", onChooseClick);
+    area.addEventListener("click", onRevealClick);
+  }
   $("home-path-open").addEventListener("click", () => openSong($("home-path").value.trim()));
   $("home-path").addEventListener("keydown", (event) => {
     if (event.key === "Enter") openSong($("home-path").value.trim());

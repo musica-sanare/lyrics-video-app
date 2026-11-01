@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob 5581045003a9b0ce002ec9b73086afff956b3a88 -->
+<!-- source: docs/en/ARCHITECTURE.md blob 8124d10518b560db4f23afc50b70d0c0d12d30bf -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -122,6 +122,11 @@ flowchart LR
 - `Songs` は開いている曲の `SyncSession` を持つか、何も持たない。何も持たないとき `/api/song` は 404 `no_song` を返し、ページは開始ページを出す
   （最近の曲は `app_files` から。「曲を開く…」は `web/dialogs.py` が `osascript` で macOS の `choose file` を実行する）。ほかの曲を開くときは、
   先に新しい曲を読み込んでから古いセッションを閉じる。書き出し中は断る。API へのリクエストのたびに時刻を `Songs.last_request` に記録する。
+- 新しい曲と曲の設定モードは `config` を通して曲ファイルを書く。`create_song` は歌詞を読んで確かめてから、選んだファイルを今の場所のまま
+  指す新しい曲ファイルを書く（`path_in_song_file`）。`write_song_settings` は曲名、クレジット、ファイル、既定のフォントを `tomlkit` で変え、
+  ほかの部分は残す。どちらも書く前に新しい内容を読み込んで確かめる。`Songs.open` はファイルが見つからない曲を断り（`config.missing_files`、
+  一覧付きの 409 `missing_files`）、ページは選び直させる（`/api/songs/repair`）。ページのダイアログはすべて、種類（`dialogs.KINDS`：曲、音声、
+  画像、歌詞、フォント、フォルダ）を指定する `/api/choose` を通る。
 - `lyrics-video start` は曲なしのアプリモードでサーバーを動かす。ポートとトークンをアプリのフォルダの `server.json` に記録し（`app_files`。
   一時ファイル経由で書くので、オーナーだけが読める）、2 回目の `start` はそのサーバーが `/api/ping` に答えればそのページを開く。アプリモードでは、
   10 分間リクエストがなく書き出しもなければサーバーは自分で止まる。ページは開いている間 30 秒ごとに `/api/ping` を送る。「終了」（`/api/quit`）は

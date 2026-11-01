@@ -4,9 +4,18 @@ from pathlib import Path
 import pytest
 from audio_spectrum import load_preset, override_preset
 
-from lyrics_video.config import load_song, save_user_design, song_design, spectrum_preset, write_design
+from lyrics_video.config import (
+    create_song,
+    load_song,
+    missing_files,
+    save_user_design,
+    song_design,
+    spectrum_preset,
+    write_design,
+    write_song_settings,
+)
 from lyrics_video.design import load_design
-from lyrics_video.errors import ConfigError, OutputExistsError
+from lyrics_video.errors import ConfigError, LyricsVideoError, OutputExistsError
 from lyrics_video.lyrics import read_lyrics
 
 EXAMPLES = Path(__file__).parent.parent / "examples"
@@ -232,3 +241,94 @@ def test_built_in_names_are_not_saved(tmp_path, user_designs):
         save_user_design(load_song(write_song(tmp_path, "")), load_design("soft"), "soft")
 
     assert list(user_designs.iterdir()) == []
+
+
+# --- New songs and song settings ------------------------------------------------------------------------------------
+
+
+def song_inputs(folder: Path) -> tuple[Path, Path, Path]:
+    folder.mkdir(parents=True, exist_ok=True)
+    audio, image, lyrics = folder / "tone.wav", folder / "bg.png", folder / "words.txt"
+    for path in (audio, image):
+        path.write_bytes(b"x")
+    lyrics.write_text("一行目\n二行目;下の段\n", encoding="utf-8")
+    return audio, image, lyrics
+
+
+def test_a_new_song_names_its_files_where_they_are(tmp_path):
+    audio, image, lyrics = song_inputs(tmp_path / "music")
+    elsewhere = tmp_path / "pictures"
+    elsewhere.mkdir()
+    image = image.rename(elsewhere / "bg.png")
+
+    song = create_song(tmp_path / "music" / "tone.toml", audio, image, lyrics, "Title", ["by Me"], "panel")
+
+    data = tomllib.loads((tmp_path / "music" / "tone.toml").read_text(encoding="utf-8"))
+    assert data["audio"] == "tone.wav" and data["lyrics"] == "words.txt" and data["timing"] == "tone.lrc"
+    assert Path(data["background_image"]).resolve() == image.resolve() and data["design"] == "panel"
+    assert "fonts" not in data
+    assert (song.audio, song.background_image) == (audio, image.resolve())
+    assert (song.title, song.credits) == ("Title", ("by Me",))
+    names = sorted(path.name for path in (tmp_path / "music").iterdir())
+    assert names == ["tone.toml", "tone.wav", "words.txt"], "nothing copied"
+
+
+def test_a_new_song_with_a_font_under_the_home_folder(tmp_path):
+    audio, image, lyrics = song_inputs(tmp_path)
+    font = Path.home() / "Fonts" / "mine.otf"
+
+    create_song(tmp_path / "tone.toml", audio, image, lyrics, "T", [], "soft", font)
+
+    assert tomllib.loads((tmp_path / "tone.toml").read_text(encoding="utf-8"))["fonts"]["default"] == "~/Fonts/mine.otf"
+
+
+def test_a_new_song_is_refused_before_anything_is_written(tmp_path):
+    audio, image, lyrics = song_inputs(tmp_path)
+    (tmp_path / "taken.toml").write_text("", encoding="utf-8")
+    broken = tmp_path / "broken.txt"
+    broken.write_text("a;b;c\n", encoding="utf-8")
+
+    with pytest.raises(OutputExistsError):
+        create_song(tmp_path / "taken.toml", audio, image, lyrics, "T", [], "soft")
+    with pytest.raises(LyricsVideoError, match="broken.txt"):
+        create_song(tmp_path / "new.toml", audio, image, broken, "T", [], "soft")
+    with pytest.raises(ConfigError, match="audio file"):
+        create_song(tmp_path / "new.toml", tmp_path / "none.wav", image, lyrics, "T", [], "soft")
+
+    assert not (tmp_path / "new.toml").exists()
+
+
+def test_changing_song_settings_keeps_the_rest(tmp_path):
+    audio, image, lyrics = song_inputs(tmp_path)
+    path = write_song(tmp_path, '# my notes\naudio = "tone.wav"\ntitle = "Old"\n\n[video]\nfps = 25  # kept\n')
+    other = tmp_path / "other.wav"
+    other.write_bytes(b"x")
+
+    song = write_song_settings(path, {"title": "New", "credits": ["a", "b"], "audio": str(other), "font": "/f/x.otf"})
+
+    text = path.read_text(encoding="utf-8")
+    data = tomllib.loads(text)
+    assert "# my notes" in text and "fps = 25  # kept" in text
+    assert (data["title"], data["credits"]) == ("New", ["a", "b"])
+    assert (data["audio"], data["fonts"]["default"]) == ("other.wav", "/f/x.otf")
+    assert song.video.fps == 25 and (tmp_path / "song.toml.bak").exists()
+    write_song_settings(path, {"font": None})
+    assert "default" not in tomllib.loads(path.read_text(encoding="utf-8")).get("fonts", {})
+
+
+def test_missing_files(tmp_path):
+    audio, image, lyrics = song_inputs(tmp_path)
+    song = load_song(write_song(tmp_path, 'audio = "tone.wav"\nbackground_image = "gone.png"\nlyrics = "words.txt"\n'))
+
+    assert missing_files(song) == {"background_image": str(tmp_path / "gone.png")}
+
+
+def test_a_named_design_carries_the_songs_font(tmp_path, user_designs):
+    text = '[fonts]\ndefault = "~/Fonts/mine.otf"\n[design]\nname = "soft"\n[design.title]\nfont = "/t.otf"\n'
+    song = load_song(write_song(tmp_path, text))
+
+    save_user_design(song, song.design, "mine")
+
+    data = tomllib.loads((user_designs / "mine.toml").read_text(encoding="utf-8"))
+    assert data["title"]["font"] == "/t.otf"
+    assert data["caption"]["font"] == data["credits"]["font"] == "~/Fonts/mine.otf"

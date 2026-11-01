@@ -116,6 +116,17 @@ uv run lyrics-video start
 - The start page lists recent songs (click one to open it) and has "Open song…", which shows the Finder's dialog
   for a song file (it may open behind the browser window; a path field works too). "Songs" in the page's top bar
   comes back to it from a song.
+- "New song…" makes a song file from files you already have, wherever they are: choose the audio, the background
+  image and the lyrics text (each with "Choose…" or a typed path), and give the title, credits, design and font.
+  - The song file goes next to the audio as `<audio name>.toml`; "Change folder…" puts it elsewhere. Its timing file
+    and `videos/` go next to it. An existing song file is never replaced.
+  - The files are not copied: the song file names them where they are (relative inside its folder, else by full
+    path).
+  - The lyrics are checked first, so a problem in them shows before anything is written.
+  - The page remembers the design and font for the next new song. With a named design saved since version 0.5, the
+    font can stay "Only the design's fonts".
+- If a file of a song was moved or renamed, opening the song shows which file is missing; choose it again and the
+  song file is updated (keeping a `.bak`).
 - One song is open at a time. Opening another asks first when something is unsaved, and waits while a video renders.
 - A second `start` opens the page of the app that is already running instead of starting another.
 - Quit on the page stops the app (after asking, when something is unsaved or a video renders). `start` also stops by
@@ -133,7 +144,8 @@ uv run lyrics-video start
      change between lines). A changed setting is shown in bold; ↺ takes it back to the design's value.
    - The font list holds the fonts of this Mac and of the folders of the fonts your song file names.
    - Save as design: saves the whole look as it is on the page, spectrum included, under a name that any song can
-     use ("Named designs" in section 6). The page then offers to use it for this song.
+     use ("Named designs" in section 6). Parts without their own font get the song's font, so the design carries its
+     fonts. The page then offers to use it for this song.
    - Spectrum: choose an audio-spectrum-app preset (the built-in ones and your saved ones) and change its position,
      height, side margin, style, bar width, colors (one color or a gradient of two to four), glow and analysis (bands,
      frequencies, level, rise and fall). Analysis settings take about half a second each and apply when you release
@@ -142,7 +154,10 @@ uv run lyrics-video start
    - Save writes the changes into the song file's `[design]` table (only the changed settings) and keeps the previous
      song file as `song.toml.bak`. Everything else in the song file stays as it was, comments included, except
      comments inside `[design]`. Other settings stay editable in the song file (section 6).
-4. **Preview video:** before the long render, makes a quick video of the whole song and plays it in the page while
+4. **Song:** change the title, credits, the audio, background image and lyrics files, and the default font. "Save
+   and reopen the song" writes the song file (keeping a `.bak`) and opens the song again; other unsaved changes are
+   lost, so the page asks first.
+5. **Preview video:** before the long render, makes a quick video of the whole song and plays it in the page while
    the song plays, to check every caption change with the design and the spectrum.
    - It is made from the lines and the design as they are on the page, saved or not, in about a tenth of the song's
      length (about 20 s for a 5-minute song). It is smaller than the video (960 × 540 at 15 frames a second) and has
@@ -152,9 +167,9 @@ uv run lyrics-video start
      still as before.
    - Cancel keeps the previous preview. The preview is kept in a temporary folder and removed when the server stops;
      nothing is written next to the song.
-5. **Save:** the Save button or `⌘S` writes the timing file, and the design into the song file when it changed.
+6. **Save:** the Save button or `⌘S` writes the timing file, and the design into the song file when it changed.
    Nothing is written before that, and leaving the page with unsaved changes asks first.
-6. **Render video:** renders the whole video from the saved timing and design, as the `render` command does
+7. **Render video:** renders the whole video from the saved timing and design, as the `render` command does
    (section 5), into `videos/<song file name>.mp4`.
    - The button waits until everything is saved, so the video always matches the timing file and the song file.
    - A bar shows the progress and the time left. Cancel stops the render and leaves no file.

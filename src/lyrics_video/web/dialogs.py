@@ -16,6 +16,23 @@ CANCELLED = "-128"
 MAX_PROMPT = 200
 
 
+# What each dialog of the page shows: file extensions, or None for a folder.
+KINDS: dict[str, tuple[str, ...] | None] = {
+    "song": ("toml",),
+    "audio": ("wav", "aif", "aiff", "flac", "mp3", "m4a", "ogg"),
+    "image": ("jpg", "jpeg", "png", "webp", "tif", "tiff", "bmp"),
+    "lyrics": ("txt",),
+    "font": ("ttf", "otf", "ttc", "otc"),
+    "folder": None,
+}
+
+
+def choose(kind: str, prompt: str) -> Path | None:
+    """The page's dialogs by kind (`KINDS`); None when cancelled."""
+    extensions = KINDS[kind]
+    return choose_folder(prompt) if extensions is None else choose_file(prompt, extensions)
+
+
 def choose_file(prompt: str, extensions: tuple[str, ...] = ()) -> Path | None:
     """A file chosen in the Finder's dialog, or None when cancelled. `extensions` limits the files shown."""
     types = f" of type {{{', '.join(_quote(extension) for extension in extensions)}}}" if extensions else ""

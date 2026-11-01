@@ -1,6 +1,7 @@
-"""The app's own files in Application Support: the running server, so a second start reuses it, and the recent songs.
+"""The app's own files in Application Support: the running server, so a second start reuses it, the recent songs,
+and what the page remembers (the last design and font of a new song).
 
-Both are small JSON files written through a temporary file, readable by the owner only (the server file holds the
+All are small JSON files written through a temporary file, readable by the owner only (the server file holds the
 session token).
 """
 
@@ -15,6 +16,7 @@ APP_ENVIRONMENT = "LYRICS_VIDEO_APP_DIR"
 APP_FOLDER = Path("~/Library/Application Support/lyrics-video")
 SERVER_FILE = "server.json"
 RECENT_FILE = "recent.json"
+SETTINGS_FILE = "settings.json"
 RECENT_LIMIT = 20
 
 
@@ -54,6 +56,16 @@ def remove_server() -> None:
     data = read_server()
     if data is not None and data.get("pid") == os.getpid():
         (app_folder() / SERVER_FILE).unlink(missing_ok=True)
+
+
+def read_settings() -> dict:
+    """What the page remembers between songs, such as the last design and font chosen for a new song."""
+    data = _read(SETTINGS_FILE)
+    return data if isinstance(data, dict) else {}
+
+
+def remember(**values) -> None:
+    _write(SETTINGS_FILE, {**read_settings(), **values})
 
 
 def recent_songs() -> list[dict]:
