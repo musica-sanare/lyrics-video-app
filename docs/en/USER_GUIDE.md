@@ -154,6 +154,9 @@ uv run lyrics-video start
 - The start page lists recent songs (click one to open it) and has "Open song…", which shows the Finder's dialog
   for a song file (it may open behind the browser window; a path field works too). "Songs" in the page's top bar
   comes back to it from a song.
+- While a Finder dialog is open, the page is covered and waits for it, so a second click cannot open another one.
+- "How to use" in the top bar shows the steps from the Dock to Quit. The start page shows them by itself until the
+  first song is opened.
 - "New song…" makes a song file from files you already have, wherever they are: choose the audio, the background
   image and the lyrics text (each with "Choose…" or a typed path), and give the title, credits, design and font.
   - The song file goes next to the audio as `<audio name>.toml`; "Change folder…" puts it elsewhere. Its timing file

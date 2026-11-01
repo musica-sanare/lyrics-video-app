@@ -743,6 +743,28 @@ def test_choosing_a_song_file_in_the_finder(tmp_path):
     assert unknown.status_code == 422
 
 
+def test_only_one_finder_dialog_at_a_time(tmp_path):
+    opened, release = threading.Event(), threading.Event()
+
+    def slow_dialog(kind, prompt):
+        opened.set()
+        release.wait(5)
+        return tmp_path / "song.toml"
+
+    client = app_client(dialog=slow_dialog)
+    first = {}
+    waiting = threading.Thread(target=lambda: first.update(post(client, "/api/choose", {"kind": "song"}).json()))
+    waiting.start()
+    assert opened.wait(5)
+    second = post(client, "/api/choose", {"kind": "audio"})
+    release.set()
+    waiting.join(5)
+    after = post(client, "/api/choose", {"kind": "song"})
+
+    assert second.status_code == 409 and second.json()["code"] == "dialog_open"
+    assert first == {"path": str(tmp_path / "song.toml")} and after.status_code == 200
+
+
 def test_quitting(tmp_path):
     client = app_client()
 

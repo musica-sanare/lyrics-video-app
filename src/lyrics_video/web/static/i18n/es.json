@@ -183,6 +183,19 @@
   "choose.image": "Elige la imagen de fondo",
   "choose.lyrics": "Elige el archivo de texto de la letra",
   "choose.font": "Elige un archivo de fuente",
-  "choose.folder": "Elige la carpeta del archivo de la canción"
+  "choose.folder": "Elige la carpeta del archivo de la canción",
+  "guide.button": "Cómo usar",
+  "guide.title": "Cómo usar Lyrics Video",
+  "guide.intro": "Crea un vídeo con letra en este orden. El audio, la imagen de fondo y el texto de la letra pueden estar en cualquier carpeta.",
+  "guide.start": "Iniciar: haz clic en Lyrics Video en el Dock. Esta página se abre en el navegador.",
+  "guide.new": "Nueva canción…: elige el audio, la imagen de fondo y el texto de la letra con Elegir…, escribe el título y los créditos y pulsa Crear y abrir. El archivo de la canción se guarda junto al audio; la próxima vez, ábrelo desde Canciones recientes.",
+  "guide.tap": "Marcar: pulsa Reproducir y luego [[Space]] cuando empieza una línea y [[Enter]] cuando termina.",
+  "guide.adjust": "Ajustar: haz clic en un tiempo y muévelo con [[←]] [[→]] mirando la forma de onda y la imagen fija.",
+  "guide.design": "Diseño y Canción: cambia el aspecto, o los archivos, el título y los créditos.",
+  "guide.preview": "Vista previa del vídeo: revisa toda la canción en un vídeo pequeño y rápido.",
+  "guide.save": "Guardar ([[⌘]]+[[S]]) escribe los tiempos y el diseño. Exportar vídeo escribe el vídeo final en la carpeta videos junto al archivo de la canción.",
+  "guide.quit": "Salir (arriba a la derecha) detiene la aplicación. Si solo cierras la pestaña, se detiene sola a los 10 minutos.",
+  "guide.close": "Cerrar",
+  "waiting.text": "Elige en el diálogo del Finder. Si no lo ves, mira detrás de esta ventana."
  }
 }

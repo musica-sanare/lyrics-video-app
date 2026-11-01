@@ -183,6 +183,19 @@
   "choose.image": "Choisissez l'image de fond",
   "choose.lyrics": "Choisissez le fichier texte des paroles",
   "choose.font": "Choisissez un fichier de police",
-  "choose.folder": "Choisissez le dossier du fichier de la chanson"
+  "choose.folder": "Choisissez le dossier du fichier de la chanson",
+  "guide.button": "Mode d’emploi",
+  "guide.title": "Utiliser Lyrics Video",
+  "guide.intro": "Créez une vidéo de paroles dans cet ordre. L’audio, l’image de fond et le texte des paroles peuvent être dans n’importe quel dossier.",
+  "guide.start": "Démarrer : cliquez sur Lyrics Video dans le Dock. Cette page s’ouvre dans le navigateur.",
+  "guide.new": "Nouvelle chanson… : choisissez l’audio, l’image de fond et le texte des paroles avec Choisir…, saisissez le titre et les crédits, puis Créer et ouvrir. Le fichier de la chanson est écrit à côté de l’audio ; la fois suivante, ouvrez-le depuis Chansons récentes.",
+  "guide.tap": "Taper : appuyez sur Lire, puis [[Space]] quand une ligne commence et [[Enter]] quand elle finit.",
+  "guide.adjust": "Ajuster : cliquez sur un temps et déplacez-le avec [[←]] [[→]] en regardant la forme d’onde et l’image fixe.",
+  "guide.design": "Design et Chanson : changez l’apparence, ou les fichiers, le titre et les crédits.",
+  "guide.preview": "Aperçu vidéo : vérifiez toute la chanson dans une petite vidéo rapide.",
+  "guide.save": "Enregistrer ([[⌘]]+[[S]]) écrit le minutage et le design. Exporter la vidéo écrit la vidéo finale dans le dossier videos à côté du fichier de la chanson.",
+  "guide.quit": "Quitter (en haut à droite) arrête l’application. Si vous fermez seulement l’onglet, elle s’arrête seule après 10 minutes.",
+  "guide.close": "Fermer",
+  "waiting.text": "Choisissez dans la fenêtre du Finder. Si vous ne la voyez pas, regardez derrière cette fenêtre."
  }
 }

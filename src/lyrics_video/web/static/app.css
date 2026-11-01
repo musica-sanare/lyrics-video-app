@@ -99,3 +99,11 @@ body.stopped header, body.stopped main, body.stopped #notices, body.stopped #hom
 #recent strong { white-space: nowrap; }
 #recent .where { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #help kbd { background: #2a2f38; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; color: var(--text); }
+dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 16px 20px; max-width: min(640px, calc(100vw - 32px)); }
+dialog::backdrop { background: #000000a0; }
+#guide h2 { margin: 0 0 8px; font-size: 18px; }
+#guide ol { padding-left: 22px; }
+#guide li { margin: 6px 0; }
+#guide kbd { background: #2a2f38; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+#guide form { text-align: right; margin: 0; }
+#waiting p { margin: 0; }

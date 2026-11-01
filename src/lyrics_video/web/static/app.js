@@ -82,6 +82,7 @@ async function setLanguage(language) {
   }
   if (state.render.snapshot) showRender(state.render.snapshot);
   if (state.mode === "design") showDesign();
+  if ($("guide").open) showGuide();
   if (!$("home").hidden) showHome();
   render();
 }
@@ -1200,6 +1201,7 @@ function moveSelection(step, extend) {
 
 document.addEventListener("keydown", (event) => {
   if (["INPUT", "SELECT", "TEXTAREA"].includes(event.target.tagName) || !state.song) return;
+  if ($("guide").open || $("waiting").open) return;
   const key = event.key;
   const command = event.metaKey || event.ctrlKey;
   if (command && (key === "s" || key === "S")) {
@@ -1387,6 +1389,10 @@ async function showHome() {
           )
           .join("")
       : `<li class="missing">${escapeHtml(t("songs.none"))}</li>`;
+    if (!recent.length && !current && !state.guideShown) {
+      state.guideShown = true;
+      showGuide();
+    }
   } catch (error) {
     showHomeError(error);
   }
@@ -1431,10 +1437,28 @@ async function chooseSong() {
   }
 }
 
-// The Finder's dialog, shown by the server on this Mac; null when cancelled.
+// The Finder's dialog, shown by the server on this Mac; null when cancelled. It takes a moment to appear, so the
+// page is covered until it closes, and a second click cannot open another one.
 async function choosePath(kind) {
-  const { path } = await (await api("/api/choose", { kind, prompt: t(`choose.${kind}`) })).json();
-  return path;
+  if ($("waiting").open) return null;
+  $("waiting").showModal();
+  try {
+    const { path } = await (await api("/api/choose", { kind, prompt: t(`choose.${kind}`) })).json();
+    return path;
+  } catch (error) {
+    if (error.code === "dialog_open") return null;
+    throw error;
+  } finally {
+    $("waiting").close();
+  }
+}
+
+// The steps of making a video, from the Dock to Quit; shown by How to use, and on the start page until a song opens.
+const GUIDE_STEPS = ["start", "new", "tap", "adjust", "design", "preview", "save", "quit"];
+
+function showGuide() {
+  $("guide-steps").innerHTML = GUIDE_STEPS.map((step) => `<li>${withKeys(t(`guide.${step}`))}</li>`).join("");
+  if (!$("guide").open) $("guide").showModal();
 }
 
 // A file field: a path to type or paste, and Choose… for the Finder's dialog.
@@ -1682,6 +1706,9 @@ async function start() {
     if (audio.paused) requestStill();
   });
   $("songs").addEventListener("click", showHome);
+  $("guide-button").addEventListener("click", showGuide);
+  // The covered page waits for the Finder's dialog; Escape must not uncover it early.
+  $("waiting").addEventListener("cancel", (event) => event.preventDefault());
   $("quit").addEventListener("click", () => quitApp());
   $("home-open").addEventListener("click", chooseSong);
   $("home-new").addEventListener("click", showNewSong);

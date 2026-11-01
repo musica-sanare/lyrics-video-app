@@ -135,7 +135,8 @@ flowchart LR
   title, credits, files and default font with `tomlkit`, keeping the rest. Both load the new text before writing.
   `Songs.open` refuses a song whose files are missing (`config.missing_files`, 409 `missing_files` with the list), and
   the page offers to choose them again (`/api/songs/repair`). The page's dialogs go through one route, `/api/choose`,
-  by kind (`dialogs.KINDS`: song, audio, image, lyrics, font, folder).
+  by kind (`dialogs.KINDS`: song, audio, image, lyrics, font, folder). Only one dialog opens at a time (409
+  `dialog_open`), and the page stays covered until it closes.
 - `lyrics-video install-app` (`app_bundle.py`) writes `Lyrics Video.app`: an `Info.plist` and a shell script that
   sets `PATH` to the folders of `uv` and `ffmpeg` (an app started from the Finder gets a short one) and runs
   `uv run --project <repository> lyrics-video start` in the background, then exits. Each click therefore runs the

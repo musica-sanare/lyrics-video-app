@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob c2bebaf465d949a64d3c303dba53697239374f07 -->
+<!-- source: docs/en/ARCHITECTURE.md blob a6c0b7b56b3d2db2ec291432261907e910dc96f0 -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -126,7 +126,8 @@ flowchart LR
   指す新しい曲ファイルを書く（`path_in_song_file`）。`write_song_settings` は曲名、クレジット、ファイル、既定のフォントを `tomlkit` で変え、
   ほかの部分は残す。どちらも書く前に新しい内容を読み込んで確かめる。`Songs.open` はファイルが見つからない曲を断り（`config.missing_files`、
   一覧付きの 409 `missing_files`）、ページは選び直させる（`/api/songs/repair`）。ページのダイアログはすべて、種類（`dialogs.KINDS`：曲、音声、
-  画像、歌詞、フォント、フォルダ）を指定する `/api/choose` を通る。
+  画像、歌詞、フォント、フォルダ）を指定する `/api/choose` を通る。ダイアログは一度に一つだけ開き（ほかは 409 `dialog_open`）、閉じるまで
+  ページは覆われる。
 - `lyrics-video install-app`（`app_bundle.py`）は `Lyrics Video.app` を書く。中身は `Info.plist` とシェルスクリプトで、スクリプトは `PATH` に
   `uv` と `ffmpeg` のフォルダを加え（Finder から起動したアプリの `PATH` は短い）、`uv run --project <リポジトリ> lyrics-video start` をバックグラウンドで
   実行してすぐ終わる。そのためクリックのたびにスクリプトが動き、`start` が動いているアプリのページを開く。パスはインストール時に調べて書くので、

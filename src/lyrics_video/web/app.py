@@ -112,6 +112,12 @@ class NoSongError(LyricsVideoError):
     code = "no_song"
 
 
+class DialogOpenError(LyricsVideoError):
+    """A Finder dialog is already open; the page answers 409 instead of opening a second one."""
+
+    code = "dialog_open"
+
+
 class MissingFilesError(LyricsVideoError):
     """Files the song file names do not exist; the page lets the owner choose them again."""
 
@@ -573,6 +579,7 @@ def create_app(
         songs = Songs(songs)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     expected = token.encode()
+    dialog_lock = threading.Lock()
 
     @app.middleware("http")
     async def guard(request: Request, call_next):
@@ -593,7 +600,7 @@ def create_app(
         if isinstance(error, MissingFilesError):
             body = {"code": error.code, "message": str(error), "path": str(error.path), "missing": error.missing}
             return JSONResponse(body, status_code=409)
-        if isinstance(error, (RenderBusyError, RenderOutputExistsError)):
+        if isinstance(error, (RenderBusyError, RenderOutputExistsError, DialogOpenError)):
             return _error(409, error.code, str(error))
         if isinstance(error, OutputExistsError):
             return _error(409, "output_exists", str(error))
@@ -622,7 +629,13 @@ def create_app(
 
     @app.post("/api/choose")
     def choose_path(request: ChooseRequest) -> dict:
-        chosen = choose(request.kind, request.prompt)
+        # The dialog takes a moment to appear; a second click in the meantime must not open another one.
+        if not dialog_lock.acquire(blocking=False):
+            raise DialogOpenError("a Finder dialog is already open")
+        try:
+            chosen = choose(request.kind, request.prompt)
+        finally:
+            dialog_lock.release()
         return {"path": str(chosen) if chosen else None}
 
     @app.get("/api/designs")

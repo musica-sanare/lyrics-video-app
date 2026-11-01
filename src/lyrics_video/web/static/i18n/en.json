@@ -183,6 +183,19 @@
   "choose.image": "Choose the background image",
   "choose.lyrics": "Choose the lyrics text file",
   "choose.font": "Choose a font file",
-  "choose.folder": "Choose the folder for the song file"
+  "choose.folder": "Choose the folder for the song file",
+  "guide.button": "How to use",
+  "guide.title": "How to use Lyrics Video",
+  "guide.intro": "Make a lyrics video in this order. The audio, background image and lyrics text can be in any folder.",
+  "guide.start": "Start: click Lyrics Video in the Dock. This page opens in the browser.",
+  "guide.new": "New song…: pick the audio, background image and lyrics text with Choose…, enter the title and credits, then Create and open. The song file is written next to the audio; next time, open it from Recent songs.",
+  "guide.tap": "Tap: press Play, then [[Space]] when a line starts and [[Enter]] when it ends.",
+  "guide.adjust": "Adjust: click a time and move it with [[←]] [[→]], watching the waveform and the still.",
+  "guide.design": "Design and Song: change the look, or the files, title and credits.",
+  "guide.preview": "Preview video: check the whole song in a quick, small video.",
+  "guide.save": "Save ([[⌘]]+[[S]]) writes the timing and the design. Render video writes the final video to the videos folder next to the song file.",
+  "guide.quit": "Quit (top right) stops the app. If you only close the tab, the app stops by itself after 10 minutes.",
+  "guide.close": "Close",
+  "waiting.text": "Choose in the Finder's dialog. If you cannot see it, look behind this window."
  }
 }
