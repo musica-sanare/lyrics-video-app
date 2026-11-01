@@ -45,6 +45,15 @@
   "render.failed": "La exportación ha fallado: {message}",
   "render.reveal": "Mostrar en el Finder",
   "render.replace": "{file} ya existe. ¿Reemplazarlo?",
-  "render.untimed": "{count} línea(s) sin tiempo no aparecen en el vídeo."
+  "render.untimed": "{count} línea(s) sin tiempo no aparecen en el vídeo.",
+  "preview_video.button": "Vista previa del vídeo",
+  "preview_video.preparing": "Preparando la vista previa…",
+  "preview_video.running": "Creando la vista previa: {percent} %, quedan unos {left}",
+  "preview_video.done": "Vista previa lista en {seconds} s. Reproduce la canción para verla.",
+  "preview_video.cancelled": "Vista previa cancelada; se conserva la anterior.",
+  "preview_video.failed": "No se pudo crear la vista previa: {message}",
+  "preview_video.playing": "Vista previa ({width} × {height}, {fps} fps): el diseño, los subtítulos y el espectro del vídeo",
+  "preview_video.outdated": "Vista previa ({width} × {height}, {fps} fps): las líneas marcadas están desactualizadas",
+  "preview_video.stale_lines": "Hay líneas cambiadas desde la última vista previa; pulsa de nuevo para verlas"
  }
 }

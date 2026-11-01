@@ -45,6 +45,15 @@
   "render.failed": "書き出しに失敗しました: {message}",
   "render.reveal": "Finder で表示",
   "render.replace": "{file} はすでにあります。置き換えますか？",
-  "render.untimed": "時刻のない {count} 行は動画に入りません。"
+  "render.untimed": "時刻のない {count} 行は動画に入りません。",
+  "preview_video.button": "プレビュー動画",
+  "preview_video.preparing": "プレビューを準備しています…",
+  "preview_video.running": "プレビュー動画を作成中: {percent} %、残り約 {left}",
+  "preview_video.done": "プレビュー動画ができました（{seconds} 秒）。曲を再生すると見られます。",
+  "preview_video.cancelled": "プレビューを中止しました。前のプレビューはそのまま残っています。",
+  "preview_video.failed": "プレビューを作れませんでした: {message}",
+  "preview_video.playing": "プレビュー動画（{width} × {height}、{fps} fps）: 動画と同じデザイン・字幕・スペクトラム",
+  "preview_video.outdated": "プレビュー動画（{width} × {height}、{fps} fps）: 印の行は古いまま",
+  "preview_video.stale_lines": "前回のプレビューの後に変わった行があります。もう一度押すと反映されます"
  }
 }

@@ -100,8 +100,8 @@ The design's `lead_seconds`, `fade_seconds` and `transition` turn sung times int
 - At a pause, the caption fades out after its end. The last caption is gone at the end of the song.
 - A window never reaches the start of the caption after next, so at most two captions are blended at once.
 
-The sync page computes the same windows in JavaScript for its live preview while the song plays. Its stills come from
-the server and are exact.
+The sync page computes the same windows in JavaScript for its simple live preview while the song plays. Its stills and
+its preview video come from the server and are drawn by `LyricsBackdrop`.
 
 ### The sync page
 
@@ -114,8 +114,10 @@ flowchart LR
   page -->|"GET /api/audio (ranges)"| server
   page -->|"POST /api/still"| server
   page -->|"POST /api/timing (Save)"| server
+  page -->|"POST /api/preview, GET /api/preview/video"| server
   page -->|"POST /api/render, GET /api/render"| server
   server --> files
+  server --> temp["preview.mp4 in a temporary folder"]
 ```
 
 - `SyncSession` decodes the song once, keeps one `Preview` and one `LyricsBackdrop`, and replaces the backdrop's
@@ -123,10 +125,17 @@ flowchart LR
 - The page plays the song from `/api/audio` with range requests and records key presses at the audio element's time.
   It decodes the same audio in the browser for the waveform.
 - The page keeps all edits in memory. Only Save writes the timing file.
+- "Preview video" starts the same `RenderTask` with `prepare_preview` (`render.py`): the page's current lines, saved
+  or not, at most 960 × 540 and 15 fps, without audio (`preview_size`). The backdrop and the spectrum scale with the
+  frame height, so it shows the video's design, captions and spectrum. It goes to a temporary folder of the session,
+  replacing the previous preview only when done, and `GET /api/preview/video` serves it (the token is accepted in the
+  URL, as for the audio). The page plays it muted and keeps it within 0.1 s of the `<audio>` element, which stays
+  the one clock, and marks lines changed since the preview was made. `SyncSession.close` removes the folder when the
+  server stops.
 - "Render video" starts the session's `RenderTask`: `prepare_render` runs in the request, so its errors answer at
   once; `render` then runs in a background thread with `cancel` tied to the page's Cancel. The page polls the task's
-  state. Only the saved timing file is rendered, one render at a time, and Save is refused while it runs. Stopping the
-  server cancels the render and waits for it.
+  state. Only the saved timing file is rendered, one render (video or preview) at a time, and Save is refused while
+  a video renders. Stopping the server cancels the render and waits for it.
 
 ## 3. Rules every change keeps
 
@@ -138,10 +147,12 @@ flowchart LR
   `test_stills_are_the_frames_of_the_video`).
 - **Nothing is written without an explicit command or Save.** Commands draw every image before writing any, refuse to
   overwrite without `--overwrite`, and write each file through a temporary file and a rename. The page writes only on
-  Save (keeping the previous timing file as `.bak`) and on "Render video", which asks before replacing a video.
+  Save (keeping the previous timing file as `.bak`) and on "Render video", which asks before replacing a video. The
+  preview video is the one exception: it goes to a temporary folder of the session, never next to the song, and is
+  removed when the server stops.
 - **The page cannot be driven by other web pages.** The server listens on `127.0.0.1`, refuses foreign `Host` headers
-  and API requests without the session token (accepted in the URL for the audio only), and sends no cross-origin
-  headers.
+  and API requests without the session token (accepted in the URL for the audio and the preview video only), and
+  sends no cross-origin headers.
 - **Only audio-spectrum-app's public API is used.** Changes it needs are planned in its own repository.
 - **Errors meant for the user** are `LyricsVideoError` subclasses with the file and, for text files, the line.
 
@@ -160,7 +171,8 @@ How it stays cheap
 
 Measured with `tools/time_backdrop.py` on an M1 at 1080p (Phase 2): about 8 ms per frame with a caption and 17 ms
 during a crossfade in the default `soft` design. A whole 279 s video with the spectrum renders in 143 s to 154 s
-(51 % to 55 % of the song) in every built-in design. See the phase acceptance reports for the full tables.
+(51 % to 55 % of the song) in every built-in design; its preview video (960 × 540 at 15 fps) in about 19 s (7 %).
+See the phase acceptance reports for the full tables.
 
 ## 5. Where new features fit
 

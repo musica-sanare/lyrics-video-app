@@ -45,6 +45,15 @@
   "render.failed": "Render failed: {message}",
   "render.reveal": "Show in Finder",
   "render.replace": "{file} exists. Replace it?",
-  "render.untimed": "{count} line(s) without a time are left out of the video."
+  "render.untimed": "{count} line(s) without a time are left out of the video.",
+  "preview_video.button": "Preview video",
+  "preview_video.preparing": "Preparing the preview…",
+  "preview_video.running": "Making the preview video: {percent} %, about {left} left",
+  "preview_video.done": "Preview video ready in {seconds} s. Play the song to watch it.",
+  "preview_video.cancelled": "Preview cancelled; the previous preview is kept.",
+  "preview_video.failed": "Preview failed: {message}",
+  "preview_video.playing": "Preview video ({width} × {height}, {fps} fps): the video's design, captions and spectrum",
+  "preview_video.outdated": "Preview video ({width} × {height}, {fps} fps), out of date for the marked lines",
+  "preview_video.stale_lines": "Lines changed since the last preview; press again to see them"
  }
 }

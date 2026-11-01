@@ -14,8 +14,8 @@ from signals import write_sine
 
 from lyrics_video import cli
 from lyrics_video.cli import EXIT_FAILED, EXIT_INTERRUPTED, EXIT_OK, TextProgress, main
-from lyrics_video.config import load_song
-from lyrics_video.render import default_output, prepare_render, render
+from lyrics_video.config import VideoSettings, load_song
+from lyrics_video.render import default_output, prepare_render, preview_size, render
 
 pytestmark = pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg is not installed")
 
@@ -113,6 +113,23 @@ def test_default_names():
     assert default_output(song, 60, 15) == Path("work/my-song/videos/song_60s-75s.mp4")
     assert default_output(song, 60) == Path("work/my-song/videos/song_60s-end.mp4")
     assert default_output(song, codec="prores") == Path("work/my-song/videos/song.mov")
+
+
+@pytest.mark.parametrize(
+    ("width", "height", "fps", "expected"),
+    [
+        (1920, 1080, 30, (960, 540, 15)),
+        (1280, 720, 24, (960, 540, 15)),
+        (3840, 2160, 60, (960, 540, 15)),
+        (480, 270, 30, (480, 270, 15)),
+        (1080, 1920, 30, (304, 540, 15)),
+        (1920, 1080, 10, (960, 540, 10)),
+    ],
+)
+def test_preview_size(width, height, fps, expected):
+    song = SimpleNamespace(video=VideoSettings(width=width, height=height, fps=fps))
+
+    assert preview_size(song) == expected
 
 
 def test_refusals_before_any_work(tmp_path, sans_font, capsys):

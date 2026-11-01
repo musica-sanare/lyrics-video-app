@@ -16,6 +16,7 @@
   </span>
   <label><span data-i18n="offset.label">Reaction offset</span> <input id="offset" type="number" value="0" step="10"> ms</label>
   <button id="save" type="button" data-i18n="save.button">Save</button>
+  <button id="preview-video" type="button" data-i18n="preview_video.button">Preview video</button>
   <button id="render" type="button" data-i18n="render.button">Render video</button>
   <span id="status" role="status"></span>
   <label class="language"><span data-i18n="lang.label">Language</span> <select id="language"></select></label>
@@ -41,6 +42,7 @@
   <div id="right">
     <div id="preview">
       <img id="still" alt="">
+      <video id="pvideo" muted playsinline preload="auto" hidden></video>
       <div id="live" hidden><div class="cap" id="cap-a"></div><div class="cap" id="cap-b"></div></div>
       <span id="preview-note" class="note"></span>
     </div>

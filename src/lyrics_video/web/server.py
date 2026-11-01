@@ -34,7 +34,7 @@ def run(song: Song, port: int = 0, open_browser: bool = True) -> None:
     except KeyboardInterrupt:
         pass  # uvicorn has shut down; Ctrl+C is the normal way to stop
     finally:
-        session.render.stop()
+        session.close()
 
 
 def _open_when_started(server: uvicorn.Server, url: str) -> None:

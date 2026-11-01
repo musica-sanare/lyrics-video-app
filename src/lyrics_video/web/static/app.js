@@ -1,12 +1,16 @@
 "use strict";
 // The sync page: tap the start and end of each caption while the song plays, adjust the times with the waveform and
-// exact stills of the video, then save the timing file. Nothing is written without Save.
+// exact stills of the video, check them in a quick preview video, then save the timing file. Nothing is written
+// without Save (the preview goes to a temporary folder of the server).
 
 const LANGUAGES = { ja: "日本語", en: "English", es: "Español", fr: "Français" };
 const STILL_DELAY_MS = 250;
 const RENDER_POLL_MS = 500;
+// The preview video follows the audio, which stays the one clock; it is moved when it drifts further than this.
+const PREVIEW_DRIFT_SECONDS = 0.1;
 const $ = (id) => document.getElementById(id);
 const audio = $("audio");
+const video = $("pvideo");
 
 const state = {
   token: null,
@@ -24,7 +28,8 @@ const state = {
   wave: null, // {data: Float32Array (mono), rate, peaks}
   drag: null,
   still: { timer: null, serial: 0, url: null },
-  render: { snapshot: null, timer: null }, // the server's render task, polled while it runs
+  render: { snapshot: null, timer: null }, // the server's render task (video or preview), polled while it runs
+  preview: { url: null, lines: null, pending: null }, // the last preview video and the lines it was made from
 };
 
 // --- Texts ---------------------------------------------------------------------------------------------------------
@@ -71,6 +76,7 @@ async function setLanguage(language) {
     showNotices();
     requestStill();
   }
+  if (state.render.snapshot) showRender(state.render.snapshot);
   render();
 }
 
@@ -292,12 +298,13 @@ async function save() {
 // --- Rendering the video -------------------------------------------------------------------------------------------
 
 const rendering = () => state.render.snapshot?.state === "running";
+const renderingVideo = () => rendering() && state.render.snapshot.kind !== "preview";
 
 // The server renders the saved timing file, so the button waits for Save; an existing video is replaced only on a yes.
 async function startRender(overwrite = false) {
   if (state.dirty || !state.song?.timing_exists || rendering()) return;
   $("render").disabled = true;
-  showRender({ state: "preparing" });
+  showRender({ kind: "video", state: "preparing" });
   try {
     showRender(await (await api("/api/render", { overwrite })).json());
     pollRender();
@@ -306,20 +313,60 @@ async function startRender(overwrite = false) {
       $("render-bar").hidden = true;
       if (confirm(t("render.replace", { file: error.message.replace(/ exists$/, "") }))) return startRender(true);
     } else {
-      showRender({ state: "failed", error: { message: error.message } });
+      showRender({ kind: "video", state: "failed", error: { message: error.message } });
     }
   } finally {
     render();
   }
 }
 
+// The preview is made from the lines as they are now, saved or not; it only replaces the last preview when done.
+async function startPreview() {
+  if (!state.song || rendering()) return;
+  $("preview-video").disabled = true;
+  showRender({ kind: "preview", state: "preparing" });
+  const lines = payload();
+  try {
+    const snapshot = await (await api("/api/preview", { lines })).json();
+    state.preview.pending = lines;
+    showRender(snapshot);
+    pollRender();
+  } catch (error) {
+    showRender({ kind: "preview", state: "failed", error: { message: error.message } });
+  } finally {
+    render();
+  }
+}
+
+function previewReady() {
+  state.preview.lines = state.preview.pending;
+  state.preview.pending = null;
+  state.preview.url = `/api/preview/video?token=${encodeURIComponent(state.token)}&v=${Date.now()}`;
+  video.src = state.preview.url;
+}
+
+const lineKey = (line) => JSON.stringify([line.rows, line.start, line.end]);
+
+// A line whose text or times changed since the preview was made: the preview shows it as it was.
+function previewStale(i) {
+  const made = state.preview.lines;
+  if (!made) return false;
+  if (made.length !== state.lines.length) return true;
+  return lineKey(made[i]) !== lineKey(state.lines[i]);
+}
+
+const previewOutdated = () => state.lines.some((_, i) => previewStale(i));
+
 function pollRender() {
   clearTimeout(state.render.timer);
   state.render.timer = setTimeout(async () => {
+    const kind = state.render.snapshot?.kind;
     try {
-      showRender(await (await api("/api/render")).json());
+      const snapshot = await (await api("/api/render")).json();
+      showRender(snapshot);
+      if (snapshot.kind === "preview" && snapshot.state === "done" && state.preview.pending) previewReady();
     } catch (error) {
-      showRender({ state: "failed", error: { message: error.message } });
+      showRender({ kind, state: "failed", error: { message: error.message } });
     }
     if (rendering()) pollRender();
     else render();
@@ -335,17 +382,19 @@ function showRender(snapshot) {
   const fraction = snapshot.frames ? snapshot.frame / snapshot.frames : 0;
   $("render-progress").hidden = !running;
   $("render-progress").value = fraction;
+  const preview = snapshot.kind === "preview";
+  const prefix = preview ? "preview_video" : "render";
   $("render-cancel").hidden = snapshot.state !== "running";
-  $("render-reveal").hidden = snapshot.state !== "done";
+  $("render-reveal").hidden = snapshot.state !== "done" || preview;
   $("render-close").hidden = running;
   let text = "";
   switch (snapshot.state) {
     case "preparing":
-      text = t("render.preparing");
+      text = t(`${prefix}.preparing`);
       break;
     case "running": {
       const left = snapshot.frame > 0 ? Math.round((snapshot.elapsed * (snapshot.frames - snapshot.frame)) / snapshot.frame) : null;
-      text = t("render.running", {
+      text = t(`${prefix}.running`, {
         file: snapshot.output,
         percent: Math.floor(fraction * 100),
         left: left == null ? "–" : `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`,
@@ -353,16 +402,18 @@ function showRender(snapshot) {
       break;
     }
     case "done":
-      text = t("render.done", { file: snapshot.output, seconds: Math.round(snapshot.elapsed) });
+      text = t(`${prefix}.done`, { file: snapshot.output, seconds: Math.round(snapshot.elapsed) });
       break;
     case "cancelled":
-      text = t("render.cancelled");
+      text = t(`${prefix}.cancelled`);
       break;
     case "failed":
-      text = t("render.failed", { message: snapshot.error?.message ?? "" });
+      text = t(`${prefix}.failed`, { message: snapshot.error?.message ?? "" });
       break;
   }
-  if (snapshot.untimed && ["running", "done"].includes(snapshot.state)) text += " " + t("render.untimed", { count: snapshot.untimed });
+  if (!preview && snapshot.untimed && ["running", "done"].includes(snapshot.state)) {
+    text += " " + t("render.untimed", { count: snapshot.untimed });
+  }
   $("render-text").textContent = text;
 }
 
@@ -450,8 +501,17 @@ function currentLine(seconds) {
 
 function updatePreview() {
   const playing = !audio.paused;
-  $("live").hidden = !playing;
+  const withVideo = playing && state.preview.url != null;
+  $("live").hidden = !playing || withVideo;
+  video.hidden = !withVideo;
+  if (!withVideo && !video.paused) video.pause();
   if (!playing) return;
+  if (withVideo) {
+    followAudio();
+    const { width, height, fps } = state.song.preview;
+    $("preview-note").textContent = t(previewOutdated() ? "preview_video.outdated" : "preview_video.playing", { width, height, fps });
+    return;
+  }
   const shown = shownCaptions(audio.currentTime);
   [$("cap-a"), $("cap-b")].forEach((element, k) => {
     element.style.opacity = shown[k]?.opacity ?? 0;
@@ -462,6 +522,12 @@ function updatePreview() {
     fade: state.song.fade,
     transition: t(`transition.${state.song.transition}`),
   });
+}
+
+function followAudio() {
+  if (video.readyState === 0 || video.seeking) return;
+  if (Math.abs(video.currentTime - audio.currentTime) > PREVIEW_DRIFT_SECONDS) video.currentTime = audio.currentTime;
+  if (video.paused) video.play().catch(() => {});
 }
 
 // An exact still of the video at the playhead, drawn by the server whenever the song is paused and something changed.
@@ -504,6 +570,7 @@ function render() {
         i === next && !adjusting ? "next" : "",
         i === current ? "current" : "",
         adjusting && (i === state.sel.i || state.multi.has(i)) ? "sel" : "",
+        previewStale(i) ? "stale" : "",
       ].join(" ");
       const cell = (field) => {
         const pick = adjusting && i === state.sel.i && state.sel.field === field ? "pick" : "";
@@ -516,7 +583,9 @@ function render() {
   $("help").innerHTML = withKeys(t(adjusting ? "help.adjust" : "help.tap"));
   $("multi-info").textContent = state.multi.size > 1 ? t("adjust.multi", { count: state.multi.size }) : "";
   $("save").classList.toggle("dirty", state.dirty);
-  $("save").disabled = rendering();
+  $("save").disabled = renderingVideo();
+  $("preview-video").disabled = rendering();
+  $("preview-video").title = state.preview.url && previewOutdated() ? t("preview_video.stale_lines") : "";
   $("render").disabled = state.dirty || !state.song.timing_exists || rendering();
   $("render").title = state.dirty || !state.song.timing_exists ? t("render.unsaved") : "";
   $("mode-tap").classList.toggle("on", !adjusting);
@@ -658,7 +727,7 @@ document.addEventListener("keydown", (event) => {
   const command = event.metaKey || event.ctrlKey;
   if (command && (key === "s" || key === "S")) {
     event.preventDefault();
-    if (!rendering()) save();
+    if (!renderingVideo()) save();
     return;
   }
   if (key === "p" || key === "P") {
@@ -841,6 +910,7 @@ async function start() {
   $("mode-adjust").addEventListener("click", () => setMode("adjust"));
   $("save").addEventListener("click", save);
   $("render").addEventListener("click", () => startRender());
+  $("preview-video").addEventListener("click", startPreview);
   $("render-cancel").addEventListener("click", cancelRender);
   $("render-reveal").addEventListener("click", revealRender);
   $("render-close").addEventListener("click", () => ($("render-bar").hidden = true));
@@ -854,6 +924,7 @@ async function start() {
   }
   audio.addEventListener("play", render);
   audio.addEventListener("pause", () => {
+    video.pause();
     render();
     requestStill();
   });

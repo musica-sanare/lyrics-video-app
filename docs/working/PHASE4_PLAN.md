@@ -98,16 +98,17 @@ The page's preview area is at most 40 % of the window's height, about 640 × 360
   lines and design, including unsaved edits. It is a check, not a result, so unlike "Render video" it does not need
   a saved timing file.
 - It runs as a second kind of task in the session's `RenderTask` (one task at a time, preview or video), with the
-  same progress bar and Cancel, automatic workers and H.264 at a fast setting. The backdrop and the spectrum scale
+  same progress bar and Cancel, automatic workers and H.264 at a fast setting, without audio. The backdrop and the spectrum scale
   with the frame height, so the same `LyricsBackdrop` and preset are used at 960 × 540.
 - The file goes to a temporary folder of the session (not next to the song file), replaces the previous preview, and
   is removed when the server stops. The rule "nothing is written without an explicit command or Save" is about the
   user's files; the architecture doc states this exception.
 - `GET /api/preview/video` serves it with range requests. A `<video>` element cannot send headers, so this route
   takes the token in the URL, as the audio route does.
-- In the page, the preview video replaces the still and the simple live preview. It plays muted and follows the
-  `<audio>` element, which stays the one clock for keys and the waveform: it seeks with the audio and is corrected
-  when it drifts by more than about 50 ms.
+- In the page, the preview video replaces the simple live preview while the song plays; paused, the exact still
+  shows as before. It plays muted and follows the `<audio>` element, which stays the one clock for keys and the
+  waveform: it seeks with the audio and is corrected when it drifts by more than 0.1 s (milestone 1 measured a steady
+  20 ms to 30 ms, under half a preview frame).
 - Changing a time or a design setting after the preview marks it out of date: the note above the preview says so,
   and the changed lines are marked in the table, until "Preview video" is pressed again. The preview is not
   rebuilt automatically, so a render never starts while the owner is still tapping.
@@ -175,9 +176,10 @@ test checks.
 
 Generated tones, images and made-up lyrics; system fonts, skipped where missing; video tests skipped without ffmpeg.
 
-- Preview: a few seconds of a generated song render at 960 × 540 and 15 fps from unsaved lines; the file is in the
-  session's temporary folder, has the expected size, frame count and audio; a decoded frame is close to a 1080p still
-  of the same time scaled down; the route needs the token; the folder is gone after `stop`.
+- Preview: a few seconds of a generated song render at 15 fps from unsaved lines; the file is in the session's
+  temporary folder, has the expected size and frame count and no audio; decoded frames are close to the stills of the
+  same times (the test song is smaller than 540 pixels, so no scaling); the route needs the token; the folder is gone
+  after `close`.
 - One task at a time: a preview refuses to start during a render and the other way round.
 - Design keys: defaults give the same pixels as before; `bold` widens the text mask; `italic` shifts the top of a
   glyph to the right of its bottom; `font_face` opens another face of a `.ttc`; `title.panel` draws a box of the

@@ -28,6 +28,10 @@ VIDEOS_DIR = "videos"
 # need; 18 looks the same and gives smaller files.
 DEFAULT_CRF = 18
 SUFFIXES = {"h264": ".mp4", "prores": ".mov"}
+# The preview before rendering: small, light and silent (the page plays it in step with the song's audio).
+PREVIEW_HEIGHT = 540
+PREVIEW_FPS = 15.0
+PREVIEW_ENCODE = EncodeSettings(crf=26, x264_preset="veryfast", include_audio=False)
 
 Codec = Literal["h264", "prores"]
 Progress = Callable[[int, int], None]
@@ -109,6 +113,46 @@ def prepare_render(
     )
     untimed = [line for line in timing if line.start is None]
     return PreparedRender(job, song.title, chosen.name, song_seconds, len(captions), untimed)
+
+
+def preview_size(song: Song) -> tuple[int, int, float]:
+    """The preview's width, height and frame rate: at most 540 pixels high and 15 frames a second (Phase 4 plan)."""
+    video = song.video
+    height = min(PREVIEW_HEIGHT, video.height)
+    width = max(2, round(video.width * height / video.height / 2) * 2)
+    return width, height - height % 2, min(PREVIEW_FPS, video.fps)
+
+
+def prepare_preview(song: Song, lines: list[TimedLine], song_seconds: float, output: Path) -> PreparedRender:
+    """A quick, silent, low-resolution video of the whole song from `lines` (saved or not), replacing `output`.
+
+    The backdrop and the spectrum scale with the frame height, so the preview shows the video's design, captions and
+    spectrum; only text and thin lines are softer.
+    """
+    if song.audio is None:
+        raise ConfigError(f"{song.path}: audio is not set (the song file for the spectrum)")
+    width, height, fps = preview_size(song)
+    try:
+        check_inside(lines, song_seconds, "timing")
+        captions = timed_captions(lines, song_seconds)
+        backdrop = LyricsBackdrop.for_song(song, captions, song_seconds)
+        backdrop.prepare(width, height)
+        preset = override_preset(load_preset(song.spectrum_preset), [*song.design.spectrum.set, *song.spectrum_set])
+    except AudioSpectrumError as error:
+        raise SpectrumError(str(error)) from None
+    job = RenderJob(
+        audio_path=song.audio,
+        output_path=output,
+        preset=preset,
+        width=width,
+        height=height,
+        fps=fps,
+        encode=PREVIEW_ENCODE,
+        overwrite=True,
+        backdrop=backdrop,
+    )
+    untimed = [line for line in lines if line.start is None]
+    return PreparedRender(job, song.title, song.design.name, song_seconds, len(captions), untimed)
 
 
 def render(

@@ -5,7 +5,9 @@ import dataclasses
 import hmac
 import io
 import mimetypes
+import shutil
 import subprocess
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -21,12 +23,15 @@ from lyrics_video.backdrop import LyricsBackdrop, timed_captions
 from lyrics_video.config import Song
 from lyrics_video.errors import ConfigError, LyricsVideoError
 from lyrics_video.lyrics import read_lyrics
-from lyrics_video.render import PreparedRender, default_output, prepare_render, render
+from lyrics_video.render import PreparedRender, default_output, prepare_preview, prepare_render, preview_size, render
 from lyrics_video.timing import Merged, TimedLine, check_inside, check_lines, merge, read_lrc, write_lrc
 
 TOKEN_HEADER = "x-token"
-# The audio element cannot send headers, so this one route also takes the token as a query parameter.
+# Audio and video elements cannot send headers, so these routes also take the token as a query parameter.
 AUDIO_ROUTE = "/api/audio"
+PREVIEW_ROUTE = "/api/preview/video"
+MEDIA_ROUTES = {AUDIO_ROUTE, PREVIEW_ROUTE}
+PREVIEW_FILE = "preview.mp4"
 STATIC = Path(__file__).parent / "static"
 # How long stopping the server waits for a cancelled render to remove its temporary file.
 SHUTDOWN_WAIT_SECONDS = 10.0
@@ -58,17 +63,25 @@ class RenderOutputExistsError(LyricsVideoError):
     code = "output_exists"
 
 
+class PreviewMissingError(LyricsVideoError):
+    """No preview has been rendered yet; the page answers 404."""
+
+    code = "no_preview"
+
+
 class RenderRequest(BaseModel):
     overwrite: bool = False
 
 
 class RenderTask:
-    """The one render the page can run at a time, in a background thread. The page polls `snapshot`."""
+    """The one render the page can run at a time, in a background thread: the video, or the preview before it
+    (`kind`). The page polls `snapshot`."""
 
     def __init__(self) -> None:
         self.lock = threading.Lock()
         self.cancel = threading.Event()
         self.thread: threading.Thread | None = None
+        self.kind = "video"
         self.state = "idle"
         self.frame = 0
         self.frames = 0
@@ -81,10 +94,13 @@ class RenderTask:
     def running(self) -> bool:
         return self.thread is not None and self.thread.is_alive()
 
-    def start(self, prepared: PreparedRender) -> None:
+    def running_video(self) -> bool:
+        return self.running() and self.kind == "video"
+
+    def start(self, prepared: PreparedRender, kind: str = "video") -> None:
         self.cancel.clear()
         with self.lock:
-            self.state, self.frame, self.frames, self.seconds, self.error = "running", 0, 0, None, None
+            self.kind, self.state, self.frame, self.frames, self.seconds, self.error = kind, "running", 0, 0, None, None
             self.output, self.untimed, self.started = prepared.job.output_path, len(prepared.untimed), time.monotonic()
         self.thread = threading.Thread(target=self._run, args=(prepared,), daemon=True)
         self.thread.start()
@@ -109,11 +125,11 @@ class RenderTask:
         with self.lock:
             output = self.output
             name = None
-            if output is not None:
+            if output is not None and self.kind == "video":
                 name = str(output.relative_to(folder)) if output.is_relative_to(folder) else str(output)
             elapsed = self.seconds if self.seconds is not None else time.monotonic() - self.started
             return {
-                "state": self.state, "frame": self.frame, "frames": self.frames, "output": name,
+                "kind": self.kind, "state": self.state, "frame": self.frame, "frames": self.frames, "output": name,
                 "untimed": self.untimed, "elapsed": elapsed if self.state != "idle" else 0.0, "error": self.error,
             }
 
@@ -146,6 +162,8 @@ class SyncSession:
         self.render = RenderTask()
         # Held while a render is checked and started, so two requests cannot start two renders.
         self.starting = threading.Lock()
+        # The preview video lives in a temporary folder of the session, made on first use and removed by `close`.
+        self.preview_folder: Path | None = None
 
     def load(self) -> dict:
         """The lines to time: the timing file merged with the lyrics file, or the lyrics file alone at first."""
@@ -158,6 +176,7 @@ class SyncSession:
         else:
             merged = Merged([TimedLine(c.rows) for c in read_lyrics(self.song.lyrics, separator)], [])
         style = self.song.design.caption
+        width, height, fps = preview_size(self.song)
         return {
             "title": self.song.title or self.song.path.parent.name,
             "song_file": self.song.path.name,
@@ -170,6 +189,7 @@ class SyncSession:
             "lead": style.lead_seconds,
             "fade": style.fade_seconds,
             "transition": style.transition,
+            "preview": {"width": width, "height": height, "fps": fps},
             "lines": [dataclasses.asdict(line) for line in merged.lines],
             "changes": [dataclasses.asdict(change) for change in merged.changes],
         }
@@ -181,7 +201,7 @@ class SyncSession:
         return lines
 
     def save(self, request: TimingRequest) -> dict:
-        if self.render.running():
+        if self.render.running_video():
             raise RenderBusyError("a video is being rendered; save after it is done or cancelled")
         lines = self.lines(request)
         write_lrc(self.timing_path, lines, self.song.separator, backup=True)
@@ -192,8 +212,7 @@ class SyncSession:
         if not self.starting.acquire(blocking=False):
             raise RenderBusyError("a video is already being rendered")
         try:
-            if self.render.running():
-                raise RenderBusyError("a video is already being rendered")
+            self._refuse_while_running()
             song = dataclasses.replace(self.song, timing=self.timing_path)
             if not self.timing_path.exists():
                 raise ConfigError(f"{self.timing_path.name} does not exist yet; save the timing first")
@@ -204,10 +223,42 @@ class SyncSession:
         finally:
             self.starting.release()
 
+    def start_preview(self, request: TimingRequest) -> None:
+        """Render the preview from the page's current lines, saved or not, into the session's temporary folder."""
+        lines = self.lines(request)
+        if not self.starting.acquire(blocking=False):
+            raise RenderBusyError("a video is already being rendered")
+        try:
+            self._refuse_while_running()
+            if self.preview_folder is None:
+                self.preview_folder = Path(tempfile.mkdtemp(prefix="lyrics-video-preview-"))
+            output = self.preview_folder / PREVIEW_FILE
+            self.render.start(prepare_preview(self.song, lines, self.duration, output), kind="preview")
+        finally:
+            self.starting.release()
+
+    def _refuse_while_running(self) -> None:
+        if self.render.running():
+            kind = "a preview" if self.render.kind == "preview" else "a video"
+            raise RenderBusyError(f"{kind} is already being rendered")
+
+    def preview_video(self) -> Path:
+        """The last finished preview; a preview being rendered replaces it only when it is done."""
+        if self.preview_folder is None or not (self.preview_folder / PREVIEW_FILE).exists():
+            raise PreviewMissingError("there is no preview video yet")
+        return self.preview_folder / PREVIEW_FILE
+
+    def close(self) -> None:
+        """Stop a running render and remove the preview, when the server stops."""
+        self.render.stop()
+        if self.preview_folder is not None:
+            shutil.rmtree(self.preview_folder, ignore_errors=True)
+            self.preview_folder = None
+
     def reveal(self) -> None:
         """Select the finished video in the Finder; only the file this session rendered."""
         output = self.render.output
-        if self.render.state != "done" or output is None or not output.exists():
+        if self.render.kind != "video" or self.render.state != "done" or output is None or not output.exists():
             raise ConfigError("there is no finished video to show")
         subprocess.run(["open", "-R", str(output)], check=False)
 
@@ -236,7 +287,7 @@ def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> Fas
             return _error(403, "forbidden", "unexpected host")
         if request.url.path.startswith("/api/"):
             supplied = request.headers.get(TOKEN_HEADER, "")
-            if request.url.path == AUDIO_ROUTE and not supplied:
+            if request.url.path in MEDIA_ROUTES and not supplied:
                 supplied = request.query_params.get("token", "")
             if not hmac.compare_digest(supplied.encode(), expected):
                 return _error(403, "forbidden", "missing or wrong session token")
@@ -246,6 +297,8 @@ def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> Fas
     async def app_error(request: Request, error: LyricsVideoError):
         if isinstance(error, (RenderBusyError, RenderOutputExistsError)):
             return _error(409, error.code, str(error))
+        if isinstance(error, PreviewMissingError):
+            return _error(404, error.code, str(error))
         return _error(400, type(error).__name__, str(error))
 
     @app.get("/", response_class=HTMLResponse)
@@ -284,6 +337,15 @@ def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> Fas
     def cancel_render() -> dict:
         session.render.cancel.set()
         return session.render.snapshot(session.song.path.parent)
+
+    @app.post("/api/preview")
+    def start_preview(request: TimingRequest) -> dict:
+        session.start_preview(request)
+        return session.render.snapshot(session.song.path.parent)
+
+    @app.get(PREVIEW_ROUTE)
+    def preview_video() -> FileResponse:
+        return FileResponse(session.preview_video(), media_type="video/mp4", headers={"Cache-Control": "no-store"})
 
     @app.post("/api/render/reveal")
     def reveal() -> dict:

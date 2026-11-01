@@ -45,6 +45,15 @@
   "render.failed": "L’export a échoué : {message}",
   "render.reveal": "Afficher dans le Finder",
   "render.replace": "{file} existe déjà. Le remplacer ?",
-  "render.untimed": "{count} ligne(s) sans temps ne figurent pas dans la vidéo."
+  "render.untimed": "{count} ligne(s) sans temps ne figurent pas dans la vidéo.",
+  "preview_video.button": "Aperçu vidéo",
+  "preview_video.preparing": "Préparation de l'aperçu…",
+  "preview_video.running": "Création de l'aperçu vidéo : {percent} %, environ {left} restant",
+  "preview_video.done": "Aperçu vidéo prêt en {seconds} s. Lancez la chanson pour le voir.",
+  "preview_video.cancelled": "Aperçu annulé ; l'aperçu précédent est conservé.",
+  "preview_video.failed": "Échec de l'aperçu : {message}",
+  "preview_video.playing": "Aperçu vidéo ({width} × {height}, {fps} i/s) : le design, les sous-titres et le spectre de la vidéo",
+  "preview_video.outdated": "Aperçu vidéo ({width} × {height}, {fps} i/s) : lignes marquées périmées",
+  "preview_video.stale_lines": "Des lignes ont changé depuis le dernier aperçu ; cliquez de nouveau pour les voir"
  }
 }

@@ -2,6 +2,7 @@ import io
 import json
 import re
 import shutil
+import subprocess
 import threading
 import time
 from pathlib import Path
@@ -12,6 +13,7 @@ from audio_spectrum import Cancelled
 from fastapi.testclient import TestClient
 from PIL import Image
 from signals import write_sine
+from test_render import probe
 
 from lyrics_video.cli import EXIT_FAILED, main
 from lyrics_video.config import load_song
@@ -229,7 +231,9 @@ def test_every_message_the_page_uses_exists():
 
 @pytest.fixture
 def session(song):
-    return SyncSession(load_song(song))
+    session = SyncSession(load_song(song))
+    yield session
+    session.close()
 
 
 @pytest.fixture
@@ -372,3 +376,105 @@ def test_an_unexpected_failure_is_reported(render_client, monkeypatch):
 
     assert snapshot["state"] == "failed"
     assert snapshot["error"] == {"code": "OSError", "message": "disk full"}
+
+
+# --- The preview video ---------------------------------------------------------------------------------------------
+
+
+def preview_url(token=TOKEN):
+    return f"/api/preview/video?token={token}"
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg is not installed")
+def test_the_preview_is_made_from_unsaved_lines(render_client, session, song):
+    started = post(render_client, "/api/preview", {"lines": TIMED})
+    snapshot = wait_for_render(render_client)
+    response = render_client.get(preview_url())
+
+    assert started.json()["kind"] == "preview"
+    assert snapshot["state"] == "done", snapshot
+    assert snapshot["output"] is None
+    assert not (song.parent / "lyrics.lrc").exists() and not (song.parent / "videos").exists()
+    assert response.status_code == 200 and response.headers["content-type"] == "video/mp4"
+    video = session.preview_folder / web_app.PREVIEW_FILE
+    streams = probe(video)
+    assert "audio" not in streams
+    assert (streams["video"]["width"], streams["video"]["height"]) == (480, 270)
+    assert int(streams["video"]["nb_read_frames"]) == 3 * 15
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg is not installed")
+def test_the_preview_shows_the_captions_of_the_stills(render_client, session):
+    post(render_client, "/api/preview", {"lines": TIMED})
+    wait_for_render(render_client)
+    frames = subprocess.run(
+        ["ffmpeg", "-v", "error", "-i", str(session.preview_folder / web_app.PREVIEW_FILE), "-f", "rawvideo",
+         "-pix_fmt", "rgb24", "-"],
+        capture_output=True, check=True,
+    ).stdout
+    frames = np.frombuffer(frames, dtype=np.uint8).reshape(-1, 270, 480, 3).astype(int)
+
+    for seconds in (0.2, 1.0, 2.0):
+        still = np.asarray(Image.open(io.BytesIO(post(render_client, "/api/still", {"lines": TIMED, "time": seconds}).content)))
+        frame = frames[round(seconds * 15)]
+        assert np.abs(frame - still).mean() < 6, seconds
+    # The captions differ between those times, so the comparison above would notice a wrong caption.
+    assert np.abs(frames[3] - frames[30]).mean() > 1
+
+
+def test_no_preview_before_one_is_made(render_client):
+    assert render_client.get(preview_url()).status_code == 404
+
+
+def test_the_preview_needs_the_token(render_client):
+    assert render_client.get(preview_url("wrong")).status_code == 403
+    assert render_client.post("/api/preview", json={"lines": TIMED}).status_code == 403
+
+
+def test_invalid_lines_make_no_preview(render_client, session):
+    response = post(render_client, "/api/preview", {"lines": [dict(TIMED[0], start=9.0)]})
+
+    assert response.status_code == 400
+    assert session.preview_folder is None
+
+
+def test_one_preview_or_render_at_a_time_and_saving_during_a_preview(render_client, held):
+    post(render_client, "/api/timing", {"lines": TIMED})
+    assert post(render_client, "/api/preview", {"lines": TIMED}).json()["state"] == "running"
+
+    render_refused = post(render_client, "/api/render", {})
+    preview_refused = post(render_client, "/api/preview", {"lines": TIMED})
+    saving = post(render_client, "/api/timing", {"lines": TIMED})
+
+    assert (render_refused.status_code, render_refused.json()["code"]) == (409, "busy")
+    assert "preview" in render_refused.json()["message"]
+    assert preview_refused.status_code == 409
+    assert saving.status_code == 200
+    held.release.set()
+    assert wait_for_render(render_client)["state"] == "done"
+    held.release.clear()
+    assert post(render_client, "/api/render", {}).json()["kind"] == "video"
+    assert post(render_client, "/api/preview", {"lines": TIMED}).status_code == 409
+
+
+def test_show_in_finder_is_not_for_the_preview(render_client, held, monkeypatch):
+    monkeypatch.setattr(web_app.subprocess, "run", lambda command, check: None)
+    post(render_client, "/api/preview", {"lines": TIMED})
+    held.release.set()
+    wait_for_render(render_client)
+
+    assert post(render_client, "/api/render/reveal", {}).status_code == 400
+
+
+def test_closing_the_session_removes_the_preview(render_client, session, held):
+    post(render_client, "/api/preview", {"lines": TIMED})
+    folder = session.preview_folder
+
+    session.close()
+
+    assert not session.render.running()
+    assert not folder.exists() and session.preview_folder is None
+
+
+def test_the_page_learns_the_preview_size(client):
+    assert get(client, "/api/song").json()["preview"] == {"width": 480, "height": 270, "fps": 15.0}

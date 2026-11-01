@@ -110,14 +110,24 @@ listens on `127.0.0.1` and refuses other web pages. Stop it with `Ctrl+C` in the
    pause. `Backspace` undoes the last mark. The highlighted line starts next.
 2. **Adjust:** click a time (or switch to Adjust) and correct it while listening and looking at the waveform. The
    picture above the waveform is the exact frame of the video at the playhead whenever the song is paused.
-3. **Save:** the Save button or `⌘S` writes the timing file. Nothing is written before that, and leaving the page
+3. **Preview video:** before the long render, makes a quick video of the whole song and plays it in the page while
+   the song plays, to check every caption change with the design and the spectrum.
+   - It is made from the lines as they are on the page, saved or not, in about a tenth of the song's length (about
+     20 s for a 5-minute song). It is smaller than the video (960 × 540 at 15 frames a second) and has no sound of its
+     own: it follows the song in the page.
+   - Lines changed after the preview are marked in the table, and the note above the picture says the preview is
+     out of date; press the button again to see them. Paused, the picture is the exact still as before.
+   - Cancel keeps the previous preview. The preview is kept in a temporary folder and removed when the server stops;
+     nothing is written next to the song.
+4. **Save:** the Save button or `⌘S` writes the timing file. Nothing is written before that, and leaving the page
    with unsaved changes asks first.
-4. **Render video:** renders the whole video from the saved timing, as the `render` command does (section 5), into
+5. **Render video:** renders the whole video from the saved timing, as the `render` command does (section 5), into
    `videos/<song file name>.mp4`.
    - The button waits until everything is saved, so the video always matches the timing file.
    - A bar shows the progress and the time left. Cancel stops the render and leaves no file.
    - An existing video is replaced only after you confirm. When the video is done, "Show in Finder" selects it.
    - While the render runs, stills still work, but Save waits until the render is done or cancelled.
+   - One render runs at a time: the video or a preview.
    - Stopping the server with `Ctrl+C` cancels a running render cleanly.
 
 Keys in Adjust mode:
@@ -141,7 +151,8 @@ Details:
   changed since, the page lists the added and removed lines and keeps the times of unchanged lines (matched in
   order). New lines have no time until you set one.
 - The reaction offset (in ms) is subtracted from every tapped time; it is 0 by default.
-- While the song plays, the picture is a simple preview with the design's lead, fade and transition.
+- While the song plays without a preview video, the picture is a simple preview with the design's lead, fade and
+  transition only.
 - The page speaks Japanese, English, Spanish and French.
 
 ### The timing file
