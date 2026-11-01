@@ -2,8 +2,8 @@
 
 # Phase 6 plan: everyday use, from the Dock to the next song
 
-Status: proposed on 2026-11-01, waiting for the owner's answers to the questions in the last section. The owner chose
-this scope on 2026-11-01.
+Status: approved by the owner on 2026-11-01 with the recommended options (A1, B1, C1, D1) and every recommended
+answer; the answers are recorded in the last section. The owner chose this scope the same day.
 
 ## Goal
 
@@ -206,6 +206,17 @@ replaced by a stand-in.
 - A measured render time with a heavier spectrum, if render time becomes a concern.
 
 ## Questions for the owner
+
+Answers (2026-11-01): the owner accepted every recommendation.
+
+- Q1: A1, B1, C1 and D1.
+- Q2: the app is called "Lyrics Video".
+- Q3: the song file goes next to the audio file by default; "Change…" chooses another folder.
+- Q4: the Song mode is part of this phase.
+- Q5: a Quit button, and the server stops by itself 10 minutes after the last page closed.
+- Q6: the default icon for now.
+
+The questions as asked:
 
 - Q1. Options A to D: are the recommendations (A1 an app made by `install-app`, B1 the song file next to the audio by
   default, C1 files referenced where they are, D1 named designs carry their fonts) fine?
