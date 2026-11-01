@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob 310c4333ee2b7ab4c65936f8c585edb190d5eb3e -->
+<!-- source: docs/en/ARCHITECTURE.md blob 602e9b0a0bb66be62c4734b966a41352bcbb5637 -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -15,11 +15,11 @@ lyrics-video-app の作りをまとめる。層の分け方、曲ファイルが
 ```mermaid
 flowchart TB
   subgraph commands["コマンドとページ"]
-    cli["cli.py：captions、compare、still、sync"]
+    cli["cli.py：captions、compare、still、render、sync"]
     web["web/：サーバーと sync ページ"]
   end
   subgraph frames["フレーム"]
-    still["still.py"]
+    still["still.py、render.py"]
     backdrop["backdrop.py：LyricsBackdrop"]
     layers["layers.py：一度だけ描く絵"]
   end
@@ -38,12 +38,12 @@ flowchart TB
 | 層 | モジュール | 役割 |
 |---|---|---|
 | 曲とデザイン | `config.py`、`design.py`、`designs/*.toml`、`lyrics.py`、`timing.py`、`errors.py` | 曲ファイル、上書きを反映したデザイン、歌詞ファイル、タイミングファイル（LRC）を読んで検証する。パスは曲ファイルを基準に解決する |
-| フレーム | `layers.py`、`backdrop.py`、`still.py` | フレームの部品（背景、曲名、字幕、クレジット）を描き、時刻に合わせてスペクトラムの下に重ねる |
+| フレーム | `layers.py`、`backdrop.py`、`still.py`、`render.py` | フレームの部品（背景、曲名、字幕、クレジット）を描き、時刻に合わせてスペクトラムの下に重ね、静止画や動画のために audio-spectrum-app へ渡す |
 | audio-spectrum-app | `audio_spectrum`（別リポジトリ） | 曲をデコードして解析し、このアプリの backdrop の上にスペクトラムを描く。静止画にも動画にも使う |
 | コマンドとページ | `cli.py`、`web/` | 利用者の操作を下の層の呼び出しに変え、ファイルを書く |
 
 旧来の字幕画像（`captions.py`、`caption_image.py`、`fonts.py`、`contact_sheet.py`）はフレームの層の横にある。
-Phase 3 で動画全体を書き出せるようになるまで残す。
+最初の動画全体が iMovie のワークフローに代わった時点で削除する（[Phase 3 plan](../working/PHASE3_PLAN.md)）。
 
 ## 2. 曲ファイルから静止画まで
 
@@ -73,7 +73,17 @@ sequenceDiagram
    見つからなければフレームを描く前に失敗する。
 4. audio-spectrum-app がフレームごとに `backdrop.frame(index, seconds, width, height)` を呼び、返った画像の上にスペクトラムを描く。
 
-動画（Phase 3）は同じ backdrop を `render_video` に渡し、ワーカープロセスの中で呼ぶ。そのため静止画は、対応する動画のフレームと同じ画像になる。
+### 動画全体
+
+`render` は同じ backdrop を作り、audio-spectrum-app の `render_video` に渡す（`render.py`）。
+
+1. `prepare_render` は、すぐ失敗しうる処理をこのプロセスで済ませる。曲ファイルとタイミングを読み、既存の出力を断り、曲を一度デコードして長さを求め、
+   時刻を確かめ、`prepare` を呼ぶ。そのため画像やフォントが見つからなければ、ワーカーを起動する前に失敗する。返り値は `RenderJob` と概要だ。
+2. `render` がそのジョブで `render_video` を呼ぶ。audio-spectrum-app は backdrop を pickle してワーカープロセスに送り、
+   曲全体のフレームごとに（一部だけのときも `start` から）そこで `frame` を呼び、上にスペクトラムを描き、一時ファイルを通して音声付きの動画にする。
+
+そのため静止画は、対応する動画のフレームと（H.264 の圧縮を除けば）同じ画像になる。Ctrl+C は `render_video` を中断し、
+ワーカーを止めて一時ファイルを消す。
 
 ### 時刻に合わせた字幕
 
@@ -131,6 +141,7 @@ backdrop は audio-spectrum-app のワーカーで、スペクトラム（1080p 
   変換は字幕が現れるたびに 1 回で済み、曲が長くてもメモリは増えない。
 
 `tools/time_backdrop.py` による M1、1080p での計測（Phase 2）では、既定の `soft` デザインで字幕ありが約 8 ms、クロスフェード中が約 17 ms。
+スペクトラム付きで 279 秒の動画全体を書き出すと、どの組み込みデザインでも 143〜154 秒（曲の長さの 51〜55 %）かかる。
 全体の表は各フェーズの受け入れ報告にある。
 
 ## 5. 新しい機能の置き場所
@@ -143,4 +154,3 @@ backdrop は audio-spectrum-app のワーカーで、スペクトラム（1080p 
 | フレームの新しい部品 | `design.py` のスタイル、`layers.py` の層、`LyricsBackdrop` での重ね方 | 変わらないものは `_prepared_for` で一度だけ描き、変わる間だけフレームごとに重ねる |
 | 別のタイミングの出どころ（MusicXML、自動合わせ） | `TimedLine` の一覧を返す読み込み関数 | `timing.py` が LRC として書く。backdrop は変えなくてよい |
 | ページの新しい言語 | `web/static/i18n/<code>.json` と `app.js` の `LANGUAGES` | すべてのメッセージファイルがそろっているかをテストで確かめる |
-| 動画全体（Phase 3） | `LyricsBackdrop` を `render_video` に渡すコマンド | backdrop はすでに pickle でき、別プロセスでのテストもある |

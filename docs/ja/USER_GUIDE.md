@@ -1,14 +1,14 @@
-<!-- source: docs/en/USER_GUIDE.md blob 69abee431419bb7208c629c51ce6391f310d025e -->
+<!-- source: docs/en/USER_GUIDE.md blob d08ebf878f616774f100cc7b3f7a93579ed723d8 -->
 [English](../en/USER_GUIDE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/USER_GUIDE.md)の翻訳。内容が異なる場合は英語版が優先する。
 
 # ユーザーガイド
 
-lyrics-video-app をセットアップし、曲の字幕画像を作り、字幕にタイミングを付け、動画のフレームを確かめる手順をまとめる。このアプリで歌詞動画を作る人向け。
-動画全体の書き出しは後のフェーズで加わる。
+lyrics-video-app をセットアップし、曲の字幕にタイミングを付け、動画のフレームを確かめ、動画全体を書き出す手順をまとめる。このアプリで歌詞動画を作る人向け。
+旧ワークフローの字幕画像も引き続き作れる。
 
-曲ごとにフォルダを作り、そこに曲ファイルを置く。3 つのコマンドがそれを読み、隣のフォルダに画像を書き出す。
+曲ごとにフォルダを作り、そこに曲ファイルを置く。各コマンドがそれを読み、隣のフォルダに画像や動画を書き出す。
 `sync` はブラウザでページを開き、字幕にタイミングを付ける。
 
 ```mermaid
@@ -21,17 +21,20 @@ flowchart LR
   captions["captions"]
   compare["compare"]
   still["still"]
+  render["render"]
   sync["sync（ページ）"]
   outCaptions["captions/：字幕 1 つにつき PNG 1 枚"]
   outCompare["compare/：フォントごとの画像と一覧画像"]
   outStills["stills/：動画のフレーム"]
-  song --> captions & compare & still
+  outVideos["videos/：動画全体"]
+  song --> captions & compare & still & render
   lyrics --> captions & still
-  timing --> still
+  timing --> still & render
   lyrics & media --> sync
   sync -->|保存| timing
   comparetxt --> compare
-  media --> still
+  media --> still & render
+  render --> outVideos
   captions --> outCaptions
   compare --> outCompare
   still --> outStills
@@ -202,7 +205,7 @@ uv run lyrics-video sync work/my-song/song.toml
 
 ### 字幕が時刻に合わせて出入りするしくみ
 
-字幕の出入りはデザインの 3 つの設定（7 節）で決まる。これらを変えても、タイミングを付け直す必要はない。
+字幕の出入りはデザインの 3 つの設定（8 節）で決まる。これらを変えても、タイミングを付け直す必要はない。
 
 | 設定 | 既定値 | 意味 |
 |---|---|---|
@@ -212,7 +215,52 @@ uv run lyrics-video sync work/my-song/song.toml
 
 歌が途切れるところでは、終わりの時刻から字幕が消え始める。フェード 2 回分より短い字幕は、そのぶん速くフェードする。
 
-## 7. デザイン
+## 7. 動画全体：`render`
+
+```bash
+uv run lyrics-video render work/my-song/song.toml
+```
+
+曲の音声付きの歌詞動画を、曲ファイルの隣の `videos/<曲ファイル名>.mp4` に書き出す（`song.toml` なら `videos/song.mp4`）。
+各フレームは 5 節の静止画と同じで、背景、タイトル、タイミングどおりの字幕、クレジット、その上のスペクトラムからなる。
+サイズとフレームレートは曲ファイルの `[video]` に従う。
+
+時間のかかる処理に入る前に、すぐ失敗しうるもの（曲ファイル、タイミング、背景画像、フォント、既存の動画）をすべて確かめ、概要を表示する。
+
+```text
+Song: Song Title (song.wav, 279.5 s)
+Design: soft; timed captions: 18
+Rendering work/my-song/videos/song.mp4
+```
+
+ここでタイトルと音声ファイルを確かめる。別の曲からコピーした曲ファイルなら、すぐ気付ける。
+
+- 曲ファイルに `audio` と `timing` が要る。
+- 時刻のない行は警告に一覧が出て、動画には入らない。下書きにはこれが便利だ。
+- 進捗は標準エラー出力に出る。`Ctrl+C` で止めるとファイルは残らない。
+- 既存の動画は `--overwrite` なしでは置き換えない。動画はまず一時ファイルに書くので、最終的な名前のファイルは常に完全な状態だ。
+- 4.7 分の曲なら M1 の Mac で約 2 分半かかり、ファイルは約 125 MB になる。
+
+曲全体を書き出す前に一部だけ確かめるなら、開始位置と長さを指定する。
+
+```bash
+uv run lyrics-video render work/my-song/song.toml --start 60 --duration 15
+```
+
+これで `videos/song_60s-75s.mp4` ができる（`--duration` を省くと `song_60s-end.mp4`）。
+フレームは動画全体の同じ時刻のものと同一で、音声もそれに合わせて切り出す。
+
+| オプション | 既定値 | 意味 |
+|---|---|---|
+| `-o`、`--output FILE` | `videos/<曲ファイル名>.mp4` | 別の動画ファイル。H.264 なら `.mp4`、ProRes なら `.mov` |
+| `--overwrite` | オフ | 既存の動画を置き換える |
+| `--start SECONDS`、`--duration SECONDS` | 曲全体 | 曲の一部だけを書き出す |
+| `--design NAME` | 曲ファイルの指定 | 別のデザイン（組み込みの名前かファイル）。曲ファイルのデザイン上書きも効く |
+| `--workers N` | `0`（自動） | 描画プロセスの数。`1` なら 1 プロセスで描く |
+| `--codec CODEC` | `h264` | `h264` か `prores`（ProRes 422。編集向けで、ファイルはずっと大きい） |
+| `--crf N` | `18` | H.264 の画質（0〜51）。小さいほど高画質でファイルが大きい |
+
+## 8. デザイン
 
 フレームの部品がどう見えるかをまとめたものが**デザイン**。曲ファイルに `design = "soft"` と書いて選ぶか、
 自分のデザインファイルを `design = "my-design.toml"` で指定する。
@@ -274,20 +322,20 @@ size = 56
 | `gradient`（`caption` の中） | `height`、`color`、`opacity`（下端での不透明度） |
 | `panel`（`caption`、`credits` の中） | `color`、`opacity`（色の濃さ）、`blur`（背後のぼかし）、`radius`、`padding`（`[x, y]`） |
 
-## 8. 曲ファイル
+## 9. 曲ファイル
 
-曲ファイルは TOML で書く。パスは曲ファイルからの相対パスで、`~` はホームフォルダ。`captions` に要る `captions.font` と、
-`still` に要る `audio` を除き、どのキーも省略できる。
+曲ファイルは TOML で書く。パスは曲ファイルからの相対パスで、`~` はホームフォルダ。`captions` に要る `captions.font`、
+`still` に要る `audio`、`render` に要る `audio` と `timing` を除き、どのキーも省略できる。
 
 | キー | 既定値 | 意味 |
 |---|---|---|
 | `lyrics` | `"lyrics.txt"` | 歌詞ファイル |
-| `timing` | なし | タイミングファイル（LRC）。`still` で使う（6 節） |
-| `audio` | なし | 曲の音声（スペクトラム用、`still`） |
+| `timing` | なし | タイミングファイル（LRC）。`still` と `render` で使う（6 節） |
+| `audio` | なし | 曲の音声（スペクトラムと動画の音声用、`still`、`render`） |
 | `background_image` | なし | 動画の背景画像 |
 | `title` | `""` | 曲名（1 行） |
 | `credits` | `[]` | クレジットの各行。例：`["by Your Name"]` |
-| `design` | `"soft"` | デザイン名かデザインファイル、または `name` と上書きを書いた `[design]` テーブル（7 節） |
+| `design` | `"soft"` | デザイン名かデザインファイル、または `name` と上書きを書いた `[design]` テーブル（8 節） |
 | `fonts.default` | なし | 自分のフォントを指定しない、動画のすべての部品のフォント |
 | `spectrum.preset` | `"default"` | audio-spectrum-app のプリセット名かプリセットファイル |
 | `spectrum.set` | `[]` | プリセットの上書き（audio-spectrum-app の `--set` と同じ） |
@@ -308,7 +356,7 @@ size = 56
 フォントはこのリポジトリに含めず、コピーもしない。曲ファイルはフォントの場所を指すだけ。実際の曲ファイルは
 `work/` かリポジトリの外に置く。
 
-## 9. 旧歌詞画像スクリプトからの移行
+## 10. 旧歌詞画像スクリプトからの移行
 
 旧版で入力していた 0 か 1 の代わりに、コマンド `captions` か `compare` を選ぶ。旧 `conf.toml` のキーは、曲ファイルの次のキーに対応する。
 
@@ -332,13 +380,14 @@ size = 56
   一覧画像は新しく加えた。
 - `--overwrite` を付けなければ既存の画像は上書きしない。曲ファイル、歌詞ファイル、フォントにエラーがあれば、画像は 1 枚も書き出さない。
 
-## 10. エラー
+## 11. エラー
 
 | 終了コード | 意味 |
 |---|---|
 | 0 | 完了 |
 | 1 | 失敗。理由は標準エラー出力のメッセージに出る（曲ファイル、歌詞ファイルやタイミングファイル、フォント、画像、曲、収まらない字幕、既存の出力） |
 | 2 | コマンドラインの使い方の誤り |
+| 130 | `render` を `Ctrl+C` で止めた。動画は書き出していない |
 
 エラーにはファイル名と、歌詞とタイミングなら行番号が出る。すべての画像を描き終えてから書き出すので、これらのエラーでは何も書き出さない。
 各ファイルは完全に書き出すか、まったく書き出さないかのどちらかになる。

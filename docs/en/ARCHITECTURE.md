@@ -14,11 +14,11 @@ public API (`audio_spectrum`).
 ```mermaid
 flowchart TB
   subgraph commands["Commands and the page"]
-    cli["cli.py: captions, compare, still, sync"]
+    cli["cli.py: captions, compare, still, render, sync"]
     web["web/: server and sync page"]
   end
   subgraph frames["Frames"]
-    still["still.py"]
+    still["still.py, render.py"]
     backdrop["backdrop.py: LyricsBackdrop"]
     layers["layers.py: pictures drawn once"]
   end
@@ -37,12 +37,13 @@ flowchart TB
 | Layer | Modules | Responsibility |
 |---|---|---|
 | Song and designs | `config.py`, `design.py`, `designs/*.toml`, `lyrics.py`, `timing.py`, `errors.py` | Read and validate the song file, the design with its overrides, the lyrics file and the timing file (LRC). Paths are resolved against the song file |
-| Frames | `layers.py`, `backdrop.py`, `still.py` | Draw the parts of a frame (background, title, captions, credits) and compose them by time under the spectrum |
+| Frames | `layers.py`, `backdrop.py`, `still.py`, `render.py` | Draw the parts of a frame (background, title, captions, credits), compose them by time under the spectrum, and hand them to audio-spectrum-app for stills and videos |
 | audio-spectrum-app | `audio_spectrum` (another repository) | Decode the song, analyse it and draw the spectrum over this app's backdrop, for stills and videos |
 | Commands and the page | `cli.py`, `web/` | Turn user actions into calls of the layers below, and write files |
 
 The caption images of the old workflow (`captions.py`, `caption_image.py`, `fonts.py`, `contact_sheet.py`) sit beside
-the frames layer. They are kept until Phase 3 delivers whole videos.
+the frames layer. They are removed once the first whole video replaces the iMovie workflow
+([Phase 3 plan](../working/PHASE3_PLAN.md)).
 
 ## 2. From a song file to a still
 
@@ -74,8 +75,19 @@ sequenceDiagram
 4. audio-spectrum-app calls `backdrop.frame(index, seconds, width, height)` for each frame and draws the spectrum
    over the returned picture.
 
-Videos (Phase 3) pass the same backdrop to `render_video`, which calls it in its worker processes. A still is
-therefore the same picture as the video frame it stands for.
+### Whole videos
+
+`render` builds the same backdrop and passes it to audio-spectrum-app's `render_video` (`render.py`):
+
+1. `prepare_render` does everything that can fail quickly, in this process: it loads the song file and the timing,
+   refuses an existing output, decodes the song once for its duration, checks the times and calls `prepare`, so a
+   missing image or font fails before any worker starts. It returns the `RenderJob` and a summary.
+2. `render` calls `render_video` with that job. audio-spectrum-app pickles the backdrop to its worker processes, calls
+   `frame` there for each frame of the whole song (also for a part, from `start`), draws the spectrum on top and
+   encodes the video with the audio through a temporary file.
+
+A still is therefore the same picture as the video frame it stands for (up to H.264 compression). Ctrl+C interrupts
+`render_video`, which stops its workers and removes the temporary file.
 
 ### Captions by time
 
@@ -142,7 +154,8 @@ How it stays cheap
   consecutive frames, so a caption is converted once per appearance; memory stays bounded however long the song is.
 
 Measured with `tools/time_backdrop.py` on an M1 at 1080p (Phase 2): about 8 ms per frame with a caption and 17 ms
-during a crossfade in the default `soft` design. See the phase acceptance reports for the full tables.
+during a crossfade in the default `soft` design. A whole 279 s video with the spectrum renders in 143 s to 154 s
+(51 % to 55 % of the song) in every built-in design. See the phase acceptance reports for the full tables.
 
 ## 5. Where new features fit
 
@@ -154,4 +167,3 @@ during a crossfade in the default `soft` design. See the phase acceptance report
 | A new part of the frame | A style in `design.py`, a layer in `layers.py`, composition in `LyricsBackdrop` | Draw once in `_prepared_for` if it never changes; blend per frame only while it changes |
 | Another timing source (MusicXML, alignment) | A reader that returns `TimedLine`s | `timing.py` writes them as LRC; the backdrop needs no change |
 | A new page language | `web/static/i18n/<code>.json` and `LANGUAGES` in `app.js` | A test keeps every message file complete |
-| Whole videos (Phase 3) | A command that passes `LyricsBackdrop` to `render_video` | The backdrop is already picklable and tested in another process |

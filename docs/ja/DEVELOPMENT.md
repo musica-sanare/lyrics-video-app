@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob 5a5354468c09f40baaf16cb411f50d913e70ef6a -->
+<!-- source: docs/en/DEVELOPMENT.md blob 509d45c60b84db0fc3ec649639661b0e709b1485 -->
 [English](../en/DEVELOPMENT.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/DEVELOPMENT.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -30,7 +30,7 @@ uv run pytest
 ```
 
 テストには生成したテキスト・画像・信号（`tests/signals.py`）だけを使い、実際の曲、歌詞、第三者のフォントは使わない。
-フォントが要るテストは macOS のシステムフォントを使い、フォントがない環境ではスキップする。
+フォントが要るテストは macOS のシステムフォントを使い、フォントがない環境ではスキップする。動画のテストは ffmpeg がなければスキップする。
 `sync` のページ自体（`src/lyrics_video/web/static/`）はブラウザで手で確かめる。
 
 | ファイル | 対象 |
@@ -45,6 +45,7 @@ uv run pytest
 | `test_timing.py` | タイミングファイル（LRC）：読み込み、書き出し、往復、終わりの行、不正なファイル、変わった歌詞ファイルとの突き合わせ |
 | `test_backdrop.py` | フェード、時刻ごとの字幕（先行、クロスフェード、順番の切り替え、歌の途切れ、短い字幕、同時に 2 つまで）、クレジット、pickle と別プロセス、静止画がスペクトラムの下の backdrop と一致すること |
 | `test_still.py` | `still` コマンド：ファイル名、時刻ごとまたは指定した字幕、曲ファイルからのデザインとスペクトラム、複数のデザインと比較画像、エラー |
+| `test_render.py` | `render` コマンド：音声付きの動画、静止画と同じフレーム、コンソールスクリプト経由の複数ワーカー、曲の一部、ファイル名、処理前の拒否、キャンセルと Ctrl+C、進捗表示 |
 | `test_web.py` | `sync` のサーバー：トークンとホストの検査、URL のトークンは音声だけで有効、範囲リクエスト、読み込み、保存（バックアップ、不正な時刻）、`still` と同じ静止画、4 言語のページ用メッセージがそろっていること |
 | `test_spectrum_dependency.py` | audio-spectrum-app が入っていること、渡した背景（backdrop）の上に静止画が描かれること |
 

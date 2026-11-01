@@ -7,7 +7,7 @@ lyrics = "lyrics.txt"
 # Without it, stills show one chosen caption.
 timing = "lyrics.lrc"
 
-# The video (stills for now: `lyrics-video still`).
+# The video (`lyrics-video still` and `lyrics-video render`).
 audio = "song.wav"                     # the song, for the spectrum
 background_image = "background.jpg"    # covers the frame and is cropped, never stretched
 title = "Song Title"

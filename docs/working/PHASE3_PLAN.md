@@ -2,7 +2,8 @@
 
 # Phase 3 plan: the whole lyrics video in one step
 
-Status: proposed on 2026-11-01, waiting for the owner's approval. The questions are in the last section.
+Status: approved by the owner on 2026-11-01 with the recommended options (A1, B1, C1) and every recommended
+answer; the answers are recorded in the last section.
 
 ## Goal
 
@@ -107,8 +108,9 @@ The command is a console script, so worker processes re-import a module that has
 
 - Progress on stderr, one line updated in place: percent, frames, elapsed time and an estimate of the time left,
   at most about four times a second. Plain lines when stderr is not a terminal.
-- Ctrl+C and SIGTERM set a flag that `cancel` returns, so `render_video` stops its workers and removes the temporary
-  file; the command prints "cancelled" and exits with 130, as audio-spectrum-app does.
+- Ctrl+C and SIGTERM interrupt `render_video`, which stops its workers (they ignore Ctrl+C themselves) and removes
+  the temporary file; the command prints "cancelled" and exits with 130, as audio-spectrum-app's own CLI does. The
+  page uses `cancel` instead.
 - Exit codes: 0 done, 1 failed (including an existing output), 2 usage, 130 cancelled.
 
 ### Rendering from the `sync` page (C1)
@@ -190,6 +192,23 @@ Generated tones, images and made-up lyrics; system fonts, skipped where missing;
 | 4. Remove caption images | `refactor: remove the caption image commands` | After the owner's confirmation: `captions`, `compare` and their settings removed, `separator` moved, docs and example song file updated |
 | 5. Acceptance | `docs: accept Phase 3` | ADR-007, `PHASE3_ACCEPTANCE.md`, version 0.2.0 |
 
+## Milestone 1 measurements
+
+`lyrics-video render` on the owner's 279.1 s song (a 5000 × 3333 photo, 7 of 18 lines timed), 1920 × 1080 at 30 fps,
+H.264 CRF 18, automatic workers on the 8-core M1. Each video has 8374 frames and 279.1 s of AAC audio, and is about
+125 MB.
+
+| Design | First run | Second run (warm) |
+|---|---|---|
+| `soft` | 234.1 s (84 %) | 143.3 s (51 %) |
+| `classic` | 191.6 s (69 %) | 149.3 s (54 %) |
+| `panel` | 153.8 s (55 %) | not repeated |
+
+The three first runs were made one after the other and got faster each time, so the first `soft` run paid for a cold
+start (libraries and files not yet in memory). Warm, every design renders in about half the song's length, close to
+audio-spectrum-app's 57 % over a still photo. `classic` is not noticeably slower, so its credits stay as they are
+(Q8).
+
 ## Acceptance criteria
 
 | Criterion | How it is checked |
@@ -204,6 +223,19 @@ Generated tones, images and made-up lyrics; system fonts, skipped where missing;
 | Docs in English and Japanese, nothing private committed | Hash check, file review, `gitleaks` |
 
 ## Questions for the owner
+
+Answers (2026-11-01): the owner accepted every recommendation.
+
+- Q1: A1, B1 and C1.
+- Q2: `videos/<song file name>.mp4`.
+- Q3: lines without a time are listed in a warning, and the video is rendered without them.
+- Q4: H.264 with CRF 18 by default; `--crf` and `--codec prores` for other uses.
+- Q5: an old song file with `[captions]` or `[compare]` gives a clear error naming the sections.
+- Q6: the render button on the `sync` page is built in this phase.
+- Q7: the owner corrects the song file for the first video and times all its lines, recording the time taken.
+- Q8: `classic` credits stay as they are unless the measured whole render shows a real difference.
+
+The questions as asked:
 
 - Q1. Options A to C: are the recommendations (A1 a `render` command on `render_video`, B1 `videos/` next to the song
   file, C1 a render button on the `sync` page after the command) fine?

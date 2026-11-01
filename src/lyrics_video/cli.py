@@ -1,19 +1,28 @@
 """Command-line interface."""
 
 import argparse
+import signal
 import sys
+import time
 from pathlib import Path
+from typing import TextIO
+
+from audio_spectrum import RenderResult
 
 from lyrics_video import __version__
 from lyrics_video.captions import compare_fonts, make_captions
-from lyrics_video.config import load_song
+from lyrics_video.config import Song, load_song
 from lyrics_video.errors import LyricsVideoError
+from lyrics_video.render import DEFAULT_CRF, PreparedRender, prepare_render, render
 from lyrics_video.still import make_stills
 from lyrics_video.web.server import run as run_sync
 
 EXIT_OK = 0
 EXIT_FAILED = 1
 EXIT_USAGE = 2
+EXIT_INTERRUPTED = 130
+# A terminal's progress line is redrawn at most this often.
+PROGRESS_INTERVAL = 0.25
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -74,6 +83,33 @@ def build_parser() -> argparse.ArgumentParser:
     )
     still.add_argument("--overwrite", action="store_true", help="replace existing images")
 
+    render_parser = commands.add_parser(
+        "render",
+        help="render the whole lyrics video",
+        description=(
+            "Render the lyrics video with the song's audio: the design's background, title, captions by the song's "
+            "timing and credits, with the spectrum on top. By default it is written to videos/<song file name>.mp4 "
+            "next to the song file."
+        ),
+    )
+    render_parser.add_argument("song", type=Path, help="the song file (TOML)")
+    render_parser.add_argument("-o", "--output", type=Path, help="the video file (.mp4 for h264, .mov for prores)")
+    render_parser.add_argument("--overwrite", action="store_true", help="replace an existing video")
+    render_parser.add_argument(
+        "--start", type=_non_negative, default=0.0, metavar="SECONDS", help="render only part of the song, from here"
+    )
+    render_parser.add_argument("--duration", type=_positive, metavar="SECONDS", help="the length of that part")
+    render_parser.add_argument("--design", metavar="NAME", help="another design (a built-in name or a file)")
+    render_parser.add_argument(
+        "--workers", type=_non_negative_int, default=0, help="render processes; 0 picks them automatically"
+    )
+    render_parser.add_argument(
+        "--codec", choices=["h264", "prores"], default="h264", help="h264 (.mp4) or prores (.mov)"
+    )
+    render_parser.add_argument(
+        "--crf", type=_crf, default=DEFAULT_CRF, help=f"H.264 quality from 0 to 51, lower is better ({DEFAULT_CRF})"
+    )
+
     sync = commands.add_parser(
         "sync",
         help="time the captions in the browser",
@@ -92,6 +128,8 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         song = load_song(args.song)
+        if args.command == "render":
+            return run_render(song, args)
         if args.command == "sync":
             run_sync(song, port=args.port, open_browser=not args.no_browser)
             return EXIT_OK
@@ -115,6 +153,119 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_FAILED
     print(f"Wrote {len(written.files)} image(s) to {written.folder}")
     return EXIT_OK
+
+
+def run_render(song: Song, args: argparse.Namespace) -> int:
+    """Raises LyricsVideoError for the caller to report; Ctrl+C and SIGTERM leave no file and exit with 130."""
+    previous_sigterm = signal.signal(signal.SIGTERM, _raise_keyboard_interrupt)
+    try:
+        prepared = prepare_render(
+            song,
+            output=args.output,
+            overwrite=args.overwrite,
+            start=args.start,
+            duration=args.duration,
+            design=args.design,
+            workers=args.workers,
+            codec=args.codec,
+            crf=args.crf,
+        )
+        print_summary(prepared)
+        result = render(prepared, progress=TextProgress(sys.stderr))
+    except KeyboardInterrupt:
+        print("\ncancelled; no video was written", file=sys.stderr)
+        return EXIT_INTERRUPTED
+    finally:
+        signal.signal(signal.SIGTERM, previous_sigterm)
+    print_result(prepared, result)
+    return EXIT_OK
+
+
+def print_summary(prepared: PreparedRender) -> None:
+    job = prepared.job
+    print(f"Song: {prepared.title or '(no title)'} ({job.audio_path.name}, {prepared.song_seconds:.1f} s)")
+    print(f"Design: {prepared.design}; timed captions: {prepared.timed}")
+    if prepared.untimed:
+        print(f"Warning: {len(prepared.untimed)} line(s) have no time yet and are left out:")
+        for line in prepared.untimed:
+            print(f"  {' / '.join(line.rows)}")
+    part = ""
+    if job.start > 0 or job.duration is not None:
+        part = f" from {job.start:g} s" + (f" for {job.duration:g} s" if job.duration is not None else " to the end")
+    print(f"Rendering {job.output_path}{part}")
+
+
+def print_result(prepared: PreparedRender, result: RenderResult) -> None:
+    video_seconds = result.frames / prepared.job.fps
+    share = result.seconds / video_seconds * 100 if video_seconds > 0 else 0
+    print(f"Wrote {result.output_path} in {result.seconds:.1f} s ({share:.0f} % of its length)")
+
+
+class TextProgress:
+    """Progress of a render: one line redrawn in place on a terminal, a line per tenth otherwise."""
+
+    def __init__(self, stream: TextIO):
+        self.stream = stream
+        self.terminal = stream.isatty()
+        self.started: float | None = None
+        self.shown = 0.0
+        self.tenth = -1
+
+    def __call__(self, done: int, total: int) -> None:
+        now = time.monotonic()
+        if self.started is None:
+            self.started = now
+        if total <= 0:
+            return
+        if self.terminal:
+            if done < total and now - self.shown < PROGRESS_INTERVAL:
+                return
+            self.shown = now
+            self.stream.write(f"\r{self.line(done, total, now)}" + ("\n" if done >= total else ""))
+        else:
+            tenth = done * 10 // total
+            if tenth == self.tenth:
+                return
+            self.tenth = tenth
+            self.stream.write(f"{self.line(done, total, now)}\n")
+        self.stream.flush()
+
+    def line(self, done: int, total: int, now: float) -> str:
+        elapsed = now - self.started
+        left = f"{elapsed * (total - done) / done:.0f} s" if done > 0 else "?"
+        return f"{done * 100 // total:3d} %  frame {done}/{total}  elapsed {elapsed:.0f} s  left {left}  "
+
+
+def _raise_keyboard_interrupt(signum, frame) -> None:
+    raise KeyboardInterrupt
+
+
+def _non_negative(value: str) -> float:
+    number = float(value)
+    if not number >= 0:
+        raise argparse.ArgumentTypeError(f"must be 0 or more, got {value}")
+    return number
+
+
+def _positive(value: str) -> float:
+    number = float(value)
+    if not number > 0:
+        raise argparse.ArgumentTypeError(f"must be above 0, got {value}")
+    return number
+
+
+def _non_negative_int(value: str) -> int:
+    number = int(value)
+    if number < 0:
+        raise argparse.ArgumentTypeError(f"must be 0 or more, got {value}")
+    return number
+
+
+def _crf(value: str) -> int:
+    number = int(value)
+    if not 0 <= number <= 51:
+        raise argparse.ArgumentTypeError(f"must be from 0 to 51, got {value}")
+    return number
 
 
 if __name__ == "__main__":

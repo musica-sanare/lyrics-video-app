@@ -27,7 +27,8 @@ uv run pytest
 ```
 
 Tests use generated text, images and signals only (`tests/signals.py`), never real songs, lyrics or third-party
-fonts. Tests that need a font use macOS system fonts and are skipped where they are missing. The `sync` page itself
+fonts. Tests that need a font use macOS system fonts and are skipped where they are missing; video tests are skipped
+without ffmpeg. The `sync` page itself
 (`src/lyrics_video/web/static/`) is checked by hand in a browser.
 
 | File | Covers |
@@ -42,6 +43,7 @@ fonts. Tests that need a font use macOS system fonts and are skipped where they 
 | `test_timing.py` | Timing files (LRC): reading, writing, round trip, ends, invalid files, the merge with a changed lyrics file |
 | `test_backdrop.py` | Fades, captions by time (lead, crossfade, sequential, pauses, short captions, at most two at once), credits, pickling and other processes, a still equals the backdrop under the spectrum |
 | `test_still.py` | The `still` command: file names, captions by time or chosen, design and spectrum from the song file, several designs and the comparison, errors |
+| `test_render.py` | The `render` command: the video with its audio, frames equal to the stills, several workers through the console script, parts, file names, refusals before any work, cancellation and Ctrl+C, progress |
 | `test_web.py` | The `sync` server: token and host checks, the token in the URL for the audio only, range requests, loading, saving (backup, invalid times), stills equal to `still`, complete page messages in four languages |
 | `test_spectrum_dependency.py` | audio-spectrum-app is installed; a still is drawn over a supplied backdrop |
 

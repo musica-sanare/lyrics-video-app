@@ -1,4 +1,4 @@
-<!-- source: README.md blob 8bbaed4b86cd064ee8cdce4c785c2efca3ae830b -->
+<!-- source: README.md blob 8e56cd39e8e913cb8318dd2d518c1f3909959bc8 -->
 [English](README.md) | 日本語
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -9,8 +9,8 @@
 クレジット、[audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムと、
 曲の音声でできている。動画編集ソフトで字幕画像を重ねていた手作業を、これで置き換える。
 
-**状況：** Phase 2（歌詞のタイミング）は受け入れ済み。`sync` ページで作った LRC ファイルの時刻に合わせて字幕を出す。
-動画全体の書き出しは Phase 3 で加わる。詳しくは [Phase 2 acceptance](docs/working/PHASE2_ACCEPTANCE.md)（英語のみ）を参照。
+**状況：** Phase 3（動画全体を一度に作る）を進行中。`render` でタイミング済みの曲から動画全体を作れる。
+詳しくは [Phase 3 plan](docs/working/PHASE3_PLAN.md)（英語のみ）を参照。
 
 ## 今できること
 
@@ -19,6 +19,7 @@
 - `lyrics-video sync`：ブラウザでページを開き、曲を再生しながら字幕の時刻をタップして調整する。
 - `lyrics-video still`：将来の動画のフレーム（背景、曲名、その時点の字幕、クレジット、スペクトラム）を 3 つのデザインで描く。
   既定のデザインは `soft`。
+- `lyrics-video render`：曲の音声付きの歌詞動画全体を書き出す。
 
 ## クイックスタート
 
@@ -32,6 +33,7 @@ uv run lyrics-video captions work/my-song/song.toml         # 字幕 1 行につ
 uv run lyrics-video compare work/my-song/song.toml          # 比較用テキストを複数のフォントで
 uv run lyrics-video sync work/my-song/song.toml             # ブラウザで字幕にタイミングを付ける
 uv run lyrics-video still work/my-song/song.toml --time 60  # 指定した時刻の動画のフレーム
+uv run lyrics-video render work/my-song/song.toml           # 動画全体（work/my-song/videos/ に書き出す）
 ```
 
 テストは `uv run pytest` で走らせる。

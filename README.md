@@ -7,8 +7,8 @@ title, lyrics captions that fade in and out at the bottom, credits, and an audio
 [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), with the song's audio. It replaces a manual
 workflow of caption images layered in a video editor.
 
-**Status:** Phase 2 (timing of the lyrics) accepted: captions are placed by time from an LRC file made with the
-`sync` page. Whole videos come in Phase 3. See the [Phase 2 acceptance](docs/working/PHASE2_ACCEPTANCE.md).
+**Status:** Phase 3 (the whole video in one step) in progress: `render` makes the whole video from a timed song.
+See the [Phase 3 plan](docs/working/PHASE3_PLAN.md).
 
 ## What it does today
 
@@ -18,6 +18,7 @@ workflow of caption images layered in a video editor.
 - `lyrics-video sync` opens a page in the browser to tap and adjust the times of the captions while the song plays.
 - `lyrics-video still` renders frames of the future video (background, title, captions of the moment, credits and
   spectrum) in three designs, `soft` by default.
+- `lyrics-video render` renders the whole lyrics video with the song's audio.
 
 ## Quick start
 
@@ -31,6 +32,7 @@ uv run lyrics-video captions work/my-song/song.toml         # one PNG per captio
 uv run lyrics-video compare work/my-song/song.toml          # the comparison text in several fonts
 uv run lyrics-video sync work/my-song/song.toml             # time the captions in the browser
 uv run lyrics-video still work/my-song/song.toml --time 60  # frames of the video at chosen times
+uv run lyrics-video render work/my-song/song.toml           # the whole video, in work/my-song/videos/
 ```
 
 Run `uv run pytest` for the tests.

@@ -10,9 +10,9 @@ for a song, start with the [User guide](USER_GUIDE.md). To work on the code, sta
 
 | Document | Description |
 |---|---|
-| [User guide](USER_GUIDE.md) | Setup, the `captions`, `compare` and `still` commands, timing the captions with the `sync` page, designs, the song file, moving from the old lyrics image script. |
+| [User guide](USER_GUIDE.md) | Setup, the `captions`, `compare` and `still` commands, timing the captions with the `sync` page, rendering the whole video with `render`, designs, the song file, moving from the old lyrics image script. |
 | [Development](DEVELOPMENT.md) | Setup, tests, conventions and the rules that keep the repository safe to publish. |
-| [Architecture](ARCHITECTURE.md) | The layers, the way from a song file to a still, the sync page, rules every change keeps, performance and where new features fit. |
+| [Architecture](ARCHITECTURE.md) | The layers, the way from a song file to a still and a video, the sync page, rules every change keeps, performance and where new features fit. |
 
 ## Working docs (English only)
 

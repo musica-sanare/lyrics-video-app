@@ -2,11 +2,12 @@ English | [日本語](../ja/USER_GUIDE.md) · [Docs index](README.md)
 
 # User guide
 
-How to set up lyrics-video-app, make caption images for a song, time its captions and look at frames of its video.
-It is for anyone making a lyrics video with the app. Whole videos come in later phases.
+How to set up lyrics-video-app, time the captions of a song, look at frames of its video and render the whole
+video. It is for anyone making a lyrics video with the app. The caption images of the old workflow are still
+available.
 
-Each song has a folder with a song file. Three commands read it and write images into folders next to it; `sync`
-opens a page in the browser to time the captions:
+Each song has a folder with a song file. The commands read it and write images or the video into folders next to it;
+`sync` opens a page in the browser to time the captions:
 
 ```mermaid
 flowchart LR
@@ -18,17 +19,20 @@ flowchart LR
   captions["captions"]
   compare["compare"]
   still["still"]
+  render["render"]
   sync["sync (page)"]
   outCaptions["captions/: one PNG per caption"]
   outCompare["compare/: each font, contact sheet"]
   outStills["stills/: video frames"]
-  song --> captions & compare & still
+  outVideos["videos/: the whole video"]
+  song --> captions & compare & still & render
   lyrics --> captions & still
-  timing --> still
+  timing --> still & render
   lyrics & media --> sync
   sync -->|Save| timing
   comparetxt --> compare
-  media --> still
+  media --> still & render
+  render --> outVideos
   captions --> outCaptions
   compare --> outCompare
   still --> outStills
@@ -207,7 +211,7 @@ Details:
 
 ### How captions follow the time
 
-Three design settings (section 7) decide how captions enter and leave. They can change without timing the song
+Three design settings (section 8) decide how captions enter and leave. They can change without timing the song
 again:
 
 | Setting | Default | Meaning |
@@ -218,7 +222,54 @@ again:
 
 At a pause, the caption starts to fade out at its end time. Captions shorter than two fades fade faster.
 
-## 7. Designs
+## 7. The whole video: `render`
+
+```bash
+uv run lyrics-video render work/my-song/song.toml
+```
+
+Renders the lyrics video with the song's audio into `videos/<song file name>.mp4` next to the song file
+(`videos/song.mp4` for `song.toml`). Its frames are the stills of section 5: the background, the title, the captions
+by the timing, the credits and the spectrum on top. Size and frame rate come from the song file's `[video]`.
+
+Before the long part starts, `render` checks everything that can fail quickly (the song file, the timing, the
+background image, the fonts, an existing video) and prints a summary:
+
+```text
+Song: Song Title (song.wav, 279.5 s)
+Design: soft; timed captions: 18
+Rendering work/my-song/videos/song.mp4
+```
+
+Check the title and the audio file there: a song file copied from another song shows it at once.
+
+- The song file needs `audio` and `timing`.
+- Lines without a time are listed in a warning and left out of the video, which is handy for a draft.
+- Progress is shown on stderr. `Ctrl+C` stops the render and leaves no file.
+- An existing video is not replaced without `--overwrite`. The video is written to a temporary file first, so a file
+  with the final name is always complete.
+- A 4.7-minute song takes about 2.5 minutes on an M1 Mac and gives a file of about 125 MB.
+
+To check one part before rendering the whole song, give its start and length:
+
+```bash
+uv run lyrics-video render work/my-song/song.toml --start 60 --duration 15
+```
+
+This writes `videos/song_60s-75s.mp4` (`song_60s-end.mp4` without `--duration`). Its frames are the same as the whole
+video's at those times, and its audio is cut to match.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `-o`, `--output FILE` | `videos/<song file name>.mp4` | Another video file: `.mp4` for H.264, `.mov` for ProRes |
+| `--overwrite` | off | Replace an existing video |
+| `--start SECONDS`, `--duration SECONDS` | the whole song | Render only part of the song |
+| `--design NAME` | the song file's | Another design, a built-in name or a file; the song file's design overrides apply |
+| `--workers N` | `0` (automatic) | Render processes; `1` renders in a single process |
+| `--codec CODEC` | `h264` | `h264` or `prores` (ProRes 422, much larger files for editing) |
+| `--crf N` | `18` | H.264 quality from 0 to 51; lower is better and larger |
+
+## 8. Designs
 
 How the parts of a frame look is a **design**. Choose one with `design = "soft"` in the song file, or a design file
 of your own with `design = "my-design.toml"`.
@@ -280,20 +331,20 @@ Sizes are in pixels of a 1080-pixel-high frame; they scale with the video height
 | `gradient` (in `caption`) | `height`, `color`, `opacity` (at the bottom edge) |
 | `panel` (in `caption`, `credits`) | `color`, `opacity` (of the tint), `blur` (of the picture behind), `radius`, `padding` (`[x, y]`) |
 
-## 8. The song file
+## 9. The song file
 
 A TOML file. Paths are relative to the song file; `~` is the home folder. Every key is optional except
-`captions.font` for `captions` and `audio` for `still`.
+`captions.font` for `captions`, `audio` for `still`, and `audio` and `timing` for `render`.
 
 | Key | Default | Meaning |
 |---|---|---|
 | `lyrics` | `"lyrics.txt"` | The lyrics file |
-| `timing` | none | The timing file (LRC), for `still` (section 6) |
-| `audio` | none | The song, for the spectrum (`still`) |
+| `timing` | none | The timing file (LRC), for `still` and `render` (section 6) |
+| `audio` | none | The song, for the spectrum and the video's audio (`still`, `render`) |
 | `background_image` | none | The background image of the video |
 | `title` | `""` | The song title, one line |
 | `credits` | `[]` | Lines of credits, for example `["by Your Name"]` |
-| `design` | `"soft"` | A design name or file, or a `[design]` table with `name` and overrides (section 7) |
+| `design` | `"soft"` | A design name or file, or a `[design]` table with `name` and overrides (section 8) |
 | `fonts.default` | none | The font of every part of the video that does not name its own |
 | `spectrum.preset` | `"default"` | An audio-spectrum-app preset name or preset file |
 | `spectrum.set` | `[]` | Preset overrides, like audio-spectrum-app's `--set` |
@@ -314,7 +365,7 @@ A TOML file. Paths are relative to the song file; `~` is the home folder. Every 
 Fonts are not part of this repository and are never copied into it; the song file only points to them. Real song
 files stay in `work/` or outside the repository.
 
-## 9. Moving from the old lyrics image script
+## 10. Moving from the old lyrics image script
 
 Instead of the old prompt (0 or 1), choose the command: `captions` or `compare`. The old `conf.toml` keys map to the
 song file like this:
@@ -340,13 +391,14 @@ Differences from the old script:
 - Existing images are not overwritten without `--overwrite`. An error in a song file, lyrics file or font writes no
   images.
 
-## 10. Errors
+## 11. Errors
 
 | Exit code | Meaning |
 |---|---|
 | 0 | Done |
 | 1 | Failed; the message on stderr says why (song file, lyrics or timing file, font, image, song, a caption that does not fit, existing output) |
 | 2 | Wrong command-line usage |
+| 130 | `render` was stopped with `Ctrl+C`; no video was written |
 
 Errors name the file and, for the lyrics and the timing, the line number. All images are drawn before any is written, so these
 errors write nothing. Each file is written completely or not at all.

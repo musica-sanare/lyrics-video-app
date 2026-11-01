@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob a2e61a63d24e37ee9a63a5ad722b401f74026295 -->
+<!-- source: docs/en/README.md blob f72bebdb7adf5f12660368ad22f12d31bd39be86 -->
 [English](../en/README.md) | 日本語 · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -11,9 +11,9 @@
 
 | 文書 | 説明 |
 |---|---|
-| [ユーザーガイド](USER_GUIDE.md) | セットアップ、`captions`・`compare`・`still` コマンド、`sync` ページでの字幕のタイミング付け、デザイン、曲ファイル、旧歌詞画像スクリプトからの移行。 |
+| [ユーザーガイド](USER_GUIDE.md) | セットアップ、`captions`・`compare`・`still` コマンド、`sync` ページでの字幕のタイミング付け、`render` での動画全体の書き出し、デザイン、曲ファイル、旧歌詞画像スクリプトからの移行。 |
 | [開発](DEVELOPMENT.md) | セットアップ、テスト、規約、リポジトリを公開しても安全に保つためのルール。 |
-| [アーキテクチャ](ARCHITECTURE.md) | 層の分け方、曲ファイルから静止画までの流れ、sync ページ、どの変更でも守る決まり、性能、新しい機能の置き場所。 |
+| [アーキテクチャ](ARCHITECTURE.md) | 層の分け方、曲ファイルから静止画と動画までの流れ、sync ページ、どの変更でも守る決まり、性能、新しい機能の置き場所。 |
 
 ## 作業用ドキュメント（英語のみ）
 
