@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from audio_spectrum import AudioSpectrumError, Cancelled, Preview
+from audio_spectrum import AudioSpectrumError, Cancelled, Preview, builtin_preset_names, user_preset_names
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -21,7 +21,7 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from lyrics_video.backdrop import LyricsBackdrop, timed_captions
-from lyrics_video.config import Song, song_design, spectrum_preset, write_design
+from lyrics_video.config import Song, preset_values, song_design, spectrum_preset, write_design
 from lyrics_video.design import Design, builtin_design_names
 from lyrics_video.errors import ConfigError, LyricsVideoError
 from lyrics_video.fonts import FONT_FOLDERS, font_faces
@@ -215,7 +215,25 @@ class SyncSession:
         if self.song.design_name not in names:
             names.append(self.song.design_name)
         bases = {name: self._design(DesignRequest(name=name)).model_dump(mode="json") for name in names}
-        return {"name": self.song.design_name, "overrides": self.song.design_overrides, "bases": bases}
+        return {
+            "name": self.song.design_name,
+            "overrides": self.song.design_overrides,
+            "bases": bases,
+            "spectrum": self.spectrum_state(bases),
+        }
+
+    def spectrum_state(self, bases: dict[str, dict]) -> dict:
+        """The presets the page can start the spectrum from, with their values, and what the song file's own
+        `[spectrum]` sets: it wins over the design, so the page says so."""
+        names = [*builtin_preset_names(), *user_preset_names()]
+        chosen = [base["spectrum"]["preset"] for base in bases.values()]
+        chosen += [self.song.design_overrides.get("spectrum", {}).get("preset"), self.song.spectrum_preset]
+        names += [name for name in dict.fromkeys(chosen) if name and name not in names]
+        return {
+            "presets": {name: preset_values(name, self.song) for name in names},
+            "song_preset": self.song.spectrum_preset,
+            "song_set": list(self.song.spectrum_set),
+        }
 
     def _design(self, request: DesignRequest | None) -> Design:
         if request is None:

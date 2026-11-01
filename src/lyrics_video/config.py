@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import tomlkit
-from audio_spectrum import AudioSpectrumError, Preset, load_preset, override_preset
+from audio_spectrum import AudioSpectrumError, Preset, load_preset, override_preset, preset_to_toml
 from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt, ValidationError
 
 from lyrics_video.design import Design, load_design
@@ -147,6 +147,14 @@ def spectrum_preset(song: Song, design: Design | None = None) -> Preset:
         return override_preset(load_preset(name), [*design.spectrum.overrides(), *song.spectrum_set])
     except AudioSpectrumError as error:
         raise ConfigError(f"{song.path}: spectrum of design {design.name!r}: {error}") from None
+
+
+def preset_values(name: str, song: Song) -> dict[str, Any]:
+    """Every key of a preset (a name, or a file relative to the song file) as a preset file writes it."""
+    try:
+        return tomllib.loads(preset_to_toml(load_preset(_preset_name_or_path(name, song.path.parent)), full=True))
+    except AudioSpectrumError as error:
+        raise ConfigError(f"{song.path}: {error}") from None
 
 
 def _design_name(value: str | dict[str, Any]) -> tuple[str, dict[str, Any]]:

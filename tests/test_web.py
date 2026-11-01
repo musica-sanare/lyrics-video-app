@@ -560,3 +560,42 @@ def test_stills_follow_an_unsaved_spectrum(client):
 
     assert tall != saved
     assert refused.status_code == 400 and "look.kind" in refused.json()["message"]
+
+
+TALL_SPECTRUM = {"name": "soft", "overrides": {"spectrum": {"preset": "bars", "look": {"max_height": 0.5}}}}
+
+
+def test_the_page_learns_the_presets_and_the_song_files_spectrum(client):
+    spectrum = get(client, "/api/song").json()["design"]["spectrum"]
+
+    assert {"default", "bars", "unity-classic"} <= set(spectrum["presets"])
+    assert spectrum["presets"]["default"]["look"]["max_height"] == 0.3
+    assert spectrum["presets"]["unity-classic"]["look"]["kind"] == "perspective"
+    assert (spectrum["song_preset"], spectrum["song_set"]) == (None, [])
+
+
+def test_the_song_files_own_spectrum_is_reported(tmp_path, sans_font):
+    song = make_song(tmp_path, sans_font)
+    song.write_text(song.read_text(encoding="utf-8") + '[spectrum]\npreset = "glow"\nset = ["look.mirror=false"]\n', encoding="utf-8")
+
+    spectrum = SyncSession(load_song(song)).design_state()["spectrum"]
+
+    assert (spectrum["song_preset"], spectrum["song_set"]) == ("glow", ["look.mirror=false"])
+
+
+def test_saving_the_spectrum_writes_preset_tables(client, song):
+    post(client, "/api/design", TALL_SPECTRUM)
+
+    text = song.read_text(encoding="utf-8")
+    assert '[design.spectrum]\npreset = "bars"' in text and "[design.spectrum.look]\nmax_height = 0.5" in text
+    assert load_song(song).design.spectrum.look == {"max_height": 0.5}
+
+
+def test_the_preview_uses_the_unsaved_spectrum(render_client, monkeypatch):
+    started = []
+    monkeypatch.setattr(web_app, "render", lambda prepared, progress=None, cancel=None: started.append(prepared))
+
+    post(render_client, "/api/preview", {"lines": TIMED, "design": TALL_SPECTRUM})
+    wait_for_render(render_client)
+
+    assert started[0].job.preset.look.max_height == 0.5

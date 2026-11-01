@@ -649,7 +649,46 @@ const DESIGN_FIELDS = [
       ["shadow.opacity", range(0, 1, 0.05)],
     ],
   },
+  {
+    part: "spectrum",
+    fields: [
+      ["preset", { type: "select", options: () => Object.keys(state.design.spectrum.presets), raw: true }],
+      ["look.baseline_y", { ...range(0, 1, 0.01), when: flatLook }],
+      ["look.max_height", { ...range(0, 1, 0.01), when: flatLook }],
+      ["look.margin_x", { ...range(0, 0.3, 0.01), when: flatLook }],
+      ["look.mirror", { type: "bool", when: flatLook }],
+      ["look.style", { type: "select", options: ["bars", "blocks"], when: flatLook }],
+      ["look.bar_fill", { ...range(0.05, 1, 0.05), when: flatLook }],
+      ["look.block_height_px", { ...range(2, 40, 1), when: (v) => flatLook() && v("look.style") === "blocks" }],
+      ["look.block_gap_px", { ...range(0, 20, 1), when: (v) => flatLook() && v("look.style") === "blocks" }],
+      ["look.response", { ...range(0.5, 3, 0.1), when: flatLook }],
+      ["fill.mode", { type: "select", options: ["solid", "frequency"], when: flatLook }],
+      ["foreground", { type: "color", when: (v) => !flatLook() || v("fill.mode") !== "frequency" }],
+      ["fill.colors", { type: "colors", when: (v) => flatLook() && v("fill.mode") === "frequency" }],
+      ["fx.glow_radius_px", range(0, 40, 1)],
+      ["fx.glow_strength", range(0, 1, 0.05)],
+      // The song is analysed again for each new analysis value (about half a second), so these apply on release.
+      ["analysis.bands", { ...range(16, 1024, 16), lazy: true }],
+      ["analysis.min_frequency", { ...range(20, 500, 10), lazy: true }],
+      ["analysis.max_frequency", { ...range(2000, 20000, 500), lazy: true }],
+      ["analysis.gain", { ...range(0.1, 4, 0.1), lazy: true }],
+      ["analysis.attack_seconds", { ...range(0, 0.5, 0.01), lazy: true }],
+      ["analysis.release_seconds", { ...range(0, 1.5, 0.05), lazy: true }],
+    ],
+  },
 ];
+
+// The preset the spectrum starts from: the song file's own, else the design's, else "default".
+function currentPreset() {
+  const name = state.design.spectrum.song_preset ?? designValue("spectrum.preset") ?? "default";
+  return state.design.spectrum.presets[name] ?? state.design.spectrum.presets.default;
+}
+
+// The perspective look has other settings (a camera), which stay in files, and only one color.
+function flatLook() {
+  return currentPreset().look.kind !== "perspective";
+}
+const GRADIENT_START = "#4FA3FF";
 
 // The box settings: a caption panel's whenever its style is "panel", a title or credits box while it is on.
 function panelFields(when = (v) => v("panel") != null) {
@@ -693,9 +732,12 @@ function deletePath(object, path) {
 
 const baseDesign = () => state.design.bases[state.design.name];
 
-// The design's own value of a setting; inside a box the base design does not have, the defaults of a box.
+// The design's own value of a setting; inside a box the base design does not have, the defaults of a box; for a
+// spectrum key the design does not change, the preset's value.
 function baseValue(path) {
   const value = getPath(baseDesign(), path);
+  if (path === "spectrum.preset") return value ?? "default";
+  if (path.startsWith("spectrum.")) return value ?? getPath(currentPreset(), path.slice("spectrum.".length));
   const box = path.match(/^(\w+)\.panel\.(\w+)$/);
   if (box && getPath(baseDesign(), `${box[1]}.panel`) == null) return state.design.panel[box[2]];
   return value;
@@ -712,7 +754,13 @@ function designValue(path) {
 
 const hex = (value) =>
   Array.isArray(value) ? "#" + value.map((c) => c.toString(16).padStart(2, "0")).join("") : String(value ?? "#000000").toLowerCase();
-const same = (a, b) => (Array.isArray(a) || Array.isArray(b) || String(a).startsWith("#") ? hex(a) === hex(b) : a === b);
+const colorList = (value) => Array.isArray(value) && value.every((item) => typeof item === "string");
+
+function same(a, b) {
+  if (colorList(a) || colorList(b)) return JSON.stringify((a ?? []).map(hex)) === JSON.stringify((b ?? []).map(hex));
+  if (Array.isArray(a) || Array.isArray(b) || String(a).startsWith("#")) return hex(a) === hex(b);
+  return a === b;
+}
 
 function setDesignValue(path, value) {
   if (same(value, baseValue(path))) deletePath(state.design.overrides, path);
@@ -771,6 +819,7 @@ async function showDesign() {
   const html = [];
   for (const group of DESIGN_FIELDS) {
     html.push(`<h3>${escapeHtml(t(`design_part.${group.part}`))}</h3>`);
+    if (group.part === "spectrum") html.push(songSpectrumNote());
     const value = (key) => designValue(`${group.part}.${key}`);
     for (const [key, field] of group.fields) {
       if (field.when && !field.when(value)) continue;
@@ -779,6 +828,14 @@ async function showDesign() {
   }
   $("design-fields").innerHTML = html.join("");
   markChanged();
+}
+
+// The song file's own [spectrum] wins over the design, so its settings here would not show.
+function songSpectrumNote() {
+  const { song_preset: preset, song_set: overrides } = state.design.spectrum;
+  if (!preset && !overrides.length) return "";
+  const what = [preset ? `preset = "${preset.split("/").at(-1)}"` : "", ...overrides].filter(Boolean).join(", ");
+  return `<p class="note">${escapeHtml(t("design.song_spectrum", { what }))}</p>`;
 }
 
 function fieldHtml(path, key, field) {
@@ -794,6 +851,12 @@ function fieldHtml(path, key, field) {
     case "color":
       control = `<input type="color" id="${id}" value="${hex(value)}"><input class="hex" type="text" value="${hex(value)}" maxlength="7">`;
       break;
+    case "colors":
+      control =
+        (value ?? []).map((color, i) => `<input type="color" ${i ? "" : `id="${id}"`} data-index="${i}" value="${hex(color)}">`).join("") +
+        ((value ?? []).length < 4 ? `<button type="button" class="add-color" title="${escapeHtml(t("design.add_color"))}">+</button>` : "") +
+        ((value ?? []).length > 2 ? `<button type="button" class="remove-color" title="${escapeHtml(t("design.remove_color"))}">−</button>` : "");
+      break;
     case "bool":
       control = `<input type="checkbox" id="${id}" ${value ? "checked" : ""}>`;
       break;
@@ -801,16 +864,19 @@ function fieldHtml(path, key, field) {
       control = `<input type="checkbox" id="${id}" ${value != null ? "checked" : ""}>`;
       break;
     case "select":
-      control = `<select id="${id}">${field.options
-        .map((option) => `<option value="${option}" ${option === value ? "selected" : ""}>${escapeHtml(t(`design_value.${option}`))}</option>`)
+      control = `<select id="${id}">${(typeof field.options === "function" ? field.options() : field.options)
+        .map((option) => {
+          const label = field.raw ? String(option).split("/").at(-1) : t(`design_value.${option}`);
+          return `<option value="${escapeHtml(option)}" ${option === value ? "selected" : ""}>${escapeHtml(label)}</option>`;
+        })
         .join("")}</select>`;
       break;
     case "font":
       control = fontSelect(id, path);
       break;
   }
-  const label = escapeHtml(t(`design_field.${key.replace(".", "_")}`));
-  return `<div class="field" data-path="${path}" data-type="${field.type}"><label for="${id}">${label}</label><span class="control">${control}</span><button type="button" class="reset" title="${escapeHtml(t("design.reset"))}">↺</button></div>`;
+  const label = escapeHtml(t(`design_field.${key.replaceAll(".", "_")}`));
+  return `<div class="field" data-path="${path}" data-type="${field.type}" ${field.lazy ? "data-lazy" : ""}><label for="${id}">${label}</label><span class="control">${control}</span><button type="button" class="reset" title="${escapeHtml(t("design.reset"))}">↺</button></div>`;
 }
 
 // A font is a file and a face in it; the list holds the fonts of this Mac and the song file's, plus the one in use.
@@ -844,7 +910,13 @@ function onDesignInput(event) {
     const number = Number(target.value);
     if (Number.isNaN(number)) return;
     for (const input of row.querySelectorAll("input")) if (input !== target) input.value = number;
+    if (row.hasAttribute("data-lazy")) return;
     setDesignValue(path, number);
+    designChanged(false);
+  } else if (type === "colors") {
+    const colors = [...(designValue(path) ?? [])];
+    colors[Number(target.dataset.index)] = target.value.toUpperCase();
+    setDesignValue(path, colors);
     designChanged(false);
   } else if (type === "color") {
     const value = target.value.trim();
@@ -861,9 +933,30 @@ function onDesignChange(event) {
   const path = row.dataset.path;
   const type = row.dataset.type;
   const target = event.target;
+  if (type === "range" && row.hasAttribute("data-lazy")) {
+    const number = Number(target.value);
+    if (Number.isNaN(number)) return;
+    setDesignValue(path, number);
+    designChanged(false);
+    return;
+  }
   if (type === "bool") setDesignValue(path, target.checked);
   else if (type === "panel") setBox(path.split(".")[0], target.checked);
-  else if (type === "select") setDesignValue(path, target.value);
+  else if (path === "spectrum.preset") {
+    const kind = currentPreset().look.kind;
+    setDesignValue(path, target.value);
+    // Look settings and gradients of a flat preset do not apply to a perspective one, and the other way round.
+    if (currentPreset().look.kind !== kind) {
+      deletePath(state.design.overrides, "spectrum.look");
+      deletePath(state.design.overrides, "spectrum.fill");
+    }
+  } else if (path === "spectrum.fill.mode") {
+    setDesignValue(path, target.value);
+    const colors = designValue("spectrum.fill.colors") ?? [];
+    if (target.value === "frequency" && colors.length < 2) {
+      setDesignValue("spectrum.fill.colors", [hex(designValue("spectrum.foreground")).toUpperCase(), GRADIENT_START]);
+    }
+  } else if (type === "select") setDesignValue(path, target.value);
   else if (type === "font") {
     deletePath(state.design.overrides, path);
     deletePath(state.design.overrides, `${path}_face`);
@@ -877,6 +970,16 @@ function onDesignChange(event) {
 }
 
 function onDesignReset(event) {
+  const colorButton = event.target.closest(".add-color, .remove-color");
+  if (colorButton) {
+    const path = colorButton.closest(".field").dataset.path;
+    const colors = [...(designValue(path) ?? [])];
+    if (colorButton.classList.contains("add-color")) colors.push(colors.at(-1) ?? GRADIENT_START);
+    else colors.pop();
+    setDesignValue(path, colors);
+    designChanged(true);
+    return;
+  }
   const button = event.target.closest(".reset");
   if (!button) return;
   const path = button.closest(".field").dataset.path;

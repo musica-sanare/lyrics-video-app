@@ -128,8 +128,10 @@ flowchart LR
 - The Design mode edits the song file's design overrides in the page. Each still and preview sends them with the
   base design's name; the server validates them as the song file would (`song_design`) and passes the result to
   `LyricsBackdrop.set_design`, which draws again but keeps the scaled background image unless the background settings
-  changed. `/api/song` also sends every base design's values, so the page shows what changed; `/api/fonts` lists the
-  faces of the macOS font folders and of the folders of the song file's fonts (`fonts.font_faces`), once per session.
+  changed. `/api/song` also sends every base design's values, and the values of every preset the spectrum can start
+  from (`config.preset_values`) with what the song file's own `[spectrum]` sets, so the page shows what changed;
+  `/api/fonts` lists the faces of the macOS font folders and of the folders of the song file's fonts
+  (`fonts.font_faces`), once per session.
 - The page plays the song from `/api/audio` with range requests and records key presses at the audio element's time.
   It decodes the same audio in the browser for the waveform.
 - The page keeps all edits in memory. Only Save writes: the timing file, and for a changed design the song file

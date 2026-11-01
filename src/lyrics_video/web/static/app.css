@@ -70,5 +70,7 @@ canvas[hidden], #help[hidden] { display: none; }
 .field input.hex { width: 6.5em; font-variant-numeric: tabular-nums; }
 .field select.font { flex: 1; min-width: 0; }
 .field .reset { padding: 0 6px; visibility: hidden; }
+.field .add-color, .field .remove-color { padding: 0 8px; }
+#design-fields .note { color: var(--muted); font-size: 12px; margin: 0 0 4px; }
 .field.changed .reset { visibility: visible; }
 #help kbd { background: #2a2f38; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; color: var(--text); }

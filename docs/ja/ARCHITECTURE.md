@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob f6fc5365a640a4cb52f00002bb81ae3f30c9468c -->
+<!-- source: docs/en/ARCHITECTURE.md blob 6140f6ef74b2dc2df9b57cbdc306bf8bc53e45fe -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -120,7 +120,8 @@ flowchart LR
   （`set_captions`）。描き終えた絵はそのまま使い回す。
 - デザインモードは、曲ファイルのデザインの上書きをページの中で編集する。静止画とプレビューのたびに、元にするデザインの名前と一緒に送る。
   サーバーは曲ファイルと同じ規則（`song_design`）で検証し、結果を `LyricsBackdrop.set_design` に渡す。描き直すが、背景の設定が変わらなければ
-  縮小済みの背景画像はそのまま使う。`/api/song` は元にできる各デザインの値も送るので、ページは変えた設定を示せる。`/api/fonts` は macOS の
+  縮小済みの背景画像はそのまま使う。`/api/song` は元にできる各デザインの値に加え、スペクトラムの元にできる各プリセットの値（`config.preset_values`）と、
+  曲ファイル自身の `[spectrum]` の指定も送る。そのためページは変えた設定を示せる。`/api/fonts` は macOS の
   フォントフォルダと、曲ファイルのフォントがあるフォルダの書体を一覧にする（`fonts.font_faces`）。一覧はセッションごとに一度だけ作る。
 - ページは `/api/audio` から範囲リクエストで曲を再生し、キーを押した時点の audio 要素の時刻を記録する。波形用に同じ音声をブラウザでもデコードする。
 - 編集はすべてページのメモリに置く。書き込むのは保存のときだけで、タイミングファイルと、デザインを変えたときは曲ファイル

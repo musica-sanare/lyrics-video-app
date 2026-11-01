@@ -111,11 +111,17 @@ listens on `127.0.0.1` and refuses other web pages. Stop it with `Ctrl+C` in the
    pause. `Backspace` undoes the last mark. The highlighted line starts next.
 2. **Adjust:** click a time (or switch to Adjust) and correct it while listening and looking at the waveform. The
    picture above the waveform is the exact frame of the video at the playhead whenever the song is paused.
-3. **Design:** change the look of the background, title, captions and credits; the still shows each change at once.
+3. **Design:** change the look of the background, title, captions, credits and spectrum; the still shows each change
+   at once.
    - Start from a built-in design (or the song file's design file) and change single settings: colors, opacities,
      sizes, fonts, bold and italic, boxes behind the title and credits, shadows, and the caption timing (lead, fade,
      change between lines). A changed setting is shown in bold; ↺ takes it back to the design's value.
    - The font list holds the fonts of this Mac and of the folders of the fonts your song file names.
+   - Spectrum: choose an audio-spectrum-app preset (the built-in ones and your saved ones) and change its position,
+     height, side margin, style, bar width, colors (one color or a gradient of two to four), glow and analysis (bands,
+     frequencies, level, rise and fall). Analysis settings take about half a second each and apply when you release
+     the slider. If the song file sets `[spectrum]` itself, a note says so: it wins over these settings ("The
+     spectrum" in section 6).
    - Save writes the changes into the song file's `[design]` table (only the changed settings) and keeps the previous
      song file as `song.toml.bak`. Everything else in the song file stays as it was, comments included, except
      comments inside `[design]`. Other settings stay editable in the song file (section 6).
@@ -308,7 +314,8 @@ Bold and italic:
 ### The spectrum
 
 The design holds the spectrum too: an audio-spectrum-app preset and changes to its keys, written as the preset's own
-tables. A design saved with the spectrum therefore keeps the whole look of a video.
+tables. The Design mode of the `sync` page writes them for you. A design saved with the spectrum therefore keeps the
+whole look of a video.
 
 ```toml
 [design.spectrum]
