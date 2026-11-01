@@ -14,7 +14,7 @@ public API (`audio_spectrum`).
 ```mermaid
 flowchart TB
   subgraph commands["Commands and the page"]
-    cli["cli.py: still, render, sync"]
+    cli["cli.py: start, sync, still, render, install-app"]
     web["web/: server and sync page"]
   end
   subgraph frames["Frames"]
@@ -39,7 +39,7 @@ flowchart TB
 | Song and designs | `config.py`, `design.py`, `designs/*.toml`, `lyrics.py`, `timing.py`, `errors.py` | Read and validate the song file, the design with its overrides, the lyrics file and the timing file (LRC). Paths are resolved against the song file |
 | Frames | `layers.py`, `backdrop.py`, `still.py`, `render.py` | Draw the parts of a frame (background, title, captions, credits), compose them by time under the spectrum, and hand them to audio-spectrum-app for stills and videos |
 | audio-spectrum-app | `audio_spectrum` (another repository) | Decode the song, analyse it and draw the spectrum over this app's backdrop, for stills and videos |
-| Commands and the page | `cli.py`, `web/` | Turn user actions into calls of the layers below, and write files |
+| Commands and the page | `cli.py`, `web/`, `app_files.py`, `app_bundle.py` | Turn user actions into calls of the layers below, and write files; keep the app's own files and its app bundle |
 
 Two helpers of the frames layer come from the caption images of the old workflow, which were removed in version 0.2.0:
 `caption_image.py` draws the `classic` caption band with the old script's rules, and `contact_sheet.py` builds the
@@ -136,6 +136,11 @@ flowchart LR
   `Songs.open` refuses a song whose files are missing (`config.missing_files`, 409 `missing_files` with the list), and
   the page offers to choose them again (`/api/songs/repair`). The page's dialogs go through one route, `/api/choose`,
   by kind (`dialogs.KINDS`: song, audio, image, lyrics, font, folder).
+- `lyrics-video install-app` (`app_bundle.py`) writes `Lyrics Video.app`: an `Info.plist` and a shell script that
+  sets `PATH` to the folders of `uv` and `ffmpeg` (an app started from the Finder gets a short one) and runs
+  `uv run --project <repository> lyrics-video start` in the background, then exits. Each click therefore runs the
+  script again, and `start` opens the running app's page. The paths are found when installing, so the bundle is made
+  on each Mac and never committed.
 - `lyrics-video start` runs the server without a song in app mode: it records its port and token in
   `server.json` in the app's folder (`app_files`, written through a temporary file, so readable by the owner only),
   and a second `start` opens that server's page when it answers `/api/ping`. In app mode the server stops itself when

@@ -13,6 +13,8 @@ seconds and renders it. See the [Phase 5 acceptance](docs/working/PHASE5_ACCEPTA
 
 ## What it does today
 
+- Lyrics Video.app (made by `lyrics-video install-app`) starts the app from the Dock: a start page with recent songs,
+  and new songs made from an audio file, a background image and a lyrics text in any folder.
 - `lyrics-video sync` opens a page in the browser to tap and adjust the times of the captions while the song plays,
   change the design and the spectrum with a live still, save the look as a named design for other songs, check
   everything in a quick preview video, and render the video from there.
@@ -27,10 +29,16 @@ audio-spectrum-app must be checked out next to this repository (`../audio-spectr
 ```bash
 brew install uv ffmpeg
 uv sync
-mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # then set the song, image, font and lyrics
-uv run lyrics-video sync work/my-song/song.toml             # time the captions in the browser
-uv run lyrics-video still work/my-song/song.toml --time 60  # frames of the video at chosen times
-uv run lyrics-video render work/my-song/song.toml           # the whole video, in work/my-song/videos/
+uv run lyrics-video install-app   # Lyrics Video.app in ~/Applications; drag it to the Dock
+```
+
+Click the app, choose "New song…" and pick your audio, background image and lyrics. The
+[User guide](docs/en/USER_GUIDE.md) §2 walks through a whole song. The same works from the terminal:
+
+```bash
+uv run lyrics-video sync path/to/song.toml               # time the captions and set the look in the browser
+uv run lyrics-video still path/to/song.toml --time 60    # frames of the video at chosen times
+uv run lyrics-video render path/to/song.toml             # the whole video, in videos/ next to the song file
 ```
 
 Run `uv run pytest` for the tests.

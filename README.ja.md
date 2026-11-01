@@ -1,4 +1,4 @@
-<!-- source: README.md blob b61bff4d2e429b143dce433743e9242047334898 -->
+<!-- source: README.md blob 9673ec02acd6f0031eed04f20f487cb70863dc28 -->
 [English](README.md) | 日本語
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -15,6 +15,8 @@
 
 ## 今できること
 
+- Lyrics Video.app（`lyrics-video install-app` で作る）で Dock からアプリを起動できる。開始ページに最近の曲が並び、どのフォルダにある音声・
+  背景画像・歌詞テキストからでも新しい曲を作れる。
 - `lyrics-video sync`：ブラウザでページを開き、曲を再生しながら字幕の時刻をタップして調整する。静止画を見ながらデザインとスペクトラムを変え、
   見た目を名前付きデザインとしてほかの曲用に保存し、簡易のプレビュー動画で確かめて、そこから動画も書き出せる。
 - `lyrics-video still`：将来の動画のフレーム（背景、曲名、その時点の字幕、クレジット、スペクトラム）を 3 つのデザインで描く。
@@ -28,10 +30,16 @@ audio-spectrum-app をこのリポジトリの隣（`../audio-spectrum-app`）�
 ```bash
 brew install uv ffmpeg
 uv sync
-mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # このあと曲、画像、フォント、歌詞を設定する
-uv run lyrics-video sync work/my-song/song.toml             # ブラウザで字幕にタイミングを付ける
-uv run lyrics-video still work/my-song/song.toml --time 60  # 指定した時刻の動画のフレーム
-uv run lyrics-video render work/my-song/song.toml           # 動画全体（work/my-song/videos/ に書き出す）
+uv run lyrics-video install-app   # ~/Applications に Lyrics Video.app ができる。Dock にドラッグする
+```
+
+アプリをクリックして「新しい曲…」を選び、音声、背景画像、歌詞を選ぶ。1 曲の流れは[ユーザーガイド](docs/ja/USER_GUIDE.md)の 2 節にある。
+ターミナルからも同じことができる。
+
+```bash
+uv run lyrics-video sync path/to/song.toml               # ブラウザで字幕にタイミングを付け、見た目を決める
+uv run lyrics-video still path/to/song.toml --time 60    # 指定した時刻の動画のフレーム
+uv run lyrics-video render path/to/song.toml             # 動画全体（曲ファイルの隣の videos/ に書き出す）
 ```
 
 テストは `uv run pytest` で走らせる。

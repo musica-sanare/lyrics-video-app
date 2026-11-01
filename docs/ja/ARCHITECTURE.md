@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob 8124d10518b560db4f23afc50b70d0c0d12d30bf -->
+<!-- source: docs/en/ARCHITECTURE.md blob c2bebaf465d949a64d3c303dba53697239374f07 -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -15,7 +15,7 @@ lyrics-video-app の作りをまとめる。層の分け方、曲ファイルが
 ```mermaid
 flowchart TB
   subgraph commands["コマンドとページ"]
-    cli["cli.py：still、render、sync"]
+    cli["cli.py：start、sync、still、render、install-app"]
     web["web/：サーバーと sync ページ"]
   end
   subgraph frames["フレーム"]
@@ -40,7 +40,7 @@ flowchart TB
 | 曲とデザイン | `config.py`、`design.py`、`designs/*.toml`、`lyrics.py`、`timing.py`、`errors.py` | 曲ファイル、上書きを反映したデザイン、歌詞ファイル、タイミングファイル（LRC）を読んで検証する。パスは曲ファイルを基準に解決する |
 | フレーム | `layers.py`、`backdrop.py`、`still.py`、`render.py` | フレームの部品（背景、曲名、字幕、クレジット）を描き、時刻に合わせてスペクトラムの下に重ね、静止画や動画のために audio-spectrum-app へ渡す |
 | audio-spectrum-app | `audio_spectrum`（別リポジトリ） | 曲をデコードして解析し、このアプリの backdrop の上にスペクトラムを描く。静止画にも動画にも使う |
-| コマンドとページ | `cli.py`、`web/` | 利用者の操作を下の層の呼び出しに変え、ファイルを書く |
+| コマンドとページ | `cli.py`、`web/`、`app_files.py`、`app_bundle.py` | 利用者の操作を下の層の呼び出しに変え、ファイルを書く。アプリ自身のファイルとアプリのバンドルも扱う |
 
 フレームの層の補助のうち 2 つは、バージョン 0.2.0 で削除した旧ワークフローの字幕画像に由来する。
 `caption_image.py` は `classic` の字幕帯を旧スクリプトの決まりで描き、`contact_sheet.py` は `still` の比較画像を作る。`fonts.py` は両方のためにフォントファイルを開く。
@@ -127,6 +127,10 @@ flowchart LR
   ほかの部分は残す。どちらも書く前に新しい内容を読み込んで確かめる。`Songs.open` はファイルが見つからない曲を断り（`config.missing_files`、
   一覧付きの 409 `missing_files`）、ページは選び直させる（`/api/songs/repair`）。ページのダイアログはすべて、種類（`dialogs.KINDS`：曲、音声、
   画像、歌詞、フォント、フォルダ）を指定する `/api/choose` を通る。
+- `lyrics-video install-app`（`app_bundle.py`）は `Lyrics Video.app` を書く。中身は `Info.plist` とシェルスクリプトで、スクリプトは `PATH` に
+  `uv` と `ffmpeg` のフォルダを加え（Finder から起動したアプリの `PATH` は短い）、`uv run --project <リポジトリ> lyrics-video start` をバックグラウンドで
+  実行してすぐ終わる。そのためクリックのたびにスクリプトが動き、`start` が動いているアプリのページを開く。パスはインストール時に調べて書くので、
+  バンドルは Mac ごとに作り、コミットしない。
 - `lyrics-video start` は曲なしのアプリモードでサーバーを動かす。ポートとトークンをアプリのフォルダの `server.json` に記録し（`app_files`。
   一時ファイル経由で書くので、オーナーだけが読める）、2 回目の `start` はそのサーバーが `/api/ping` に答えればそのページを開く。アプリモードでは、
   10 分間リクエストがなく書き出しもなければサーバーは自分で止まる。ページは開いている間 30 秒ごとに `/api/ping` を送る。「終了」（`/api/quit`）は

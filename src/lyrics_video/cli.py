@@ -10,6 +10,7 @@ from typing import TextIO
 from audio_spectrum import RenderResult
 
 from lyrics_video import __version__
+from lyrics_video.app_bundle import APPLICATIONS, install_app
 from lyrics_video.config import Song, load_song
 from lyrics_video.errors import LyricsVideoError
 from lyrics_video.render import DEFAULT_CRF, PreparedRender, prepare_render, render
@@ -113,6 +114,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     start.add_argument("--port", type=int, default=0, help="the port on 127.0.0.1; by default a free one")
     start.add_argument("--no-browser", action="store_true", help="do not open the browser")
+
+    install = commands.add_parser(
+        "install-app",
+        help="make Lyrics Video.app, to start the app from the Dock",
+        description=(
+            "Write a small app, Lyrics Video.app, that runs `lyrics-video start` from this repository. Drag it to the "
+            "Dock once; clicking it opens the app's page. Run it again after moving the repository."
+        ),
+    )
+    install.add_argument(
+        "--to", type=Path, default=APPLICATIONS, metavar="FOLDER", help="where to put it (~/Applications)"
+    )
+    install.add_argument("--overwrite", action="store_true", help="replace an app made by this command")
     return parser
 
 
@@ -121,6 +135,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "start":
         start_app(port=args.port, open_browser=not args.no_browser)
         return EXIT_OK
+    if args.command == "install-app":
+        return run_install(args.to, args.overwrite)
     try:
         song = load_song(args.song)
         if args.command == "render":
@@ -140,6 +156,16 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {error}", file=sys.stderr)
         return EXIT_FAILED
     print(f"Wrote {len(written.files)} image(s) to {written.folder}")
+    return EXIT_OK
+
+
+def run_install(folder: Path, overwrite: bool) -> int:
+    try:
+        bundle = install_app(folder, overwrite)
+    except LyricsVideoError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return EXIT_FAILED
+    print(f"Wrote {bundle}\nOpen it, or drag it to the Dock; its log is ~/Library/Logs/lyrics-video.log.")
     return EXIT_OK
 
 

@@ -10,7 +10,7 @@ video, start with the [User guide](USER_GUIDE.md). To work on the code, start wi
 
 | Document | Description |
 |---|---|
-| [User guide](USER_GUIDE.md) | Setup, timing the captions with the `sync` page, stills with `still`, rendering the whole video with `render` or from the page, designs, the song file. |
+| [User guide](USER_GUIDE.md) | Setup, everyday use from the Dock (new songs, the next song), timing the captions on the page, stills with `still`, rendering the whole video with `render` or from the page, designs, the song file. |
 | [Development](DEVELOPMENT.md) | Setup, tests, conventions and the rules that keep the repository safe to publish. |
 | [Architecture](ARCHITECTURE.md) | The layers, the way from a song file to a still and a video, the sync page, rules every change keeps, performance and where new features fit. |
 

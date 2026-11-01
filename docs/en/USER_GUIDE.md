@@ -2,11 +2,12 @@ English | [日本語](../ja/USER_GUIDE.md) · [Docs index](README.md)
 
 # User guide
 
-How to set up lyrics-video-app, time the captions of a song, look at frames of its video and render the whole
-video. It is for anyone making a lyrics video with the app.
+How to set up lyrics-video-app, start it from the Dock, make a song from your audio, image and lyrics, time the
+captions, set the look and render the whole video. It is for anyone making a lyrics video with the app. For everyday
+use, read sections 1 and 2; the rest explains each part and the commands.
 
-Each song has a folder with a song file. The commands read it and write images or the video into folders next to it;
-`sync` opens a page in the browser to time the captions and set the design:
+Each song has a song file that names its files. The page and the commands read it and write the timing and the video
+next to it:
 
 ```mermaid
 flowchart LR
@@ -40,9 +41,49 @@ uv sync
 audio-spectrum-app must be checked out next to this repository (`../audio-spectrum-app`); see
 [Development](DEVELOPMENT.md) §1. Everything runs offline.
 
-## 2. A folder per song
+## 2. Everyday use
 
-Keep each song in its own folder inside `work/`, which Git ignores, or anywhere outside the repository:
+Install the app once, then start it from the Dock for every song; no terminal is needed after that.
+
+### Install the app (once)
+
+```bash
+uv run lyrics-video install-app
+```
+
+This writes `~/Applications/Lyrics Video.app`. Drag it to the Dock.
+
+- Clicking it opens the app's page in the browser. A click while the app runs opens its page again.
+- The app runs this repository's code, so changes to the repository need no new install. After moving the
+  repository or reinstalling uv, run `uv run lyrics-video install-app --overwrite`.
+- Its messages go to `~/Library/Logs/lyrics-video.log`.
+- Quit on the page stops it; it also stops by itself 10 minutes after its last page was closed.
+
+### A new song
+
+Have the audio, a background image and the lyrics as a text file (one caption per line, see "The lyrics file"),
+in any folder.
+
+1. Click the app in the Dock, then "New song…" on the start page.
+2. Choose the three files, give the title and credits, and choose a design and a font. "Create and open" writes the
+   song file next to the audio (`<audio name>.toml`) and opens it. Nothing is copied.
+3. Tap the times (Tap mode), check them in the preview video, change the look in the Design mode, and Save.
+4. "Render video" writes `videos/<song file name>.mp4` next to the song file.
+
+The details of each step are in section 4.
+
+### The next song
+
+- Reuse a look: in the Design mode, "Save as design" saves the whole look, fonts and spectrum included, under a name.
+  Choose that name in "New song…" for the next song.
+- Open a song again from the start page's recent songs, or with "Open song…".
+- If you move a song's files, the page asks for them when you open the song.
+
+### Song files by hand
+
+A song file is a TOML file that the page writes, and it can also be written by hand. Start from the examples: copy
+`examples/song.example.toml` and `examples/lyrics.example.txt` next to your song and edit them (section 7 lists every
+key). Inside this repository, keep songs in `work/`, which Git ignores:
 
 ```text
 work/my-song/
@@ -50,9 +91,6 @@ work/my-song/
   lyrics.txt     one caption per line
   lyrics.lrc     when each caption is sung (section 4)
 ```
-
-Start from the examples: copy `examples/song.example.toml` to `work/my-song/song.toml` and
-`examples/lyrics.example.txt` to `work/my-song/lyrics.txt`, then edit them.
 
 ### The lyrics file
 
