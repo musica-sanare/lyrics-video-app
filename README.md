@@ -7,9 +7,9 @@ title, lyrics captions that fade in and out at the bottom, credits, and an audio
 [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), with the song's audio. It replaces a manual
 workflow of caption images layered in a video editor.
 
-**Status:** Phase 5 (spectrum settings on the page and named designs) accepted, version 0.4.0: the `sync` page times
-the song, sets its whole look including the spectrum, saves the look for other songs, previews the whole video in
-seconds and renders it. See the [Phase 5 acceptance](docs/working/PHASE5_ACCEPTANCE.md).
+**Status:** Phase 6 (everyday use) accepted, version 0.5.0: the app starts from the Dock, makes a new song from files
+in any folder, times it, sets its whole look including the spectrum, previews the whole video in seconds and renders
+it, all on one page. See the [Phase 6 acceptance](docs/working/PHASE6_ACCEPTANCE.md).
 
 ## What it does today
 

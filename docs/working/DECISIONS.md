@@ -207,3 +207,42 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
 - Consequences: Any song file, `still --design` and `render --design` use a named design like a built-in one. A
   named design depends on its font files staying where they are. Rejected: a `designs/` folder next to the songs
   (relative paths break when folders move).
+
+## ADR-012: Starting from the Dock, with a start page
+
+- Context: The page started only from a terminal inside the repository, one song per server. The owner wanted to
+  start the app like any Mac app and move to the next song without commands ([Phase 6 plan](PHASE6_PLAN.md), option A).
+- Decision:
+  - `lyrics-video install-app` writes `~/Applications/Lyrics Video.app`: an `Info.plist` and a shell script that runs
+    `uv run --project <repository> lyrics-video start` in the background, with the folders of `uv` and ffmpeg in
+    `PATH` and output in `~/Library/Logs/lyrics-video.log`. It is made on each Mac and never committed.
+  - `start` serves the page without a song. It records its port, token and process in
+    `~/Library/Application Support/lyrics-video/server.json` (mode 0600); a second start opens the page of the
+    recorded server if it answers.
+  - One server holds one open song at a time (`Songs`); the start page lists the recent songs and opens others.
+  - Quit on the page stops the server; it also stops after 10 minutes without requests while nothing renders, and the
+    page pings every 30 s while open.
+  - "How to use" on the page lists the steps from the Dock to Quit.
+- Consequences: No terminal in everyday use, and code changes apply at the next start without installing again.
+  Moving the repository or `uv` needs `install-app --overwrite`. The app has the default icon. Rejected: a
+  `.command` file (opens Terminal), `uv tool install` alone (still a terminal), a native window (a new GUI
+  dependency).
+
+## ADR-013: New songs from files where they are
+
+- Context: A new song meant copying the example song file and typing paths by hand. The owner keeps the audio,
+  background image and lyrics in folders of their own choosing and has all three when a song starts (Phase 6 plan,
+  options B to D).
+- Decision:
+  - "New song…" takes the three files from the Finder's own dialogs, which the server shows with `osascript`
+    (`choose file`, `choose folder`) by kind through one route, `/api/choose`. Only one dialog opens at a time, and
+    the page is covered until it closes.
+  - The song file goes next to the audio as `<audio name>.toml` unless another folder is chosen, and never replaces
+    one. It names the files where they are: relative inside its folder, else absolute with `~`. Nothing is copied.
+  - The Song mode changes the title, credits, files and font with `tomlkit`, keeping comments and a `.bak`, then
+    opens the song again. A song whose files are missing offers to choose them again.
+  - "Save as design" writes the song's default font into the parts without a font, so a named design carries its
+    fonts; the page remembers the last design and font for new songs.
+- Consequences: Songs live wherever the owner wants and the video lands next to the song file. Moving or renaming a
+  file breaks the song until it is chosen again on the page. Rejected: a library folder in Application Support
+  (another fixed place), copying the files (duplicates large audio, two lyrics files drift apart).

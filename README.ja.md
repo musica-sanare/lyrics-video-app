@@ -1,4 +1,4 @@
-<!-- source: README.md blob 9673ec02acd6f0031eed04f20f487cb70863dc28 -->
+<!-- source: README.md blob 020c6184c1359ead478a9e847badc04dadb82812 -->
 [English](README.md) | 日本語
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -9,9 +9,9 @@
 クレジット、[audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムと、
 曲の音声でできている。動画編集ソフトで字幕画像を重ねていた手作業を、これで置き換える。
 
-**状況：** Phase 5（ページでのスペクトラム設定と名前付きデザイン）は受け入れ済みで、バージョンは 0.4.0。`sync` ページで曲にタイミングを付け、
-スペクトラムを含む見た目全体を決めてほかの曲用に保存し、動画全体を数十秒でプレビューして書き出せる。
-詳しくは [Phase 5 acceptance](docs/working/PHASE5_ACCEPTANCE.md)（英語のみ）を参照。
+**状況：** Phase 6（普段の使い方）は受け入れ済みで、バージョンは 0.5.0。Dock からアプリを起動し、どのフォルダのファイルからでも新しい曲を作れる。
+タイミング付け、スペクトラムを含む見た目の設定、動画全体の数十秒でのプレビュー、書き出しまで、一つのページで済む。
+詳しくは [Phase 6 acceptance](docs/working/PHASE6_ACCEPTANCE.md)（英語のみ）を参照。
 
 ## 今できること
 

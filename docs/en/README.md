@@ -33,3 +33,4 @@ video, start with the [User guide](USER_GUIDE.md). To work on the code, start wi
 | [Phase 5 plan](../working/PHASE5_PLAN.md) | Spectrum settings on the `sync` page and named designs: the spectrum as part of the design, a chosen set of spectrum settings, designs saved by name in a user folder. |
 | [Phase 5 acceptance](../working/PHASE5_ACCEPTANCE.md) | Phase 5 acceptance report: the owner's check, criteria, measured still times, repository safety, open items. |
 | [Phase 6 plan](../working/PHASE6_PLAN.md) | Everyday use: starting the app from the Dock, a start page with recent songs, new songs from files in any folder, song settings on the page. |
+| [Phase 6 acceptance](../working/PHASE6_ACCEPTANCE.md) | Phase 6 acceptance report: the owner's check and its two fixes, criteria, measured start times, repository safety, open items. |
