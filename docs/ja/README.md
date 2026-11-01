@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob ef8652f5d1622511a2d0fc5a75fe18ac4ebbd630 -->
+<!-- source: docs/en/README.md blob 6a8ba3aec5c3090a36cc047c81f5b54945a8b009 -->
 [English](../en/README.md) | 日本語 · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -28,3 +28,4 @@
 | [Phase 2 plan](../working/PHASE2_PLAN.md)（英語のみ） | 歌詞のタイミング：LRC ファイル、キーで時刻を付けて調整するページ、先出しとクロスフェードを含む時刻での字幕表示、アーキテクチャ文書。 |
 | [Phase 2 acceptance](../working/PHASE2_ACCEPTANCE.md)（英語のみ） | Phase 2 の受け入れ報告：オーナーが選んだ字幕の切り替え方、基準、backdrop の計測時間、リポジトリの安全性、未決事項。 |
 | [Phase 3 plan](../working/PHASE3_PLAN.md)（英語のみ） | 歌詞動画全体を一度に作る：audio-spectrum-app の `render_video` を使う `render` コマンド、`sync` ページからのレンダリング、字幕画像コマンドの削除。 |
+| [Phase 3 acceptance](../working/PHASE3_ACCEPTANCE.md)（英語のみ） | Phase 3 の受け入れ報告：オーナーの最初の完成動画、基準、書き出し時間の計測、リポジトリの安全性、未決事項。 |

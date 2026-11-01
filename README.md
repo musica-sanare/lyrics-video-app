@@ -7,8 +7,8 @@ title, lyrics captions that fade in and out at the bottom, credits, and an audio
 [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), with the song's audio. It replaces a manual
 workflow of caption images layered in a video editor.
 
-**Status:** Phase 3 (the whole video in one step) in progress: `render` makes the whole video from a timed song.
-See the [Phase 3 plan](docs/working/PHASE3_PLAN.md).
+**Status:** Phase 3 (the whole video in one step) accepted, version 0.2.0: a timed song becomes the finished video
+with `render` or from the `sync` page. See the [Phase 3 acceptance](docs/working/PHASE3_ACCEPTANCE.md).
 
 ## What it does today
 

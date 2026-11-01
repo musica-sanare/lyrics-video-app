@@ -27,3 +27,4 @@ video, start with the [User guide](USER_GUIDE.md). To work on the code, start wi
 | [Phase 2 plan](../working/PHASE2_PLAN.md) | Timing of the lyrics: an LRC file, a tapping and adjusting page, captions by time with lead and crossfades, the architecture document. |
 | [Phase 2 acceptance](../working/PHASE2_ACCEPTANCE.md) | Phase 2 acceptance report: the owner's choice of transition, criteria, measured backdrop time, repository safety, open items. |
 | [Phase 3 plan](../working/PHASE3_PLAN.md) | The whole lyrics video in one step: a `render` command on audio-spectrum-app's `render_video`, rendering from the `sync` page, the removal of the caption image commands. |
+| [Phase 3 acceptance](../working/PHASE3_ACCEPTANCE.md) | Phase 3 acceptance report: the owner's first whole video, criteria, measured render times, repository safety, open items. |

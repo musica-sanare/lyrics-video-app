@@ -3,7 +3,8 @@
 # Phase 3 plan: the whole lyrics video in one step
 
 Status: approved by the owner on 2026-11-01 with the recommended options (A1, B1, C1) and every recommended
-answer; the answers are recorded in the last section.
+answer; the answers are recorded in the last section. Delivered and accepted the same day
+([Phase 3 acceptance](PHASE3_ACCEPTANCE.md)).
 
 ## Goal
 

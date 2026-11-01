@@ -1,4 +1,4 @@
-<!-- source: README.md blob 4eb4fd23ea32509ff7fde92c5b040813033da573 -->
+<!-- source: README.md blob 3f355a3f2dd246c2fe5f2b40eac4e1d3b9c56fc1 -->
 [English](README.md) | 日本語
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -9,8 +9,8 @@
 クレジット、[audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムと、
 曲の音声でできている。動画編集ソフトで字幕画像を重ねていた手作業を、これで置き換える。
 
-**状況：** Phase 3（動画全体を一度に作る）を進行中。`render` でタイミング済みの曲から動画全体を作れる。
-詳しくは [Phase 3 plan](docs/working/PHASE3_PLAN.md)（英語のみ）を参照。
+**状況：** Phase 3（動画全体を一度に作る）は受け入れ済みで、バージョンは 0.2.0。タイミング済みの曲から、`render` か `sync` ページで完成した動画を作れる。
+詳しくは [Phase 3 acceptance](docs/working/PHASE3_ACCEPTANCE.md)（英語のみ）を参照。
 
 ## 今できること
 

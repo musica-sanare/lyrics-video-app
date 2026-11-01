@@ -98,3 +98,28 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
 - Consequences: The page is checked by hand; the server is tested with FastAPI's test client. The keys were settled
   with a mock-up first (`Space` start, `Enter` end, `Backspace` undo); setting a time to the playhead was added for
   lines without a time. Rejected: a terminal tool (unknown player delay, no waveform) and writing times by hand.
+
+## ADR-007: Whole videos through `render_video`, from the command and from the sync page
+
+- Context: Phase 3 had to turn a timed song into the finished video in one step and replace the iMovie workflow
+  ([Phase 3 plan](PHASE3_PLAN.md), options A to C). audio-spectrum-app's `render_video` already handles sync, worker
+  processes, parts of songs, audio, safe output, progress and cancellation for a backdrop (ADR-001).
+- Decision:
+  - `lyrics-video render` builds `LyricsBackdrop` and passes it to `render_video` in the same process (A1).
+    `prepare_render` first does everything that can fail quickly: the song file, the timing, an existing output, the
+    times against the song's duration and the backdrop's `prepare`, so a missing image or font fails before any
+    worker starts.
+  - The video goes to `videos/<song file name>.mp4` next to the song file; a part adds its times
+    (`song_60s-75s.mp4`); `--output` chooses another file (B1). An existing video is replaced only with
+    `--overwrite`, or after a confirmation in the page.
+  - H.264 with CRF 18 by default (no chroma keying is needed, unlike audio-spectrum-app's 14); `--codec prores` and
+    `--crf` for other uses. Lines without a time are listed in a warning and left out.
+  - Ctrl+C and SIGTERM interrupt the render, which leaves no file; the command exits with 130.
+  - The sync page renders the saved timing file only, one render at a time, in a background thread with progress,
+    Cancel and Show in Finder (C1). Save is refused while it runs; stopping the server cancels the render and waits
+    for it.
+- Consequences: Stills and videos share one drawing path, so a still is the frame of the video (up to H.264
+  compression). The song is decoded twice per render (once for its duration), about a second. A whole 279 s video
+  renders in about half the song's length on an idle M1; with other load on the machine it can take longer than the
+  song. Rejected: overlaying a backdrop video and a spectrum video with ffmpeg (two encodes and a second sync path)
+  and running audio-spectrum-app's CLI as a subprocess (it cannot take a backdrop).
