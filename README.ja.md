@@ -1,4 +1,4 @@
-<!-- source: README.md blob 3f355a3f2dd246c2fe5f2b40eac4e1d3b9c56fc1 -->
+<!-- source: README.md blob 8af70780cc99eb8acf4aeb39c8af5bcc71f87b8e -->
 [English](README.md) | 日本語
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -9,12 +9,13 @@
 クレジット、[audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムと、
 曲の音声でできている。動画編集ソフトで字幕画像を重ねていた手作業を、これで置き換える。
 
-**状況：** Phase 3（動画全体を一度に作る）は受け入れ済みで、バージョンは 0.2.0。タイミング済みの曲から、`render` か `sync` ページで完成した動画を作れる。
-詳しくは [Phase 3 acceptance](docs/working/PHASE3_ACCEPTANCE.md)（英語のみ）を参照。
+**状況：** Phase 4（動画のプレビューとページでのデザイン設定）は受け入れ済みで、バージョンは 0.3.0。`sync` ページで曲にタイミングを付け、
+デザインを決め、動画全体を数十秒でプレビューして書き出せる。詳しくは [Phase 4 acceptance](docs/working/PHASE4_ACCEPTANCE.md)（英語のみ）を参照。
 
 ## 今できること
 
-- `lyrics-video sync`：ブラウザでページを開き、曲を再生しながら字幕の時刻をタップして調整する。そこから動画も書き出せる。
+- `lyrics-video sync`：ブラウザでページを開き、曲を再生しながら字幕の時刻をタップして調整する。静止画を見ながらデザインを変え、
+  簡易のプレビュー動画で両方を確かめて、そこから動画も書き出せる。
 - `lyrics-video still`：将来の動画のフレーム（背景、曲名、その時点の字幕、クレジット、スペクトラム）を 3 つのデザインで描く。
   既定のデザインは `soft`。
 - `lyrics-video render`：曲の音声付きの歌詞動画全体を書き出す。

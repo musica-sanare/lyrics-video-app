@@ -7,13 +7,14 @@ title, lyrics captions that fade in and out at the bottom, credits, and an audio
 [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), with the song's audio. It replaces a manual
 workflow of caption images layered in a video editor.
 
-**Status:** Phase 3 (the whole video in one step) accepted, version 0.2.0: a timed song becomes the finished video
-with `render` or from the `sync` page. See the [Phase 3 acceptance](docs/working/PHASE3_ACCEPTANCE.md).
+**Status:** Phase 4 (a preview of the video and design settings on the page) accepted, version 0.3.0: the `sync`
+page times the song, sets its design, previews the whole video in seconds and renders it. See the
+[Phase 4 acceptance](docs/working/PHASE4_ACCEPTANCE.md).
 
 ## What it does today
 
 - `lyrics-video sync` opens a page in the browser to tap and adjust the times of the captions while the song plays,
-  and to render the video from there.
+  change the design with a live still, check both in a quick preview video, and render the video from there.
 - `lyrics-video still` renders frames of the future video (background, title, captions of the moment, credits and
   spectrum) in three designs, `soft` by default.
 - `lyrics-video render` renders the whole lyrics video with the song's audio.

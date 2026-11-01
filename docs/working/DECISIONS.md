@@ -123,3 +123,49 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
   renders in about half the song's length on an idle M1; with other load on the machine it can take longer than the
   song. Rejected: overlaying a backdrop video and a spectrum video with ffmpeg (two encodes and a second sync path)
   and running audio-spectrum-app's CLI as a subprocess (it cannot take a backdrop).
+
+## ADR-008: A low-resolution preview video of the whole song on the sync page
+
+- Context: The owner wanted to check the caption changes as in the video, with the design and the spectrum, before
+  the long render (P3-1, [Phase 4 plan](PHASE4_PLAN.md), option A). The page's live preview while playing showed the
+  captions only; exact stills appeared only when paused.
+- Decision:
+  - "Preview video" renders the whole song from the page's current lines and design, saved or not, through the same
+    `LyricsBackdrop` and `render_video` as the video, at most 960 × 540 and 15 fps, H.264 `veryfast` without audio
+    (`prepare_preview`). The backdrop and the spectrum scale with the frame height.
+  - It runs as a second kind of task in the page's `RenderTask` (one render at a time, video or preview), writes into
+    a temporary folder of the session that is removed when the server stops, and replaces the previous preview only
+    when done. `GET /api/preview/video` serves it and accepts the token in the URL, as the audio route does.
+  - The page plays it muted while the song plays and keeps it within 0.1 s of the `<audio>` element, which stays the
+    one clock. Lines changed since the preview, or a changed design, mark it out of date; it is not rebuilt
+    automatically.
+- Consequences: A preview of a 279 s song takes about 19 s (7 %) on the M1, so it can be made after each round of
+  corrections. Text and thin lines are softer than at 1080p, and fades are less smooth at 15 fps. The rule that the
+  page writes only on Save or Render video gains one exception, a temporary file outside the song's folder.
+  Rejected: frames drawn live by the server while playing (too few per second, drifting, holding the session's
+  `Preview`), drawing the design in the browser (a second drawing path), and short full-size clips per line for now
+  (one line at a time; kept as an option if the whole-song preview is not enough).
+
+## ADR-009: Design settings on the sync page, saved in the song file
+
+- Context: The owner wanted to set the look of each part with a preview (P3-2, [Phase 4 plan](PHASE4_PLAN.md),
+  options B and C), including bold, italic and a title background, which the designs could not express.
+- Decision:
+  - New design keys for the title, caption and credits: `font_face` (a face of a font collection), `bold` (a widened
+    outline, 3 % of the font size) and `italic` (a 12° slant), synthetic because Japanese fonts have no italic and
+    few weights; and `title.panel`, a plain or frosted box. `panel = false` turns off a box of the base design. The
+    defaults draw the same pixels as before.
+  - A Design mode on the `sync` page shows a chosen set of settings per part, with the still updated at each change.
+    The page keeps the song file's overrides of a base design; stills and previews send them, and the server
+    validates them as the song file would. `LyricsBackdrop.set_design` keeps the scaled background image when the
+    background settings are unchanged.
+  - Save writes only the changed settings into the song file's `[design]` table with `tomlkit`, which keeps the rest
+    of the file and its comments; the new text is loaded before it is written, and the previous file is kept as
+    `.bak`. Render video waits until the design is saved.
+  - The font list holds the faces of the macOS font folders and of the folders of the song file's fonts, with paths
+    in composed Unicode (NFC) as song files are typed.
+- Consequences: One song file stays the single source for `still`, `render` and the page. A still after a design
+  change takes 0.13 s to 0.37 s on the owner's song. Comments inside `[design]` are lost when the page saves. New
+  settings in the Design mode need labels in four languages. Rejected: a separate design page (a second server and
+  preview), and a separate design file per song (two files to keep together). Named designs for other songs and
+  spectrum settings on the page are left to a later phase.

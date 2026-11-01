@@ -29,3 +29,4 @@ video, start with the [User guide](USER_GUIDE.md). To work on the code, start wi
 | [Phase 3 plan](../working/PHASE3_PLAN.md) | The whole lyrics video in one step: a `render` command on audio-spectrum-app's `render_video`, rendering from the `sync` page, the removal of the caption image commands. |
 | [Phase 3 acceptance](../working/PHASE3_ACCEPTANCE.md) | Phase 3 acceptance report: the owner's first whole video, criteria, measured render times, repository safety, open items. |
 | [Phase 4 plan](../working/PHASE4_PLAN.md) | A preview of the video and design settings on the `sync` page: a low-resolution preview video, bold, italic and a title box, a Design mode that saves to the song file. |
+| [Phase 4 acceptance](../working/PHASE4_ACCEPTANCE.md) | Phase 4 acceptance report: the owner's check, criteria, measured preview and still times, repository safety, open items. |

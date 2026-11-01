@@ -4,7 +4,7 @@
 
 Status: approved by the owner on 2026-11-01 with the recommended options (A1, B1, C1) and every recommended
 answer; the answers are recorded in the last section. Named designs (C3) and spectrum settings on the page are
-wanted in a later phase.
+wanted in a later phase. Delivered and accepted the same day ([Phase 4 acceptance](PHASE4_ACCEPTANCE.md)).
 
 ## Goal
 
