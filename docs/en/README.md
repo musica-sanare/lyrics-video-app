@@ -31,3 +31,4 @@ video, start with the [User guide](USER_GUIDE.md). To work on the code, start wi
 | [Phase 4 plan](../working/PHASE4_PLAN.md) | A preview of the video and design settings on the `sync` page: a low-resolution preview video, bold, italic and a title box, a Design mode that saves to the song file. |
 | [Phase 4 acceptance](../working/PHASE4_ACCEPTANCE.md) | Phase 4 acceptance report: the owner's check, criteria, measured preview and still times, repository safety, open items. |
 | [Phase 5 plan](../working/PHASE5_PLAN.md) | Spectrum settings on the `sync` page and named designs: the spectrum as part of the design, a chosen set of spectrum settings, designs saved by name in a user folder. |
+| [Phase 5 acceptance](../working/PHASE5_ACCEPTANCE.md) | Phase 5 acceptance report: the owner's check, criteria, measured still times, repository safety, open items. |

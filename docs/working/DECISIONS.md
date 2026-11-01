@@ -169,3 +169,41 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
   settings in the Design mode need labels in four languages. Rejected: a separate design page (a second server and
   preview), and a separate design file per song (two files to keep together). Named designs for other songs and
   spectrum settings on the page are left to a later phase.
+
+## ADR-010: The spectrum as part of the design, edited on the sync page
+
+- Context: The owner wanted to set up and render a video in this app alone, without audio-spectrum-app's own page,
+  and to reuse a whole look, spectrum included ([Phase 5 plan](PHASE5_PLAN.md), options A, B and D). The song file
+  chose the spectrum with `[spectrum] preset` and `set`; designs had only `spectrum.set`.
+- Decision:
+  - A design's `spectrum` holds `preset` (a name, or a file relative to the song file), `foreground`, and the preset's
+    own tables `analysis`, `look`, `fill` and `fx`, turned into `--set` overrides; `set` stays for old files.
+  - One function, `config.spectrum_preset`, builds the preset for `still`, `render`, the preview and the page: the
+    song file's `[spectrum] preset`, else the design's, else `default`; then the design's changes; then the song
+    file's `set`. A song file that sets the spectrum itself therefore wins, and the page says so. `load_song` calls it
+    once, so a wrong key fails at once with audio-spectrum-app's message and the song file's name.
+  - The Design mode shows a chosen set of about 18 flat-look settings with labels in four languages; their defaults
+    come from the chosen preset (`config.preset_values`). Analysis settings apply when the slider is released.
+    Perspective presets hide the flat look's settings and gradients.
+- Consequences: One design is the whole look of a video. audio-spectrum-app needed no change: only its public API
+  (`load_preset`, `override_preset`, `preset_to_toml`, preset names) is used, and its page's labels are not copied.
+  A look change shows in about 0.4 s, an analysis change in about 0.5 s. Rejected: the song file's `[spectrum]` only
+  (named designs would not carry the spectrum), audio-spectrum-app user presets (another app's folder), every preset
+  key from the schema (English only, hard to use), and `set` strings as the page's format (hard to read).
+
+## ADR-011: Named designs in a user folder
+
+- Context: The owner wanted to save a song's look and use it for other songs ([Phase 5 plan](PHASE5_PLAN.md),
+  option C).
+- Decision:
+  - Named designs are TOML files in `~/Library/Application Support/lyrics-video/designs/` (`$LYRICS_VIDEO_DESIGN_DIR`
+    when set, which tests use). `load_design` looks a name up among the built-in designs, then the named designs,
+    then as a file relative to the song file.
+  - "Save as design" on the page writes the whole look as it is on the page, saved or not (`config.save_user_design`):
+    only keys that differ from the defaults, colors as `#RRGGBB`, font and preset files as absolute paths with `~`.
+    Fonts are not copied. Replacing a design asks first and keeps a `.bak`; built-in names and names that look like
+    paths are refused. The page then offers to use the design for the song.
+  - "Show designs folder" opens the folder in the Finder for renaming and deleting.
+- Consequences: Any song file, `still --design` and `render --design` use a named design like a built-in one. A
+  named design depends on its font files staying where they are. Rejected: a `designs/` folder next to the songs
+  (relative paths break when folders move).

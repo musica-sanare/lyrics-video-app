@@ -4,7 +4,8 @@
 
 Status: approved by the owner on 2026-11-01 with the recommended options (A1, B1, C1, D1) and every recommended
 answer; the answers are recorded in the last section. The owner chose this scope the same day (spectrum settings and
-named designs, before MusicXML and alignment).
+named designs, before MusicXML and alignment). Delivered and accepted the same day
+([Phase 5 acceptance](PHASE5_ACCEPTANCE.md)).
 
 ## Goal
 
