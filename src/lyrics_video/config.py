@@ -63,6 +63,8 @@ class VideoSettings(_Section):
 
 class SongFile(_Section):
     lyrics: Path = Path("lyrics.txt")
+    timing: Path | None = None
+    """The timed lyrics (LRC); without it, stills show one chosen caption."""
     audio: Path | None = None
     title: str = ""
     credits: list[str] = []
@@ -99,6 +101,7 @@ class Song:
     compare_dir: Path
     compare_fonts: list[Path]
     compare_font_dirs: list[Path]
+    timing: Path | None = None
     audio: Path | None = None
     title: str = ""
     credits: tuple[str, ...] = ()
@@ -145,6 +148,7 @@ def load_song(path: Path) -> Song:
         compare_dir=resolve_path(song.compare.output_dir, base),
         compare_fonts=[resolve_path(p, base) for p in song.compare.fonts],
         compare_font_dirs=[resolve_path(p, base) for p in song.compare.font_dirs],
+        timing=resolve_path(song.timing, base) if song.timing else None,
         audio=resolve_path(song.audio, base) if song.audio else None,
         title=song.title,
         credits=tuple(song.credits),

@@ -28,17 +28,38 @@ class Layer:
     rgba: np.ndarray
 
 
-def blend(frame: np.ndarray, layer: Layer, opacity: float = 1.0) -> None:
+@dataclass(frozen=True)
+class WideLayer:
+    """A layer as 16-bit color and alpha, ready to blend. Twice the memory of the layer, so only a few are kept."""
+
+    left: int
+    top: int
+    color: np.ndarray
+    alpha: np.ndarray
+
+
+def widen(layer: Layer) -> WideLayer:
+    return WideLayer(
+        layer.left, layer.top, layer.rgba[:, :, :3].astype(np.uint16), layer.rgba[:, :, 3:4].astype(np.uint16)
+    )
+
+
+def blend(frame: np.ndarray, layer: Layer | WideLayer, opacity: float = 1.0) -> None:
     """Draw `layer` over `frame` (RGB uint8, changed in place) at the given opacity."""
     if opacity <= 0:
         return
-    height, width = layer.rgba.shape[:2]
-    region = frame[layer.top : layer.top + height, layer.left : layer.left + width]
-    alpha = layer.rgba[:, :, 3:4].astype(np.uint16)
+    wide = layer if isinstance(layer, WideLayer) else widen(layer)
+    height, width = wide.alpha.shape[:2]
+    region = frame[wide.top : wide.top + height, wide.left : wide.left + width]
+    alpha = wide.alpha
     if opacity < 1:
         alpha = (alpha * round(opacity * 255) + 127) // 255
-    color = layer.rgba[:, :, :3].astype(np.uint16)
-    region[:] = ((region.astype(np.uint16) * (255 - alpha) + color * alpha + 127) // 255).astype(np.uint8)
+    mixed = region.astype(np.uint16)
+    mixed *= 255 - alpha
+    mixed += wide.color * alpha
+    mixed += 127
+    mixed //= 255
+    region[:] = mixed
 
 
 def background(image_path: Path | None, width: int, height: int, focus=(0.5, 0.5), dim=0.0, blur=0.0) -> np.ndarray:

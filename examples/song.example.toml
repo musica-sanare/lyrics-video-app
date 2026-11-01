@@ -3,6 +3,9 @@
 
 # One caption per line; ";" splits a caption into two rows. Empty lines are skipped but still count in file names.
 lyrics = "lyrics.txt"
+# When each caption is sung: "[mm:ss.xx]caption" per line; a time with no text ends the caption above it.
+# Without it, stills show one chosen caption.
+timing = "lyrics.lrc"
 
 # The video (stills for now: `lyrics-video still`).
 audio = "song.wav"                     # the song, for the spectrum

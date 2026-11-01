@@ -49,3 +49,13 @@ def test_unknown_design():
 def test_sizes_scale_with_the_frame_height():
     assert scale_for(1080) == 1.0
     assert scale_for(720) == pytest.approx(2 / 3)
+
+
+def test_caption_timing_settings():
+    caption = load_design("soft").caption
+
+    assert (caption.lead_seconds, caption.fade_seconds, caption.transition) == (0.2, 0.3, "crossfade")
+    with pytest.raises(ConfigError, match="design.caption.transition"):
+        load_design("soft", {"caption": {"transition": "wipe"}})
+    with pytest.raises(ConfigError, match="design.caption.lead_seconds"):
+        load_design("soft", {"caption": {"lead_seconds": -1}})

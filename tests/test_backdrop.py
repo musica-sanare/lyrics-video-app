@@ -8,9 +8,11 @@ from PIL import Image
 from signals import write_silence, write_sine
 
 from audio_spectrum import load_preset, override_preset, render_stills
-from lyrics_video.backdrop import LyricsBackdrop, TimedCaption, fade_opacity
+from lyrics_video.backdrop import WIDE_CAPTIONS, LyricsBackdrop, TimedCaption, fade_opacity, timed_captions
 from lyrics_video.design import load_design
 from lyrics_video.errors import ConfigError
+from lyrics_video.layers import blend
+from lyrics_video.timing import TimedLine
 
 WIDTH, HEIGHT = 480, 270
 
@@ -31,6 +33,74 @@ def test_short_captions_fade_over_half_their_time():
 def test_infinite_ends_do_not_fade():
     assert fade_opacity(-1e9, -math.inf, math.inf, 2.0) == 1.0
     assert fade_opacity(0.0, -math.inf, 6.0, 1.5) == 1.0
+
+
+def test_timed_captions_end_at_a_pause_the_next_start_or_the_song_end():
+    lines = [TimedLine(("a",), 1.0), TimedLine(("b",), 2.0, 3.0), TimedLine(("not timed",)), TimedLine(("c",), 5.0)]
+
+    assert timed_captions(lines, 9.0) == [
+        TimedCaption(1.0, 2.0, ("a",)),
+        TimedCaption(2.0, 3.0, ("b",)),
+        TimedCaption(5.0, 9.0, ("c",)),
+    ]
+
+
+# Sung back to back from 10 s to 12 s and 12 s to 15 s, a pause, then from 20 s to the end of the song at 30 s.
+SUNG = [TimedCaption(10.0, 12.0, ("A",)), TimedCaption(12.0, 15.0, ("B",)), TimedCaption(20.0, 30.0, ("C",))]
+
+
+def opacities(seconds, captions=SUNG, transition="crossfade", **caption):
+    design = load_design("soft", {"caption": {"transition": transition, **caption}})
+    backdrop = LyricsBackdrop(design, captions, duration=30.0)
+    return [(shown.rows[0], round(opacity, 6)) for shown, opacity in backdrop.caption_opacities(seconds)]
+
+
+@pytest.mark.parametrize(
+    ("seconds", "expected"),
+    [
+        (9.7, []),
+        (9.8, []),
+        (9.95, [("A", 0.5)]),
+        (10.1, [("A", 1.0)]),
+        (11.95, [("A", 0.5), ("B", 0.5)]),
+        (12.2, [("B", 1.0)]),
+        (15.0, [("B", 1.0)]),
+        (15.15, [("B", 0.5)]),
+        (15.3, []),
+        (19.95, [("C", 0.5)]),
+        (29.85, [("C", 0.5)]),
+    ],
+)
+def test_lead_crossfade_and_fades_around_a_pause(seconds, expected):
+    assert opacities(seconds) == expected
+
+
+@pytest.mark.parametrize(
+    ("seconds", "expected"),
+    [(11.5, [("A", 1.0)]), (11.65, [("A", 0.5)]), (11.8, []), (11.95, [("B", 0.5)]), (15.15, [("B", 0.5)])],
+)
+def test_sequential_fades_the_old_caption_out_before_the_new_one(seconds, expected):
+    assert opacities(seconds, transition="sequential") == expected
+
+
+def test_lead_and_fade_are_settings():
+    assert opacities(9.5, lead_seconds=1.0, fade_seconds=1.0) == [("A", 0.5)]
+    assert opacities(10.0, lead_seconds=0.0, fade_seconds=0.0) == [("A", 1.0)]
+
+
+def test_captions_shorter_than_their_fades_show_at_most_two_at_once():
+    short = [TimedCaption(10.0 + i * 0.1, 10.1 + i * 0.1, (str(i),)) for i in range(5)]
+
+    for step in range(200):
+        assert len(opacities(9.5 + step * 0.01, captions=short)) <= 2
+    assert opacities(9.95, captions=short) == [("0", 0.5), ("1", 0.5)]
+
+
+def test_a_chosen_caption_shows_at_every_time():
+    fixed = [TimedCaption(-math.inf, math.inf, ("A",))]
+
+    assert opacities(0.0, captions=fixed) == [("A", 1.0)]
+    assert opacities(29.99, captions=fixed) == [("A", 1.0)]
 
 
 def make_backdrop(tmp_path, font, credits=(), captions=None, **design):
@@ -62,7 +132,7 @@ def test_the_caption_shows_only_in_its_time_and_fades(tmp_path, sans_font):
     background = (40, 80, 120)
 
     before = backdrop.frame(0, 1.0, WIDTH, HEIGHT)
-    fading = backdrop.frame(0, 2.5, WIDTH, HEIGHT)
+    fading = backdrop.frame(0, 1.9, WIDTH, HEIGHT)
     shown = backdrop.frame(0, 4.0, WIDTH, HEIGHT)
 
     assert band_row(before)[-1].tolist() == list(background)
@@ -125,3 +195,31 @@ def test_errors_surface_when_preparing(tmp_path):
 
     with pytest.raises(ConfigError, match="no font for the title"):
         backdrop.prepare(WIDTH, HEIGHT)
+
+
+def test_two_captions_are_blended_during_a_crossfade(tmp_path, sans_font):
+    captions = [TimedCaption(2.0, 4.0, ("一行目",)), TimedCaption(4.0, 6.0, ("二行目",))]
+    backdrop = make_backdrop(tmp_path, sans_font, captions=captions)
+    prepared = backdrop._prepared_for(WIDTH, HEIGHT)
+    [(_, old), (_, new)] = backdrop.caption_opacities(3.95)
+    expected = prepared.base.copy()
+    blend(expected, backdrop._caption(prepared, ("一行目",), WIDTH, HEIGHT), old)
+    blend(expected, backdrop._caption(prepared, ("二行目",), WIDTH, HEIGHT), new)
+
+    middle = backdrop.frame(0, 3.95, WIDTH, HEIGHT)
+
+    assert np.array_equal(middle, expected)
+    assert not np.array_equal(middle, backdrop.frame(0, 3.5, WIDTH, HEIGHT))
+    assert not np.array_equal(middle, backdrop.frame(0, 4.5, WIDTH, HEIGHT))
+
+
+def test_only_a_few_captions_are_kept_ready_to_blend(tmp_path, sans_font):
+    captions = [TimedCaption(1.0 + i, 2.0 + i, (f"行{i}",)) for i in range(6)]
+    backdrop = make_backdrop(tmp_path, sans_font, captions=captions)
+    fresh = make_backdrop(tmp_path, sans_font, captions=captions)
+
+    frames = [backdrop.frame(0, 1.5 + i, WIDTH, HEIGHT) for i in range(6)]
+
+    assert len(backdrop._prepared_for(WIDTH, HEIGHT).wide) == WIDE_CAPTIONS
+    assert np.array_equal(backdrop.frame(0, 1.5, WIDTH, HEIGHT), frames[0])
+    assert np.array_equal(fresh.frame(0, 6.5, WIDTH, HEIGHT), frames[5])

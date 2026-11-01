@@ -7,13 +7,14 @@ from pathlib import Path
 from audio_spectrum import AudioSpectrumError, Preview, load_preset, override_preset
 from PIL import Image
 
-from lyrics_video.backdrop import LyricsBackdrop, TimedCaption
+from lyrics_video.backdrop import LyricsBackdrop, TimedCaption, timed_captions
 from lyrics_video.captions import Written
 from lyrics_video.config import Song, song_design
 from lyrics_video.contact_sheet import contact_sheet
 from lyrics_video.errors import ConfigError, LyricsError, SpectrumError
 from lyrics_video.lyrics import read_lyrics
 from lyrics_video.output import write_images
+from lyrics_video.timing import check_inside, read_lrc
 
 STILLS_DIR = "stills"
 # Stills are shown at this share of their size in the comparison sheet.
@@ -33,18 +34,25 @@ def make_stills(
     `designs` replaces the song file's design name; the song file's design overrides apply to each. With more than
     one design, `compare_<time>s.png` shows the designs one under the other at half size.
 
-    Until lyrics have timing (Phase 2) the still shows one caption: the line `caption_index` of the lyrics file
-    (0-based, as in the caption image names), or the first caption.
+    With timing, each still shows the captions of its moment, fading as in the video. `caption_index` shows the line
+    of the lyrics file at that index (0-based, as in the caption image names) at every time instead; without timing
+    the still shows that line, or the first caption.
     """
     if song.audio is None:
         raise ConfigError(f"{song.path}: audio is not set (the song file for the spectrum)")
-    captions = [TimedCaption(-math.inf, math.inf, _caption_rows(song, caption_index))] if with_caption else []
+    by_time = with_caption and caption_index is None and song.timing is not None
+    timing = read_lrc(song.timing, song.look.separator) if by_time else []
+    fixed = with_caption and not by_time
+    captions = [TimedCaption(-math.inf, math.inf, _caption_rows(song, caption_index))] if fixed else []
     chosen = [song_design(song.path, name, song.design_overrides) for name in designs] if designs else [song.design]
     video = song.video
     folder = song.path.parent / STILLS_DIR
     images: dict[Path, Image.Image] = {}
     try:
         preview = Preview(song.audio, video.fps)
+        if by_time:
+            check_inside(timing, preview.duration, str(song.timing))
+            captions = timed_captions(timing, preview.duration)
         for design in chosen:
             preset = override_preset(load_preset(song.spectrum_preset), [*design.spectrum.set, *song.spectrum_set])
             backdrop = LyricsBackdrop.for_song(dataclasses.replace(song, design=design), captions, preview.duration)

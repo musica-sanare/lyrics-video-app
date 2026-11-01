@@ -1,11 +1,11 @@
-<!-- source: docs/en/USER_GUIDE.md blob 571947e1be767a6adf3241e8b6b6108350fa0b1f -->
+<!-- source: docs/en/USER_GUIDE.md blob bb9103c63fcb7fc47a228ed63ae36c3d645dd816 -->
 [English](../en/USER_GUIDE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/USER_GUIDE.md)の翻訳。内容が異なる場合は英語版が優先する。
 
 # ユーザーガイド
 
-lyrics-video-app をセットアップし、曲の字幕画像を作り、動画のフレームを確かめる手順をまとめる。このアプリで歌詞動画を作る人向け。
+lyrics-video-app をセットアップし、曲の字幕画像を作り、字幕にタイミングを付け、動画のフレームを確かめる手順をまとめる。このアプリで歌詞動画を作る人向け。
 動画全体の書き出しは後のフェーズで加わる。
 
 曲ごとにフォルダを作り、そこに曲ファイルを置く。3 つのコマンドがそれを読み、隣のフォルダに画像を書き出す。
@@ -14,6 +14,7 @@ lyrics-video-app をセットアップし、曲の字幕画像を作り、動画
 flowchart LR
   song["song.toml"]
   lyrics["lyrics.txt"]
+  timing["lyrics.lrc（タイミング）"]
   comparetxt["compare.txt"]
   media["背景画像と音声"]
   captions["captions"]
@@ -24,6 +25,7 @@ flowchart LR
   outStills["stills/：動画のフレーム"]
   song --> captions & compare & still
   lyrics --> captions & still
+  timing --> still
   comparetxt --> compare
   media --> still
   captions --> outCaptions
@@ -49,6 +51,7 @@ audio-spectrum-app をこのリポジトリの隣（`../audio-spectrum-app`）�
 work/my-song/
   song.toml      曲ファイル：歌詞、色、フォント、出力先
   lyrics.txt     1 行に 1 字幕
+  lyrics.lrc     各字幕を歌う時刻（任意、6 節）
   compare.txt    いくつかのフォントで試す 1〜2 行（任意）
 ```
 
@@ -111,13 +114,14 @@ uv run lyrics-video still work/my-song/song.toml --time 3 62.5 --caption 4
 ```
 
 指定した時刻（曲の秒数）に動画が映すフレームを、曲ファイルの隣の `stills/` に書き出す。ファイル名は `<デザイン>_<時刻>s.png`。
-静止画には背景画像、曲名、字幕、クレジット、その時点のスペクトラムが重なっていて、動画のフレームとまったく同じになる。
+静止画には背景画像、曲名、その時点の字幕、クレジット、スペクトラムが重なっていて、動画のフレームとまったく同じになる。
 
-歌詞にタイミングが付くまでは、静止画に出す字幕は 1 つだけ。
+静止画に出る字幕は次のとおり。
 
-- `--caption` で指定した行（行番号の数え方は字幕画像の名前と同じ）
-- 省略すると最初の字幕
-- `--no-caption` なら字幕なし
+- タイミング（6 節）があれば、その時点の字幕を動画と同じフェードで出す。字幕が入れ替わる間は 2 つが重なる。
+- `--caption` を付けると、どの時刻でもその行番号の字幕（数え方は字幕画像の名前と同じ）を出す。デザインを見比べるときに使う。
+- タイミングがなければ、`--caption` で指定した行、省略すると最初の字幕を出す。
+- `--no-caption` なら字幕なし。
 
 `--overwrite` の動きは `captions` と同じ。
 
@@ -128,7 +132,46 @@ uv run lyrics-video still work/my-song/song.toml --time 3 62.5 --caption 4
 uv run lyrics-video still work/my-song/song.toml --time 62.5 --design classic soft panel
 ```
 
-## 6. デザイン
+## 6. 字幕のタイミング
+
+字幕の時刻は、歌詞ファイルの隣に置くタイミング付き歌詞ファイル（LRC）に書く。曲ファイルでその名前を指定する。
+
+```toml
+timing = "lyrics.lrc"
+```
+
+このファイルを作るタップ用のページは後のバージョンで加わる。それまでは手で書く。
+
+### タイミングファイル
+
+```text
+[00:12.40]first row;second row
+[00:17.85]the next caption
+[00:23.10]
+[00:41.00]after an instrumental part
+```
+
+- UTF-8 のテキスト。各行は時刻 `[分:秒.百分の一秒]` のあとに字幕を書く。歌詞ファイルと同じく `;` で 2 行に分ける。
+  時刻は歌い始めの時刻。
+- 字幕のない時刻だけの行は、すぐ上の字幕をそこで終える。歌が途切れるところに使う。この行がなければ字幕は次の字幕が
+  始まるまで続き、最後の字幕は曲の終わりまで続く。
+- 時刻は行ごとに増え、曲の長さに収まっていなければならない。違反するとエラーになり、その行番号を示す。
+- 時刻のない行は、まだタイミングを付けていない字幕として扱い、表示しない。空行と `[ti:...]` などのタグは飛ばす。
+- `still` は字幕の文言を歌詞ファイルではなくこのファイルから取る。
+
+### 字幕が時刻に合わせて出入りするしくみ
+
+字幕の出入りはデザインの 3 つの設定（7 節）で決まる。これらを変えても、タイミングを付け直す必要はない。
+
+| 設定 | 既定値 | 意味 |
+|---|---|---|
+| `caption.lead_seconds` | `0.2` | 歌い始めのこの秒数前から字幕が現れ始める。目が先に字幕をとらえられる |
+| `caption.fade_seconds` | `0.3` | 字幕のフェードイン・アウトにかかる秒数 |
+| `caption.transition` | `"crossfade"` | 続けて歌う字幕の切り替え方。`"crossfade"` は古い字幕が消えていくのと同時に新しい字幕が現れる。`"sequential"` は古い字幕が消えきってから新しい字幕が現れる |
+
+歌が途切れるところでは、終わりの時刻から字幕が消え始める。フェード 2 回分より短い字幕は、そのぶん速くフェードする。
+
+## 7. デザイン
 
 フレームの部品がどう見えるかをまとめたものが**デザイン**。曲ファイルに `design = "soft"` と書いて選ぶか、
 自分のデザインファイルを `design = "my-design.toml"` で指定する。
@@ -141,7 +184,7 @@ uv run lyrics-video still work/my-song/song.toml --time 62.5 --design classic so
 |---|---|
 | 背景 | `background_image`。画面を覆うように拡大して切り取り、引き伸ばさない。画像がなければ黒 |
 | 曲名 | `title`。アプリが描く |
-| 字幕 | その時点の字幕。フェードイン・アウトする |
+| 字幕 | その時点の字幕（6 節）。フェードイン・アウトする |
 | クレジット | `credits` の各行。曲の最初と最後の数秒、暗くした画面の上に出す |
 | スペクトラム | `[spectrum]` のプリセットと上書き設定に従い、audio-spectrum-app が描く |
 
@@ -183,14 +226,14 @@ size = 56
 |---|---|
 | `background` | `focus`（`[x, y]`、0〜1。切り取るときに残す位置）、`dim`（0〜1）、`blur` |
 | `title` | `enabled`、`position`（`"top-center"`、`"top-left"`）、`font`、`size`、`color`、`margin`、`letter_spacing`、`rule`、`rule_thickness`、`rule_gap`、`shadow` |
-| `caption` | `style`（`"band"`、`"gradient"`、`"panel"`）、`align`（`"left"`）、`font`、`text_color`、`fade_seconds`。帯：`band_color`、`band_opacity`、`band_height`。陰と枠：`size`（最大の文字の大きさ）、`line_spacing`、`margin_x`、`margin_bottom`、`gradient`、`panel`、`shadow` |
+| `caption` | `style`（`"band"`、`"gradient"`、`"panel"`）、`align`（`"left"`）、`font`、`text_color`、`lead_seconds`、`fade_seconds`、`transition`（`"crossfade"`、`"sequential"`）。帯：`band_color`、`band_opacity`、`band_height`。陰と枠：`size`（最大の文字の大きさ）、`line_spacing`、`margin_x`、`margin_bottom`、`gradient`、`panel`、`shadow` |
 | `credits` | `enabled`、`font`、`size`、`color`、`line_spacing`、`position`（`"center"`、`"bottom-right"`）、`margin_x`、`margin_bottom`、`dim`、`panel`、`show_seconds`、`fade_seconds`、`shadow` |
 | `spectrum` | `set`：曲ファイルの `[spectrum] set` より先に適用するプリセットの上書き |
 | `shadow`（`title`、`caption`、`credits` の中） | `blur`（0 で影なし）、`offset`、`color`、`opacity` |
 | `gradient`（`caption` の中） | `height`、`color`、`opacity`（下端での不透明度） |
 | `panel`（`caption`、`credits` の中） | `color`、`opacity`（色の濃さ）、`blur`（背後のぼかし）、`radius`、`padding`（`[x, y]`） |
 
-## 7. 曲ファイル
+## 8. 曲ファイル
 
 曲ファイルは TOML で書く。パスは曲ファイルからの相対パスで、`~` はホームフォルダ。`captions` に要る `captions.font` と、
 `still` に要る `audio` を除き、どのキーも省略できる。
@@ -198,11 +241,12 @@ size = 56
 | キー | 既定値 | 意味 |
 |---|---|---|
 | `lyrics` | `"lyrics.txt"` | 歌詞ファイル |
+| `timing` | なし | タイミングファイル（LRC）。`still` で使う（6 節） |
 | `audio` | なし | 曲の音声（スペクトラム用、`still`） |
 | `background_image` | なし | 動画の背景画像 |
 | `title` | `""` | 曲名（1 行） |
 | `credits` | `[]` | クレジットの各行。例：`["by Your Name"]` |
-| `design` | `"soft"` | デザイン名かデザインファイル、または `name` と上書きを書いた `[design]` テーブル（6 節） |
+| `design` | `"soft"` | デザイン名かデザインファイル、または `name` と上書きを書いた `[design]` テーブル（7 節） |
 | `fonts.default` | なし | 自分のフォントを指定しない、動画のすべての部品のフォント |
 | `spectrum.preset` | `"default"` | audio-spectrum-app のプリセット名かプリセットファイル |
 | `spectrum.set` | `[]` | プリセットの上書き（audio-spectrum-app の `--set` と同じ） |
@@ -223,7 +267,7 @@ size = 56
 フォントはこのリポジトリに含めず、コピーもしない。曲ファイルはフォントの場所を指すだけ。実際の曲ファイルは
 `work/` かリポジトリの外に置く。
 
-## 8. 旧歌詞画像スクリプトからの移行
+## 9. 旧歌詞画像スクリプトからの移行
 
 旧版で入力していた 0 か 1 の代わりに、コマンド `captions` か `compare` を選ぶ。旧 `conf.toml` のキーは、曲ファイルの次のキーに対応する。
 
@@ -247,13 +291,13 @@ size = 56
   一覧画像は新しく加えた。
 - `--overwrite` を付けなければ既存の画像は上書きしない。曲ファイル、歌詞ファイル、フォントにエラーがあれば、画像は 1 枚も書き出さない。
 
-## 9. エラー
+## 10. エラー
 
 | 終了コード | 意味 |
 |---|---|
 | 0 | 完了 |
-| 1 | 失敗。理由は標準エラー出力のメッセージに出る（曲ファイル、歌詞ファイル、フォント、画像、曲、収まらない字幕、既存の出力） |
+| 1 | 失敗。理由は標準エラー出力のメッセージに出る（曲ファイル、歌詞ファイルやタイミングファイル、フォント、画像、曲、収まらない字幕、既存の出力） |
 | 2 | コマンドラインの使い方の誤り |
 
-エラーにはファイル名と、歌詞なら行番号が出る。すべての画像を描き終えてから書き出すので、これらのエラーでは何も書き出さない。
+エラーにはファイル名と、歌詞とタイミングなら行番号が出る。すべての画像を描き終えてから書き出すので、これらのエラーでは何も書き出さない。
 各ファイルは完全に書き出すか、まったく書き出さないかのどちらかになる。

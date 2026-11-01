@@ -1,28 +1,76 @@
 """The picture under the spectrum, as an audio-spectrum-app backdrop (ADR-001).
 
 Everything that is the same in every frame (background and title) is composed once per process and size, also with
-the credits fully shown; per frame only the caption of the moment is blended over a copy, and the credits only while
-they fade. Credits lie under the caption.
+the credits fully shown; per frame only the captions of the moment (at most two, while one replaces the other) are
+blended over a copy, and the credits only while they fade. Credits lie under the captions.
 """
 
+import bisect
 import math
-from dataclasses import dataclass
+from collections import OrderedDict
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
 
 from lyrics_video.config import Song
-from lyrics_video.design import Design, scale_for
-from lyrics_video.layers import Layer, background, blend, caption_layer, credits_layer, title_layer
+from lyrics_video.design import CaptionStyle, Design, scale_for
+from lyrics_video.layers import Layer, WideLayer, background, blend, caption_layer, credits_layer, title_layer, widen
+from lyrics_video.timing import TimedLine
 
 
 @dataclass(frozen=True)
 class TimedCaption:
-    """A caption shown from `start` to `end` (seconds of the song)."""
+    """A caption sung from `start` to `end` (seconds of the song).
+
+    `end` is a pause, the next caption's start, or the end of the song. The design's lead and fades decide when the
+    caption is actually shown.
+    """
 
     start: float
     end: float
     rows: tuple[str, ...]
+
+
+def timed_captions(lines: list[TimedLine], duration: float) -> list[TimedCaption]:
+    """The captions of the timed lines; lines not timed yet are left out."""
+    timed = [line for line in lines if line.start is not None]
+    captions = []
+    for index, line in enumerate(timed):
+        following = timed[index + 1].start if index + 1 < len(timed) else duration
+        captions.append(TimedCaption(line.start, line.end if line.end is not None else following, line.rows))
+    return captions
+
+
+@dataclass(frozen=True)
+class _Window:
+    """When a caption is shown, fades included."""
+
+    start: float
+    end: float
+
+
+def caption_windows(captions: list[TimedCaption], style: CaptionStyle, duration: float) -> list[_Window]:
+    """Shown from `lead` before the sung start, fading in over `fade`.
+
+    Between captions sung back to back the old one fades out while the new one fades in ("crossfade"), or before
+    it ("sequential"). At a pause the caption fades out after its end; the last one is gone at the end of the song.
+    A window never reaches the start of the caption after next, so at most two captions are shown at once.
+    """
+    lead, fade = style.lead_seconds, style.fade_seconds
+    starts = [caption.start - lead for caption in captions]
+    windows = []
+    for index, caption in enumerate(captions):
+        if index + 1 == len(captions):
+            end = min(caption.end + fade, max(duration, caption.end))
+        elif style.transition == "crossfade":
+            end = min(caption.end, starts[index + 1]) + fade
+        else:
+            end = min(caption.end + fade, starts[index + 1])
+        if index + 2 < len(captions):
+            end = min(end, starts[index + 2])
+        windows.append(_Window(starts[index], end))
+    return windows
 
 
 def fade_opacity(seconds: float, start: float, end: float, fade: float) -> float:
@@ -40,12 +88,17 @@ def fade_opacity(seconds: float, start: float, end: float, fade: float) -> float
     return max(0.0, min(1.0, rising, falling))
 
 
+# Captions kept ready to blend in each process; render workers take consecutive frames, so a few are enough.
+WIDE_CAPTIONS = 3
+
+
 @dataclass
 class _Prepared:
     base: np.ndarray
     credits: Layer | None
     with_credits: np.ndarray | None
     captions: dict[tuple[str, ...], Layer]
+    wide: OrderedDict[tuple[str, ...], WideLayer] = field(default_factory=OrderedDict)
 
 
 class LyricsBackdrop:
@@ -62,8 +115,10 @@ class LyricsBackdrop:
         default_font: Path | None = None,
     ):
         self.design = design
-        self.captions = captions
+        self.captions = sorted(captions, key=lambda caption: caption.start)
         self.duration = duration
+        self._windows = caption_windows(self.captions, design.caption, duration)
+        self._window_starts = [window.start for window in self._windows]
         self.background_image = background_image
         self.title = title
         self.credits = credits
@@ -103,17 +158,20 @@ class LyricsBackdrop:
         else:
             picture = prepared.base.copy()
             blend(picture, prepared.credits, credits)
-        caption = self.caption_at(seconds)
-        if caption is not None:
-            opacity = fade_opacity(seconds, caption.start, caption.end, self.design.caption.fade_seconds)
-            blend(picture, self._caption(prepared, caption.rows, width, height), opacity)
+        for caption, opacity in self.caption_opacities(seconds):
+            blend(picture, self._wide_caption(prepared, caption.rows, width, height), opacity)
         return picture
 
-    def caption_at(self, seconds: float) -> TimedCaption | None:
-        for caption in self.captions:
-            if caption.start <= seconds < caption.end:
-                return caption
-        return None
+    def caption_opacities(self, seconds: float) -> list[tuple[TimedCaption, float]]:
+        """The captions shown at `seconds` and their opacities, the older first; at most two."""
+        latest = bisect.bisect_right(self._window_starts, seconds) - 1
+        shown = []
+        for index in range(max(latest - 1, 0), latest + 1):
+            window = self._windows[index]
+            opacity = fade_opacity(seconds, window.start, window.end, self.design.caption.fade_seconds)
+            if opacity > 0:
+                shown.append((self.captions[index], opacity))
+        return shown
 
     def credits_opacity(self, seconds: float) -> float:
         """Credits are shown from the start and towards the end of the song, fading out and in."""
@@ -146,3 +204,12 @@ class LyricsBackdrop:
             layer = caption_layer(rows, style, self.default_font, width, height, scale, prepared.base)
             prepared.captions[rows] = layer
         return prepared.captions[rows]
+
+    def _wide_caption(self, prepared: _Prepared, rows: tuple[str, ...], width: int, height: int) -> WideLayer:
+        if rows in prepared.wide:
+            prepared.wide.move_to_end(rows)
+        else:
+            prepared.wide[rows] = widen(self._caption(prepared, rows, width, height))
+            if len(prepared.wide) > WIDE_CAPTIONS:
+                prepared.wide.popitem(last=False)
+        return prepared.wide[rows]

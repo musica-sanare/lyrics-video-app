@@ -31,6 +31,7 @@ def _parse_color(value: Any) -> Any:
 Color = Annotated[tuple[int, int, int], BeforeValidator(_parse_color)]
 Fraction = Annotated[float, Field(ge=0.0, le=1.0)]
 Pixels = Annotated[float, Field(ge=0.0)]
+Seconds = Annotated[float, Field(ge=0.0)]
 
 
 class _Part(BaseModel):
@@ -101,7 +102,12 @@ class CaptionStyle(_Part):
     """Only "left" for now; the setting exists so other alignments can be added without changing song files."""
     font: Path | None = None
     text_color: Color = (255, 255, 255)
-    fade_seconds: Pixels = 2.0
+    lead_seconds: Seconds = 0.2
+    """How long before its sung time a caption starts to appear."""
+    fade_seconds: Seconds = 0.3
+    transition: Literal["crossfade", "sequential"] = "crossfade"
+    """Between captions sung back to back: "crossfade" fades the old one out while the new one fades in;
+    "sequential" fades the old one out first, then the new one in."""
     band_color: Color = (0, 0, 0)
     band_opacity: Fraction = 1.0
     band_height: Pixels = Field(default=309.0, gt=0)
@@ -133,9 +139,9 @@ class CreditsStyle(_Part):
     """How much the frame is darkened behind the credits."""
     panel: Panel | None = None
     """A frosted box behind the credits; none by default."""
-    show_seconds: Pixels = 6.0
+    show_seconds: Seconds = 6.0
     """How long the credits stay at the start and at the end of the song."""
-    fade_seconds: Pixels = 1.5
+    fade_seconds: Seconds = 1.5
     shadow: Shadow = Shadow()
 
 

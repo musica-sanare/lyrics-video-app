@@ -48,14 +48,21 @@ def build_parser() -> argparse.ArgumentParser:
         help="write frames of the video at chosen times",
         description=(
             "Write the frames the video will show at the given times, with the design's background, title, caption "
-            "and credits and the spectrum on top, into stills/ next to the song file."
+            "and credits and the spectrum on top, into stills/ next to the song file. With the song file's timing, "
+            "each still shows the caption of its moment."
         ),
     )
     still.add_argument("song", type=Path, help="the song file (TOML)")
     still.add_argument("--time", type=float, nargs="+", required=True, metavar="SECONDS", help="times in the song")
     which = still.add_mutually_exclusive_group()
     which.add_argument(
-        "--caption", type=int, metavar="LINE", help="the caption at this line index (0-based); by default the first"
+        "--caption",
+        type=int,
+        metavar="LINE",
+        help=(
+            "show the caption at this line index (0-based) at every time; by default the captions of each moment from "
+            "the song's timing, or the first caption without timing"
+        ),
     )
     which.add_argument("--no-caption", action="store_true", help="show no caption")
     still.add_argument(

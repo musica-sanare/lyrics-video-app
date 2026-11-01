@@ -90,3 +90,38 @@ def test_an_unknown_design_is_reported(tmp_path, sans_font, capsys):
 
     assert main(["still", str(song), "--time", "1", "--design", "fancy"]) == EXIT_FAILED
     assert "unknown design 'fancy'" in capsys.readouterr().err
+
+
+def with_timing(song, lrc):
+    song.write_text('timing = "lyrics.lrc"\n' + song.read_text(encoding="utf-8"), encoding="utf-8")
+    if lrc is not None:
+        (song.parent / "lyrics.lrc").write_text(lrc, encoding="utf-8")
+
+
+def test_with_timing_each_still_shows_the_caption_of_its_moment(tmp_path, sans_font):
+    song = make_song(tmp_path, sans_font)
+    with_timing(song, "[00:00.50]一行目\n[00:01.50]三行目;下の行\n[00:02.50]\n")
+    times = ["1", "2", "2.9"]
+
+    assert main(["still", str(song), "--time", *times]) == EXIT_OK
+    by_time = [np.asarray(Image.open(tmp_path / f"stills/soft_{t}s.png")) for t in times]
+    main(["still", str(song), "--time", "1", "--caption", "0", "--overwrite"])
+    main(["still", str(song), "--time", "2", "--caption", "2", "--overwrite"])
+    main(["still", str(song), "--time", "2.9", "--no-caption", "--overwrite"])
+    chosen = [np.asarray(Image.open(tmp_path / f"stills/soft_{t}s.png")) for t in times]
+
+    for timed, fixed in zip(by_time, chosen, strict=True):
+        assert np.array_equal(timed, fixed)
+    assert not np.array_equal(by_time[0], by_time[2])
+
+
+def test_timing_errors(tmp_path, sans_font, capsys):
+    song = make_song(tmp_path, sans_font)
+    with_timing(song, None)
+
+    assert main(["still", str(song), "--time", "1"]) == EXIT_FAILED
+    assert "timing file not found" in capsys.readouterr().err
+    (tmp_path / "lyrics.lrc").write_text("[00:00.50]一行目\n[00:05.00]三行目;下の行\n", encoding="utf-8")
+    assert main(["still", str(song), "--time", "1"]) == EXIT_FAILED
+    assert "[00:05.00] is after the end of the song" in capsys.readouterr().err
+    assert not (tmp_path / "stills").exists()

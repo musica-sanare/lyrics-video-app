@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob c8382a87092e0bac16cf6d22f9c099e5ecfb72e0 -->
+<!-- source: docs/en/README.md blob 8a93683e1d2463bbe462b8e00ed1dd20652b2037 -->
 [English](../en/README.md) | 日本語 · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -11,7 +11,7 @@
 
 | 文書 | 説明 |
 |---|---|
-| [ユーザーガイド](USER_GUIDE.md) | セットアップ、`captions`・`compare`・`still` コマンド、デザイン、曲ファイル、旧歌詞画像スクリプトからの移行。 |
+| [ユーザーガイド](USER_GUIDE.md) | セットアップ、`captions`・`compare`・`still` コマンド、字幕のタイミング、デザイン、曲ファイル、旧歌詞画像スクリプトからの移行。 |
 | [開発](DEVELOPMENT.md) | セットアップ、テスト、規約、リポジトリを公開しても安全に保つためのルール。 |
 
 ## 作業用ドキュメント（英語のみ）
