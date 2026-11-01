@@ -13,6 +13,7 @@ video, start with the [User guide](USER_GUIDE.md). To work on the code, start wi
 | [User guide](USER_GUIDE.md) | Setup, everyday use from the Dock (new songs, the next song), timing the captions on the page, stills with `still`, rendering the whole video with `render` or from the page, designs, the song file. |
 | [Development](DEVELOPMENT.md) | Setup, tests, conventions and the rules that keep the repository safe to publish. |
 | [Architecture](ARCHITECTURE.md) | The layers, the way from a song file to a still and a video, the sync page, rules every change keeps, performance and where new features fit. |
+| [Security policy](../../SECURITY.md) (English only) | How to report a vulnerability privately, and which parts of the app are in scope. |
 
 ## Working docs (English only)
 
@@ -35,3 +36,4 @@ video, start with the [User guide](USER_GUIDE.md). To work on the code, start wi
 | [Phase 6 plan](../working/PHASE6_PLAN.md) | Everyday use: starting the app from the Dock, a start page with recent songs, new songs from files in any folder, song settings on the page. |
 | [Phase 6 acceptance](../working/PHASE6_ACCEPTANCE.md) | Phase 6 acceptance report: the owner's check and its two fixes, criteria, measured start times, repository safety, open items. |
 | [Phase 7 plan](../working/PHASE7_PLAN.md) | An app icon drawn by code and preparing the repository to go public: the icon, the public release checklist, audio-spectrum-app by tag, `SECURITY.md`. |
+| [Public release checklist](../working/PUBLIC_RELEASE.md) | Every check before the repository goes public, with results and dates, and the owner's steps for the switch and the GitHub settings after it. |

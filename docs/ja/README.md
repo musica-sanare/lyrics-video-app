@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob 9e2f362de25cd0f55e6190cbc1829d00403c4fe3 -->
+<!-- source: docs/en/README.md blob 4a828152aed084e7eec41a747e6c59c7146e50ee -->
 [English](../en/README.md) | 日本語 · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -14,6 +14,7 @@
 | [ユーザーガイド](USER_GUIDE.md) | セットアップ、Dock からの普段の使い方（新しい曲、次の曲）、ページでの字幕のタイミング付け、`still` での静止画、`render` かページからの動画全体の書き出し、デザイン、曲ファイル。 |
 | [開発](DEVELOPMENT.md) | セットアップ、テスト、規約、リポジトリを公開しても安全に保つためのルール。 |
 | [アーキテクチャ](ARCHITECTURE.md) | 層の分け方、曲ファイルから静止画と動画までの流れ、sync ページ、どの変更でも守る決まり、性能、新しい機能の置き場所。 |
+| [Security policy](../../SECURITY.md)（英語のみ） | 脆弱性を非公開で報告する方法と、対象になるアプリの部分。 |
 
 ## 作業用ドキュメント（英語のみ）
 
@@ -36,3 +37,4 @@
 | [Phase 6 plan](../working/PHASE6_PLAN.md)（英語のみ） | 日常の運用：Dock からのアプリ起動、最近の曲を並べる開始ページ、どのフォルダのファイルからでも作る新しい曲、ページでの曲の設定。 |
 | [Phase 6 acceptance](../working/PHASE6_ACCEPTANCE.md)（英語のみ） | Phase 6 の受け入れ報告：オーナーの確認とそこから出た二つの修正、基準、起動時間の計測、リポジトリの安全性、未決事項。 |
 | [Phase 7 plan](../working/PHASE7_PLAN.md)（英語のみ） | コードで描くアプリアイコンと、リポジトリ公開の準備：アイコン、公開前チェックリスト、タグ指定の audio-spectrum-app、`SECURITY.md`。 |
+| [Public release checklist](../working/PUBLIC_RELEASE.md)（英語のみ） | 公開前のすべての確認と結果・日付、公開の切り替えと直後の GitHub 設定のオーナー手順。 |
