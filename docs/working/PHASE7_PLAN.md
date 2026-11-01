@@ -2,7 +2,8 @@
 
 # Phase 7 plan: an app icon and preparing the repository to go public
 
-Status: draft, waiting for the owner's answers (last section).
+Status: approved by the owner on 2026-11-01 with every recommended option (A1 and A3, B chosen from three
+candidates in milestone 1, C2, D, refs `main` and `dev`).
 
 ## Goal
 
@@ -155,6 +156,19 @@ last sections are filled in then, in their own commit.
   public release check.
 
 ## Questions for the owner
+
+Answers (2026-11-01): the owner accepted every recommendation.
+
+- Q1: A1 with A3; `CLAUDE.md` and `docs/working/` stay public; `SECURITY.md` is added; no contribution guide and no
+  CI (D).
+- Q2: the three candidates (B1, B2, B3) are drawn into `work/icons/` in milestone 1 and the owner chooses one.
+- Q3: audio-spectrum-app goes public before or with this repository; this repository depends on its Git tag
+  `v0.5.0`, with a local override for development (C2).
+- Q4: `main` and `dev` are published, after the owner merges `dev` into `main`.
+- Q5: milestone 2 may run `git ls-remote origin`. If uv has no built-in dependency audit, the tool is asked for
+  again with its name and source.
+
+The questions as asked:
 
 - Q1. Options A and D: an icon drawn by code (A1) with `--icon` for your own image (A3); keep `CLAUDE.md` and
   `docs/working/` public, add `SECURITY.md`, no contribution guide, no CI (D). Fine (recommended)?
