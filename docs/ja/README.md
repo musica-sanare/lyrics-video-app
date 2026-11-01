@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob 71f977472a5cf5aacedaa81d59dc8a1b1ef12ca2 -->
+<!-- source: docs/en/README.md blob 82012e1b330acac8847a7f425813f83816cc34ae -->
 [English](../en/README.md) | 日本語 · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -33,3 +33,4 @@
 | [Phase 4 acceptance](../working/PHASE4_ACCEPTANCE.md)（英語のみ） | Phase 4 の受け入れ報告：オーナーの確認、基準、プレビューと静止画の計測時間、リポジトリの安全性、未決事項。 |
 | [Phase 5 plan](../working/PHASE5_PLAN.md)（英語のみ） | `sync` ページでのスペクトラム設定と名前付きデザイン：デザインの一部としてのスペクトラム、選んだスペクトラム設定、ユーザーフォルダに名前で保存するデザイン。 |
 | [Phase 5 acceptance](../working/PHASE5_ACCEPTANCE.md)（英語のみ） | Phase 5 の受け入れ報告：オーナーの確認、基準、静止画の計測時間、リポジトリの安全性、未決事項。 |
+| [Phase 6 plan](../working/PHASE6_PLAN.md)（英語のみ） | 日常の運用：Dock からのアプリ起動、最近の曲を並べる開始ページ、どのフォルダのファイルからでも作る新しい曲、ページでの曲の設定。 |
