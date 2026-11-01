@@ -16,11 +16,19 @@
   </span>
   <label><span data-i18n="offset.label">Reaction offset</span> <input id="offset" type="number" value="0" step="10"> ms</label>
   <button id="save" type="button" data-i18n="save.button">Save</button>
+  <button id="render" type="button" data-i18n="render.button">Render video</button>
   <span id="status" role="status"></span>
   <label class="language"><span data-i18n="lang.label">Language</span> <select id="language"></select></label>
 </header>
 
 <div id="error" class="error" role="alert" hidden><strong data-i18n="error.title">Error</strong> <span id="error-message"></span> <button id="error-close" type="button">×</button></div>
+<div id="render-bar" class="render-bar" role="status" hidden>
+  <span id="render-text"></span>
+  <progress id="render-progress" max="1" value="0"></progress>
+  <button id="render-cancel" type="button" data-i18n="render.cancel">Cancel</button>
+  <button id="render-reveal" type="button" data-i18n="render.reveal">Show in Finder</button>
+  <button id="render-close" type="button">×</button>
+</div>
 <div id="notices"></div>
 
 <main>

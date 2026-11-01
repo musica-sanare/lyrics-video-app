@@ -44,7 +44,7 @@ without ffmpeg. The `sync` page itself
 | `test_backdrop.py` | Fades, captions by time (lead, crossfade, sequential, pauses, short captions, at most two at once), credits, pickling and other processes, a still equals the backdrop under the spectrum |
 | `test_still.py` | The `still` command: file names, captions by time or chosen, design and spectrum from the song file, several designs and the comparison, errors |
 | `test_render.py` | The `render` command: the video with its audio, frames equal to the stills, several workers through the console script, parts, file names, refusals before any work, cancellation and Ctrl+C, progress |
-| `test_web.py` | The `sync` server: token and host checks, the token in the URL for the audio only, range requests, loading, saving (backup, invalid times), stills equal to `still`, complete page messages in four languages |
+| `test_web.py` | The `sync` server: token and host checks, the token in the URL for the audio only, range requests, loading, saving (backup, invalid times), stills equal to `still`, rendering from the page (saved timing only, one at a time, replacing, cancelling, stopping, Show in Finder), complete page messages in four languages |
 | `test_spectrum_dependency.py` | audio-spectrum-app is installed; a still is drawn over a supplied backdrop |
 
 ## 3. Local files

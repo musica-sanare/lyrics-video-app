@@ -34,6 +34,17 @@
   "transition.crossfade": "crossfade",
   "transition.sequential": "sequential",
   "help.tap": "Tap: [[P]] play or pause · [[Space]] the next line starts · [[Enter]] the current line ends (before a pause) · [[Backspace]] undo · [[⌘]]+[[S]] save. The highlighted line starts next. Keys mark times only while the song plays.",
-  "help.adjust": "Adjust: click a time to select it · [[↑]][[↓]] line · [[Tab]] start or end · [[Enter]] set to the playhead · [[←]][[→]] ±0.05 s · [[Shift]]+[[←]][[→]] ±0.5 s · [[Shift]]+click or [[Shift]]+[[↑]][[↓]] selects a range, [[⌘]]+click adds a line, [[⌘]]+[[A]] selects all; [[←]][[→]] then shift them together · [[R]] play from 2 s before · [[Space]] play or pause · drag markers in the lower waveform · [[Backspace]] undo · [[⌘]]+[[S]] save. The still shows the exact frame of the video at the playhead."
+  "help.adjust": "Adjust: click a time to select it · [[↑]][[↓]] line · [[Tab]] start or end · [[Enter]] set to the playhead · [[←]][[→]] ±0.05 s · [[Shift]]+[[←]][[→]] ±0.5 s · [[Shift]]+click or [[Shift]]+[[↑]][[↓]] selects a range, [[⌘]]+click adds a line, [[⌘]]+[[A]] selects all; [[←]][[→]] then shift them together · [[R]] play from 2 s before · [[Space]] play or pause · drag markers in the lower waveform · [[Backspace]] undo · [[⌘]]+[[S]] save. The still shows the exact frame of the video at the playhead.",
+  "render.button": "Render video",
+  "render.unsaved": "Save first: the video is rendered from the saved timing",
+  "render.preparing": "Preparing the render…",
+  "render.running": "Rendering {file}: {percent} %, about {left} left",
+  "render.cancel": "Cancel",
+  "render.done": "Wrote {file} in {seconds} s.",
+  "render.cancelled": "Render cancelled; no video was written.",
+  "render.failed": "Render failed: {message}",
+  "render.reveal": "Show in Finder",
+  "render.replace": "{file} exists. Replace it?",
+  "render.untimed": "{count} line(s) without a time are left out of the video."
  }
 }

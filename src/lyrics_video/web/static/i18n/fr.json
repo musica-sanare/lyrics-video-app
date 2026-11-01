@@ -34,6 +34,17 @@
   "transition.crossfade": "fondu enchaîné",
   "transition.sequential": "l’un après l’autre",
   "help.tap": "Taper : [[P]] lire ou mettre en pause · [[Space]] la ligne suivante commence · [[Enter]] la ligne en cours se termine (avant une pause) · [[Backspace]] annuler · [[⌘]]+[[S]] enregistrer. La ligne en surbrillance commence ensuite. Les touches ne marquent des temps que pendant la lecture.",
-  "help.adjust": "Ajuster : cliquez sur un temps pour le sélectionner · [[↑]][[↓]] ligne · [[Tab]] début ou fin · [[Enter]] placer à la position de lecture · [[←]][[→]] ±0,05 s · [[Shift]]+[[←]][[→]] ±0,5 s · [[Shift]]+clic ou [[Shift]]+[[↑]][[↓]] sélectionne une plage, [[⌘]]+clic ajoute une ligne, [[⌘]]+[[A]] sélectionne tout ; [[←]][[→]] les décale ensemble · [[R]] lire depuis 2 s avant · [[Space]] lire ou mettre en pause · faites glisser les repères dans la forme d’onde du bas · [[Backspace]] annuler · [[⌘]]+[[S]] enregistrer. L’image est exactement celle de la vidéo à la position de lecture."
+  "help.adjust": "Ajuster : cliquez sur un temps pour le sélectionner · [[↑]][[↓]] ligne · [[Tab]] début ou fin · [[Enter]] placer à la position de lecture · [[←]][[→]] ±0,05 s · [[Shift]]+[[←]][[→]] ±0,5 s · [[Shift]]+clic ou [[Shift]]+[[↑]][[↓]] sélectionne une plage, [[⌘]]+clic ajoute une ligne, [[⌘]]+[[A]] sélectionne tout ; [[←]][[→]] les décale ensemble · [[R]] lire depuis 2 s avant · [[Space]] lire ou mettre en pause · faites glisser les repères dans la forme d’onde du bas · [[Backspace]] annuler · [[⌘]]+[[S]] enregistrer. L’image est exactement celle de la vidéo à la position de lecture.",
+  "render.button": "Exporter la vidéo",
+  "render.unsaved": "Enregistrez d’abord : la vidéo est exportée avec la synchronisation enregistrée",
+  "render.preparing": "Préparation de l’export…",
+  "render.running": "Export de {file} : {percent} %, environ {left} restantes",
+  "render.cancel": "Annuler",
+  "render.done": "{file} exporté en {seconds} s.",
+  "render.cancelled": "Export annulé ; aucune vidéo n’a été écrite.",
+  "render.failed": "L’export a échoué : {message}",
+  "render.reveal": "Afficher dans le Finder",
+  "render.replace": "{file} existe déjà. Le remplacer ?",
+  "render.untimed": "{count} ligne(s) sans temps ne figurent pas dans la vidéo."
  }
 }

@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob 602e9b0a0bb66be62c4734b966a41352bcbb5637 -->
+<!-- source: docs/en/ARCHITECTURE.md blob be89ccbdc33c14499beee0a71f78bd956c2ac3bb -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -107,6 +107,7 @@ flowchart LR
   page -->|"GET /api/audio（範囲指定）"| server
   page -->|"POST /api/still"| server
   page -->|"POST /api/timing（保存）"| server
+  page -->|"POST /api/render、GET /api/render"| server
   server --> files
 ```
 
@@ -114,6 +115,9 @@ flowchart LR
   （`set_captions`）。描き終えた絵はそのまま使い回す。
 - ページは `/api/audio` から範囲リクエストで曲を再生し、キーを押した時点の audio 要素の時刻を記録する。波形用に同じ音声をブラウザでもデコードする。
 - 編集はすべてページのメモリに置く。タイミングファイルに書くのは保存のときだけ。
+- 「動画を書き出す」はセッションの `RenderTask` を始める。`prepare_render` はリクエストの中で動くので、エラーはすぐに返る。
+  そのあと `render` がバックグラウンドのスレッドで動き、`cancel` はページのキャンセルにつながる。ページはタスクの状態を定期的に問い合わせる。
+  書き出すのは保存済みのタイミングファイルだけで、一度に 1 つ。書き出し中の保存は断る。サーバーを止めると書き出しをキャンセルし、終わるまで待つ。
 
 ## 3. どの変更でも守る決まり
 
@@ -123,7 +127,8 @@ flowchart LR
 - **静止画は動画のフレームと一致する。** プレビューはすべて `LyricsBackdrop` と audio-spectrum-app の `Preview` を通し、別の描画経路を作らない。
   テストで確かめている（`test_a_still_is_the_backdrop_with_the_spectrum_drawn_over_it`、`test_stills_are_the_frames_of_the_video`）。
 - **明示的なコマンドか保存なしには何も書かない。** コマンドはすべての画像を描き終えてから書き、`--overwrite` なしには上書きせず、
-  各ファイルを一時ファイルと名前の変更で書く。ページは保存のときだけ書き、前のタイミングファイルを `.bak` として残す。
+  各ファイルを一時ファイルと名前の変更で書く。ページが書くのは保存のとき（前のタイミングファイルを `.bak` として残す）と「動画を書き出す」のときだけで、
+  既存の動画を置き換える前には確認する。
 - **ほかの Web ページからページを操作させない。** サーバーは `127.0.0.1` で待ち受け、想定外の `Host` ヘッダーとセッショントークンのない
   API リクエストを拒む（URL のトークンは音声だけで有効）。クロスオリジン用のヘッダーは送らない。
 - **audio-spectrum-app は公開 API だけを使う。** あちらに必要な変更は、あちらのリポジトリで計画する。

@@ -1,10 +1,14 @@
 import io
 import json
 import re
+import shutil
+import threading
+import time
 from pathlib import Path
 
 import numpy as np
 import pytest
+from audio_spectrum import Cancelled
 from fastapi.testclient import TestClient
 from PIL import Image
 from signals import write_sine
@@ -12,6 +16,7 @@ from signals import write_sine
 from lyrics_video.cli import EXIT_FAILED, main
 from lyrics_video.config import load_song
 from lyrics_video.still import make_stills
+from lyrics_video.web import app as web_app
 from lyrics_video.web.app import STATIC, SyncSession, create_app
 
 TOKEN = "test-token"
@@ -217,3 +222,153 @@ def test_every_message_the_page_uses_exists():
     used |= {"transition.crossfade", "transition.sequential"}
 
     assert used - messages("en").keys() == set()
+
+
+# --- Rendering from the page ---------------------------------------------------------------------------------------
+
+
+@pytest.fixture
+def session(song):
+    return SyncSession(load_song(song))
+
+
+@pytest.fixture
+def render_client(session):
+    return TestClient(create_app(session, TOKEN, {HOST}))
+
+
+def wait_for_render(client, timeout=60.0):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        snapshot = get(client, "/api/render").json()
+        if snapshot["state"] != "running":
+            return snapshot
+        time.sleep(0.05)
+    raise AssertionError("the render did not finish")
+
+
+class HeldRender:
+    """Stands in for the real render: runs until released or cancelled, so tests can act while it runs."""
+
+    def __init__(self):
+        self.release = threading.Event()
+
+    def __call__(self, prepared, progress=None, cancel=None):
+        progress(0, 10)
+        while not self.release.is_set():
+            if cancel():
+                raise Cancelled("cancelled")
+            time.sleep(0.01)
+        progress(10, 10)
+
+
+@pytest.fixture
+def held(monkeypatch):
+    held = HeldRender()
+    monkeypatch.setattr(web_app, "render", held)
+    yield held
+    held.release.set()
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg is not installed")
+def test_the_page_renders_the_saved_timing(render_client, song):
+    post(render_client, "/api/timing", {"lines": TIMED})
+
+    started = post(render_client, "/api/render", {})
+    snapshot = wait_for_render(render_client)
+
+    assert started.status_code == 200 and started.json()["state"] == "running"
+    assert snapshot["state"] == "done", snapshot
+    assert snapshot["output"] == "videos/song.mp4"
+    assert snapshot["frame"] == snapshot["frames"] == 90
+    assert (song.parent / "videos" / "song.mp4").stat().st_size > 0
+
+
+def test_rendering_needs_saved_timing(render_client):
+    response = post(render_client, "/api/render", {})
+
+    assert response.status_code == 400
+    assert "save the timing first" in response.json()["message"]
+
+
+def test_one_render_at_a_time_and_no_saving_while_it_runs(render_client, held):
+    post(render_client, "/api/timing", {"lines": TIMED})
+    assert post(render_client, "/api/render", {}).json()["state"] == "running"
+
+    second = post(render_client, "/api/render", {})
+    saving = post(render_client, "/api/timing", {"lines": TIMED})
+
+    assert (second.status_code, second.json()["code"]) == (409, "busy")
+    assert (saving.status_code, saving.json()["code"]) == (409, "busy")
+    held.release.set()
+    assert wait_for_render(render_client)["state"] == "done"
+    assert post(render_client, "/api/timing", {"lines": TIMED}).status_code == 200
+
+
+def test_an_existing_video_is_replaced_only_when_asked(render_client, song, held):
+    post(render_client, "/api/timing", {"lines": TIMED})
+    video = song.parent / "videos" / "song.mp4"
+    video.parent.mkdir()
+    video.write_bytes(b"kept")
+
+    refused = post(render_client, "/api/render", {})
+    allowed = post(render_client, "/api/render", {"overwrite": True})
+
+    assert (refused.status_code, refused.json()["code"]) == (409, "output_exists")
+    assert refused.json()["message"] == "videos/song.mp4 exists"
+    assert allowed.json()["state"] == "running"
+
+
+def test_cancelling_a_render(render_client, held):
+    post(render_client, "/api/timing", {"lines": TIMED})
+    post(render_client, "/api/render", {})
+
+    post(render_client, "/api/render/cancel", {})
+
+    assert wait_for_render(render_client)["state"] == "cancelled"
+
+
+def test_stopping_the_server_cancels_the_render(render_client, session, held):
+    post(render_client, "/api/timing", {"lines": TIMED})
+    post(render_client, "/api/render", {})
+
+    session.render.stop()
+
+    assert not session.render.running()
+    assert session.render.snapshot(session.song.path.parent)["state"] == "cancelled"
+
+
+def test_show_in_finder_only_for_the_finished_video(render_client, song, held, monkeypatch):
+    opened = []
+    monkeypatch.setattr(web_app.subprocess, "run", lambda command, check: opened.append(command))
+    post(render_client, "/api/timing", {"lines": TIMED})
+    assert post(render_client, "/api/render/reveal", {}).status_code == 400
+
+    post(render_client, "/api/render", {})
+    held.release.set()
+    wait_for_render(render_client)
+    (song.parent / "videos").mkdir(exist_ok=True)
+    (song.parent / "videos" / "song.mp4").write_bytes(b"video")
+
+    assert post(render_client, "/api/render/reveal", {}).status_code == 200
+    assert opened == [["open", "-R", str(song.parent / "videos" / "song.mp4")]]
+
+
+def test_render_routes_need_the_token(render_client):
+    assert render_client.get("/api/render").status_code == 403
+    for path in ("/api/render", "/api/render/cancel", "/api/render/reveal"):
+        assert render_client.post(path, json={}).status_code == 403
+
+
+def test_an_unexpected_failure_is_reported(render_client, monkeypatch):
+    def broken(prepared, progress=None, cancel=None):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(web_app, "render", broken)
+    post(render_client, "/api/timing", {"lines": TIMED})
+    post(render_client, "/api/render", {})
+
+    snapshot = wait_for_render(render_client)
+
+    assert snapshot["state"] == "failed"
+    assert snapshot["error"] == {"code": "OSError", "message": "disk full"}

@@ -4,6 +4,7 @@
 
 const LANGUAGES = { ja: "日本語", en: "English", es: "Español", fr: "Français" };
 const STILL_DELAY_MS = 250;
+const RENDER_POLL_MS = 500;
 const $ = (id) => document.getElementById(id);
 const audio = $("audio");
 
@@ -23,6 +24,7 @@ const state = {
   wave: null, // {data: Float32Array (mono), rate, peaks}
   drag: null,
   still: { timer: null, serial: 0, url: null },
+  render: { snapshot: null, timer: null }, // the server's render task, polled while it runs
 };
 
 // --- Texts ---------------------------------------------------------------------------------------------------------
@@ -89,7 +91,10 @@ async function api(path, body) {
     } catch {
       detail = { message: response.statusText };
     }
-    throw new Error(typeof detail.message === "string" ? detail.message : JSON.stringify(detail.detail ?? detail));
+    const message = typeof detail.message === "string" ? detail.message : JSON.stringify(detail.detail ?? detail);
+    const error = new Error(message);
+    error.code = detail.code;
+    throw error;
   }
   return response;
 }
@@ -275,8 +280,103 @@ async function save() {
     const result = await (await api("/api/timing", { lines: payload() })).json();
     state.dirty = false;
     state.song.timing_exists = true;
+    state.song.changes = [];
+    showNotices();
     setStatus(t("save.done", { file: result.timing_file }));
     render();
+  } catch (error) {
+    showError(error);
+  }
+}
+
+// --- Rendering the video -------------------------------------------------------------------------------------------
+
+const rendering = () => state.render.snapshot?.state === "running";
+
+// The server renders the saved timing file, so the button waits for Save; an existing video is replaced only on a yes.
+async function startRender(overwrite = false) {
+  if (state.dirty || !state.song?.timing_exists || rendering()) return;
+  $("render").disabled = true;
+  showRender({ state: "preparing" });
+  try {
+    showRender(await (await api("/api/render", { overwrite })).json());
+    pollRender();
+  } catch (error) {
+    if (error.code === "output_exists" && !overwrite) {
+      $("render-bar").hidden = true;
+      if (confirm(t("render.replace", { file: error.message.replace(/ exists$/, "") }))) return startRender(true);
+    } else {
+      showRender({ state: "failed", error: { message: error.message } });
+    }
+  } finally {
+    render();
+  }
+}
+
+function pollRender() {
+  clearTimeout(state.render.timer);
+  state.render.timer = setTimeout(async () => {
+    try {
+      showRender(await (await api("/api/render")).json());
+    } catch (error) {
+      showRender({ state: "failed", error: { message: error.message } });
+    }
+    if (rendering()) pollRender();
+    else render();
+  }, RENDER_POLL_MS);
+}
+
+function showRender(snapshot) {
+  if (snapshot.state !== "preparing") state.render.snapshot = snapshot;
+  const bar = $("render-bar");
+  bar.hidden = snapshot.state === "idle";
+  bar.classList.toggle("failed", snapshot.state === "failed");
+  const running = snapshot.state === "running" || snapshot.state === "preparing";
+  const fraction = snapshot.frames ? snapshot.frame / snapshot.frames : 0;
+  $("render-progress").hidden = !running;
+  $("render-progress").value = fraction;
+  $("render-cancel").hidden = snapshot.state !== "running";
+  $("render-reveal").hidden = snapshot.state !== "done";
+  $("render-close").hidden = running;
+  let text = "";
+  switch (snapshot.state) {
+    case "preparing":
+      text = t("render.preparing");
+      break;
+    case "running": {
+      const left = snapshot.frame > 0 ? Math.round((snapshot.elapsed * (snapshot.frames - snapshot.frame)) / snapshot.frame) : null;
+      text = t("render.running", {
+        file: snapshot.output,
+        percent: Math.floor(fraction * 100),
+        left: left == null ? "–" : `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`,
+      });
+      break;
+    }
+    case "done":
+      text = t("render.done", { file: snapshot.output, seconds: Math.round(snapshot.elapsed) });
+      break;
+    case "cancelled":
+      text = t("render.cancelled");
+      break;
+    case "failed":
+      text = t("render.failed", { message: snapshot.error?.message ?? "" });
+      break;
+  }
+  if (snapshot.untimed && ["running", "done"].includes(snapshot.state)) text += " " + t("render.untimed", { count: snapshot.untimed });
+  $("render-text").textContent = text;
+}
+
+async function cancelRender() {
+  try {
+    showRender(await (await api("/api/render/cancel", {})).json());
+  } catch (error) {
+    showError(error);
+  }
+}
+
+async function revealRender() {
+  try {
+    await api("/api/render/reveal", {});
   } catch (error) {
     showError(error);
   }
@@ -416,6 +516,9 @@ function render() {
   $("help").innerHTML = withKeys(t(adjusting ? "help.adjust" : "help.tap"));
   $("multi-info").textContent = state.multi.size > 1 ? t("adjust.multi", { count: state.multi.size }) : "";
   $("save").classList.toggle("dirty", state.dirty);
+  $("save").disabled = rendering();
+  $("render").disabled = state.dirty || !state.song.timing_exists || rendering();
+  $("render").title = state.dirty || !state.song.timing_exists ? t("render.unsaved") : "";
   $("mode-tap").classList.toggle("on", !adjusting);
   $("mode-adjust").classList.toggle("on", adjusting);
   $("adjust").hidden = !adjusting;
@@ -555,7 +658,7 @@ document.addEventListener("keydown", (event) => {
   const command = event.metaKey || event.ctrlKey;
   if (command && (key === "s" || key === "S")) {
     event.preventDefault();
-    save();
+    if (!rendering()) save();
     return;
   }
   if (key === "p" || key === "P") {
@@ -737,6 +840,10 @@ async function start() {
   $("mode-tap").addEventListener("click", () => setMode("tap"));
   $("mode-adjust").addEventListener("click", () => setMode("adjust"));
   $("save").addEventListener("click", save);
+  $("render").addEventListener("click", () => startRender());
+  $("render-cancel").addEventListener("click", cancelRender);
+  $("render-reveal").addEventListener("click", revealRender);
+  $("render-close").addEventListener("click", () => ($("render-bar").hidden = true));
   $("replay").addEventListener("click", replay);
   $("set-time").addEventListener("click", setToPlayhead);
   $("clear-time").addEventListener("click", clearTime);
@@ -757,6 +864,9 @@ async function start() {
   try {
     await loadSong();
     requestStill();
+    showRender(await (await api("/api/render")).json());
+    if (rendering()) pollRender();
+    render();
   } catch (error) {
     showError(error);
   }

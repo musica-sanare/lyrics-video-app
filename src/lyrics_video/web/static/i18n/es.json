@@ -34,6 +34,17 @@
   "transition.crossfade": "fundido cruzado",
   "transition.sequential": "uno tras otro",
   "help.tap": "Marcar: [[P]] reproducir o pausar · [[Space]] empieza la línea siguiente · [[Enter]] termina la línea actual (antes de una pausa) · [[Backspace]] deshacer · [[⌘]]+[[S]] guardar. La línea resaltada es la siguiente. Las teclas solo marcan tiempos mientras suena la canción.",
-  "help.adjust": "Ajustar: haz clic en un tiempo para seleccionarlo · [[↑]][[↓]] línea · [[Tab]] inicio o fin · [[Enter]] poner en la posición de reproducción · [[←]][[→]] ±0,05 s · [[Shift]]+[[←]][[→]] ±0,5 s · [[Shift]]+clic o [[Shift]]+[[↑]][[↓]] selecciona un rango, [[⌘]]+clic añade una línea, [[⌘]]+[[A]] selecciona todas; luego [[←]][[→]] las desplaza juntas · [[R]] reproducir desde 2 s antes · [[Space]] reproducir o pausar · arrastra las marcas en la forma de onda inferior · [[Backspace]] deshacer · [[⌘]]+[[S]] guardar. El fotograma es exactamente el del vídeo en la posición de reproducción."
+  "help.adjust": "Ajustar: haz clic en un tiempo para seleccionarlo · [[↑]][[↓]] línea · [[Tab]] inicio o fin · [[Enter]] poner en la posición de reproducción · [[←]][[→]] ±0,05 s · [[Shift]]+[[←]][[→]] ±0,5 s · [[Shift]]+clic o [[Shift]]+[[↑]][[↓]] selecciona un rango, [[⌘]]+clic añade una línea, [[⌘]]+[[A]] selecciona todas; luego [[←]][[→]] las desplaza juntas · [[R]] reproducir desde 2 s antes · [[Space]] reproducir o pausar · arrastra las marcas en la forma de onda inferior · [[Backspace]] deshacer · [[⌘]]+[[S]] guardar. El fotograma es exactamente el del vídeo en la posición de reproducción.",
+  "render.button": "Exportar vídeo",
+  "render.unsaved": "Guarda primero: el vídeo se exporta con la sincronización guardada",
+  "render.preparing": "Preparando la exportación…",
+  "render.running": "Exportando {file}: {percent} %, quedan unos {left}",
+  "render.cancel": "Cancelar",
+  "render.done": "{file} exportado en {seconds} s.",
+  "render.cancelled": "Exportación cancelada; no se ha escrito ningún vídeo.",
+  "render.failed": "La exportación ha fallado: {message}",
+  "render.reveal": "Mostrar en el Finder",
+  "render.replace": "{file} ya existe. ¿Reemplazarlo?",
+  "render.untimed": "{count} línea(s) sin tiempo no aparecen en el vídeo."
  }
 }

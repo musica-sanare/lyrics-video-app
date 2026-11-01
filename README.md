@@ -15,7 +15,8 @@ See the [Phase 3 plan](docs/working/PHASE3_PLAN.md).
 - `lyrics-video captions` makes the caption images of the old lyrics image script from a lyrics file, for use in
   iMovie.
 - `lyrics-video compare` shows a text in many fonts.
-- `lyrics-video sync` opens a page in the browser to tap and adjust the times of the captions while the song plays.
+- `lyrics-video sync` opens a page in the browser to tap and adjust the times of the captions while the song plays,
+  and to render the video from there.
 - `lyrics-video still` renders frames of the future video (background, title, captions of the moment, credits and
   spectrum) in three designs, `soft` by default.
 - `lyrics-video render` renders the whole lyrics video with the song's audio.

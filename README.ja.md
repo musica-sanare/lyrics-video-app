@@ -1,4 +1,4 @@
-<!-- source: README.md blob 8e56cd39e8e913cb8318dd2d518c1f3909959bc8 -->
+<!-- source: README.md blob dd80caa836923a2285751aad256e8efdcf7bbe80 -->
 [English](README.md) | 日本語
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -16,7 +16,7 @@
 
 - `lyrics-video captions`：歌詞ファイルから、旧歌詞画像スクリプトと同じ字幕画像を作る。iMovie で使う。
 - `lyrics-video compare`：テキストを多くのフォントで並べて見せる。
-- `lyrics-video sync`：ブラウザでページを開き、曲を再生しながら字幕の時刻をタップして調整する。
+- `lyrics-video sync`：ブラウザでページを開き、曲を再生しながら字幕の時刻をタップして調整する。そこから動画も書き出せる。
 - `lyrics-video still`：将来の動画のフレーム（背景、曲名、その時点の字幕、クレジット、スペクトラム）を 3 つのデザインで描く。
   既定のデザインは `soft`。
 - `lyrics-video render`：曲の音声付きの歌詞動画全体を書き出す。

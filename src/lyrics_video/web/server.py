@@ -29,7 +29,12 @@ def run(song: Song, port: int = 0, open_browser: bool = True) -> None:
     print(f"lyrics-video sync at {url}\nPress Ctrl+C to stop.", file=sys.stderr, flush=True)
     if open_browser:
         threading.Thread(target=_open_when_started, args=(server, url), daemon=True).start()
-    server.run(sockets=[listener])
+    try:
+        server.run(sockets=[listener])
+    except KeyboardInterrupt:
+        pass  # uvicorn has shut down; Ctrl+C is the normal way to stop
+    finally:
+        session.render.stop()
 
 
 def _open_when_started(server: uvicorn.Server, url: str) -> None:

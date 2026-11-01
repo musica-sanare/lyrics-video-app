@@ -114,6 +114,7 @@ flowchart LR
   page -->|"GET /api/audio (ranges)"| server
   page -->|"POST /api/still"| server
   page -->|"POST /api/timing (Save)"| server
+  page -->|"POST /api/render, GET /api/render"| server
   server --> files
 ```
 
@@ -122,6 +123,10 @@ flowchart LR
 - The page plays the song from `/api/audio` with range requests and records key presses at the audio element's time.
   It decodes the same audio in the browser for the waveform.
 - The page keeps all edits in memory. Only Save writes the timing file.
+- "Render video" starts the session's `RenderTask`: `prepare_render` runs in the request, so its errors answer at
+  once; `render` then runs in a background thread with `cancel` tied to the page's Cancel. The page polls the task's
+  state. Only the saved timing file is rendered, one render at a time, and Save is refused while it runs. Stopping the
+  server cancels the render and waits for it.
 
 ## 3. Rules every change keeps
 
@@ -133,7 +138,7 @@ flowchart LR
   `test_stills_are_the_frames_of_the_video`).
 - **Nothing is written without an explicit command or Save.** Commands draw every image before writing any, refuse to
   overwrite without `--overwrite`, and write each file through a temporary file and a rename. The page writes only on
-  Save and keeps the previous timing file as `.bak`.
+  Save (keeping the previous timing file as `.bak`) and on "Render video", which asks before replacing a video.
 - **The page cannot be driven by other web pages.** The server listens on `127.0.0.1`, refuses foreign `Host` headers
   and API requests without the session token (accepted in the URL for the audio only), and sends no cross-origin
   headers.

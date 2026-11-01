@@ -166,6 +166,13 @@ listens on `127.0.0.1` and refuses other web pages. Stop it with `Ctrl+C` in the
    picture above the waveform is the exact frame of the video at the playhead whenever the song is paused.
 3. **Save:** the Save button or `⌘S` writes the timing file. Nothing is written before that, and leaving the page
    with unsaved changes asks first.
+4. **Render video:** renders the whole video from the saved timing, as the `render` command does (section 7), into
+   `videos/<song file name>.mp4`.
+   - The button waits until everything is saved, so the video always matches the timing file.
+   - A bar shows the progress and the time left. Cancel stops the render and leaves no file.
+   - An existing video is replaced only after you confirm. When the video is done, "Show in Finder" selects it.
+   - While the render runs, stills still work, but Save waits until the render is done or cancelled.
+   - Stopping the server with `Ctrl+C` cancels a running render cleanly.
 
 Keys in Adjust mode:
 
