@@ -80,7 +80,7 @@ def prepare_render(
     if output.exists() and not overwrite:
         raise OutputExistsError(f"{output} exists; nothing was rendered (use --overwrite to replace it)")
     chosen = song_design(song.path, design, song.design_overrides) if design else song.design
-    timing = read_lrc(song.timing, song.look.separator)
+    timing = read_lrc(song.timing, song.separator)
     video = song.video
     try:
         song_seconds = Preview(song.audio, video.fps).duration

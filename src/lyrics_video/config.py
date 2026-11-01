@@ -1,11 +1,9 @@
 """The song file: one TOML file per song, with paths relative to it."""
 
-import re
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from PIL import Image, UnidentifiedImageError
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt, ValidationError
@@ -13,34 +11,12 @@ from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt, V
 from lyrics_video.design import Design, load_design
 from lyrics_video.errors import ConfigError
 
-DEFAULT_CAPTION_SIZE = (1440, 232)
-HEX_COLOR = re.compile(r"#([0-9a-fA-F]{6})")
-
-type RGB = tuple[int, int, int]
+# Sections of the caption image commands, removed in version 0.2.0 (Phase 3 plan, "Removing captions and compare").
+REMOVED_SECTIONS = ("captions", "compare")
 
 
 class _Section(BaseModel):
     model_config = ConfigDict(extra="forbid")
-
-
-class CaptionSettings(_Section):
-    output_dir: Path = Path("captions")
-    size: tuple[PositiveInt, PositiveInt] | None = Field(
-        default=None, description="Width and height; by default the background sample image's size, or 1440 x 232"
-    )
-    background: str = "#000000"
-    text_color: str = "#FFFFFF"
-    font: Path | None = None
-    font_index: int = Field(default=0, ge=0)
-    separator: str = Field(default=";", min_length=1)
-    file_prefix: str = "lyrics"
-
-
-class CompareSettings(_Section):
-    text: Path = Path("compare.txt")
-    output_dir: Path = Path("compare")
-    fonts: list[Path] = []
-    font_dirs: list[Path] = []
 
 
 class FontSettings(_Section):
@@ -63,6 +39,8 @@ class VideoSettings(_Section):
 
 class SongFile(_Section):
     lyrics: Path = Path("lyrics.txt")
+    separator: str = Field(default=";", min_length=1)
+    """Splits a caption into two rows, in the lyrics and the timing file."""
     timing: Path | None = None
     """The timed lyrics (LRC); without it, stills show one chosen caption."""
     audio: Path | None = None
@@ -74,33 +52,13 @@ class SongFile(_Section):
     fonts: FontSettings = FontSettings()
     spectrum: SpectrumSettings = SpectrumSettings()
     video: VideoSettings = VideoSettings()
-    captions: CaptionSettings = CaptionSettings()
-    compare: CompareSettings = CompareSettings()
-
-
-@dataclass(frozen=True)
-class CaptionLook:
-    """What every caption image of a song shares, resolved from the song file."""
-
-    size: tuple[int, int]
-    background: RGB
-    text_color: RGB
-    separator: str
 
 
 @dataclass(frozen=True)
 class Song:
     path: Path
     lyrics: Path
-    look: CaptionLook
-    font: Path | None
-    font_index: int
-    caption_dir: Path
-    file_prefix: str
-    compare_text: Path
-    compare_dir: Path
-    compare_fonts: list[Path]
-    compare_font_dirs: list[Path]
+    separator: str = ";"
     timing: Path | None = None
     audio: Path | None = None
     title: str = ""
@@ -126,28 +84,23 @@ def load_song(path: Path) -> Song:
         raise ConfigError(f"{path}: song file not found") from None
     except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as error:
         raise ConfigError(f"{path}: cannot read the song file ({error})") from None
+    removed = [f"[{name}]" for name in REMOVED_SECTIONS if name in data]
+    if removed:
+        verb, pronoun = ("is", "it") if len(removed) == 1 else ("are", "them")
+        raise ConfigError(
+            f"{path}: {' and '.join(removed)} {verb} no longer used: the caption image commands were removed in version "
+            f'0.2.0. Delete {pronoun}; if [captions] set a separator, write it at the top as separator = "...".'
+        )
     try:
         song = SongFile.model_validate(data)
     except ValidationError as error:
         raise ConfigError(f"{path}: invalid song file\n{_describe(error)}") from None
 
     base = path.parent
-    captions = song.captions
-    background, sample_size = _color(captions.background, base, "captions.background", path)
-    text_color, _ = _color(captions.text_color, base, "captions.text_color", path)
-    size = captions.size or sample_size or DEFAULT_CAPTION_SIZE
     return Song(
         path=path,
         lyrics=resolve_path(song.lyrics, base),
-        look=CaptionLook(size=size, background=background, text_color=text_color, separator=captions.separator),
-        font=resolve_path(captions.font, base) if captions.font else None,
-        font_index=captions.font_index,
-        caption_dir=resolve_path(captions.output_dir, base),
-        file_prefix=captions.file_prefix,
-        compare_text=resolve_path(song.compare.text, base),
-        compare_dir=resolve_path(song.compare.output_dir, base),
-        compare_fonts=[resolve_path(p, base) for p in song.compare.fonts],
-        compare_font_dirs=[resolve_path(p, base) for p in song.compare.font_dirs],
+        separator=song.separator,
         timing=resolve_path(song.timing, base) if song.timing else None,
         audio=resolve_path(song.audio, base) if song.audio else None,
         title=song.title,
@@ -188,22 +141,6 @@ def _preset_name_or_path(value: str, base: Path) -> str:
     if value.endswith(".toml"):
         return str(resolve_path(Path(value), base))
     return value
-
-
-def _color(value: str, base: Path, key: str, song_path: Path) -> tuple[RGB, tuple[int, int] | None]:
-    """A "#RRGGBB" color, or the center pixel of an image file and that image's size."""
-    if match := HEX_COLOR.fullmatch(value):
-        digits = match.group(1)
-        return (int(digits[0:2], 16), int(digits[2:4], 16), int(digits[4:6], 16)), None
-    image_path = resolve_path(Path(value), base)
-    try:
-        with Image.open(image_path) as image:
-            pixel = image.convert("RGB").getpixel((image.width // 2, image.height // 2))
-            return pixel, image.size
-    except FileNotFoundError:
-        raise ConfigError(f"{song_path}: {key}: not a #RRGGBB color and no image at {image_path}") from None
-    except (OSError, UnidentifiedImageError) as error:
-        raise ConfigError(f"{song_path}: {key}: cannot read image {image_path} ({error})") from None
 
 
 def _describe(error: ValidationError) -> str:

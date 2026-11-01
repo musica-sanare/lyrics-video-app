@@ -149,7 +149,7 @@ class SyncSession:
 
     def load(self) -> dict:
         """The lines to time: the timing file merged with the lyrics file, or the lyrics file alone at first."""
-        separator = self.song.look.separator
+        separator = self.song.separator
         if self.timing_path.exists():
             timed = read_lrc(self.timing_path, separator)
             merged = merge(timed, read_lyrics(self.song.lyrics, separator)) if self.song.lyrics.exists() else Merged(
@@ -176,7 +176,7 @@ class SyncSession:
 
     def lines(self, request: TimingRequest) -> list[TimedLine]:
         lines = [TimedLine(tuple(line.rows), line.start, line.end) for line in request.lines]
-        check_lines(lines, self.song.look.separator)
+        check_lines(lines, self.song.separator)
         check_inside(lines, self.duration, "timing")
         return lines
 
@@ -184,7 +184,7 @@ class SyncSession:
         if self.render.running():
             raise RenderBusyError("a video is being rendered; save after it is done or cancelled")
         lines = self.lines(request)
-        write_lrc(self.timing_path, lines, self.song.look.separator, backup=True)
+        write_lrc(self.timing_path, lines, self.song.separator, backup=True)
         return {"timing_file": self.timing_path.name}
 
     def start_render(self, overwrite: bool) -> None:

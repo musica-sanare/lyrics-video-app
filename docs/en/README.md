@@ -2,15 +2,15 @@ English | [日本語](../ja/README.md) · [Repository README](../../README.md)
 
 # lyrics-video-app documentation
 
-Every doc of lyrics-video-app, the offline lyrics video maker, with one line on each. To make captions and stills
-for a song, start with the [User guide](USER_GUIDE.md). To work on the code, start with
+Every doc of lyrics-video-app, the offline lyrics video maker, with one line on each. To time a song and render its
+video, start with the [User guide](USER_GUIDE.md). To work on the code, start with
 [Development](DEVELOPMENT.md). The working docs record decisions and each phase.
 
 ## Guides
 
 | Document | Description |
 |---|---|
-| [User guide](USER_GUIDE.md) | Setup, the `captions`, `compare` and `still` commands, timing the captions with the `sync` page, rendering the whole video with `render`, designs, the song file, moving from the old lyrics image script. |
+| [User guide](USER_GUIDE.md) | Setup, timing the captions with the `sync` page, stills with `still`, rendering the whole video with `render` or from the page, designs, the song file. |
 | [Development](DEVELOPMENT.md) | Setup, tests, conventions and the rules that keep the repository safe to publish. |
 | [Architecture](ARCHITECTURE.md) | The layers, the way from a song file to a still and a video, the sync page, rules every change keeps, performance and where new features fit. |
 

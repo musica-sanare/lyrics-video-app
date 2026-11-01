@@ -34,10 +34,9 @@ without ffmpeg. The `sync` page itself
 | File | Covers |
 |---|---|
 | `test_lyrics.py` | Lyrics files: line indexes, rows, separators, errors |
-| `test_config.py` | The song file: defaults, paths, colors from sample images, validation, the examples |
-| `test_fonts.py` | Collecting font files and their labels |
-| `test_caption_image.py` | Caption images: the same pixels as a transcription of the old script, sizes, layout |
-| `test_cli.py` | `captions` and `compare`: file names, overwriting, no files on errors, fonts from the command line |
+| `test_config.py` | The song file: defaults, paths, the separator, removed sections, validation, the examples |
+| `test_caption_image.py` | The `classic` caption band: the same pixels as a transcription of the old script, sizes, layout |
+| `test_cli.py` | The command line: version, running as a module, removed commands |
 | `test_design.py` | Built-in designs, overrides, design files, invalid values |
 | `test_layers.py` | Background cover and crop (never stretched), focus, dim and blur; title (spacing, rule), caption band, gradient and panel, credits (positions, panel); blending |
 | `test_timing.py` | Timing files (LRC): reading, writing, round trip, ends, invalid files, the merge with a changed lyrics file |
@@ -61,20 +60,6 @@ Before a commit, check the file list for any of these. Also check for absolute p
 `~/...`).
 
 ## 4. Tools
-
-### Comparing caption images: `compare_images.py`
-
-Use it whenever a change should not alter the caption images.
-
-```bash
-uv run python tools/compare_images.py OLD_FOLDER NEW_FOLDER
-```
-
-- It pairs the PNGs of two folders by file name, for example the old lyrics image script's output and this app's.
-- For each pair it prints the share of differing pixels, the largest difference and where the differences are.
-- Stacked old / new / difference images go to `work/compare_images/`.
-- It prints positions instead of file names (add `--names` to see them). So its output can go into reports without
-  song or font names.
 
 ### Timing the backdrop: `time_backdrop.py`
 

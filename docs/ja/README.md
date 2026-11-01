@@ -1,17 +1,17 @@
-<!-- source: docs/en/README.md blob f72bebdb7adf5f12660368ad22f12d31bd39be86 -->
+<!-- source: docs/en/README.md blob ef8652f5d1622511a2d0fc5a75fe18ac4ebbd630 -->
 [English](../en/README.md) | 日本語 · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳。内容が異なる場合は英語版が優先する。
 
 # lyrics-video-app ドキュメント
 
-オフラインの歌詞動画メーカー lyrics-video-app の全文書を、1 行の説明付きで並べる。曲の字幕や静止画を作るなら[ユーザーガイド](USER_GUIDE.md)から、コードを触るなら[開発](DEVELOPMENT.md)から読む。作業用ドキュメントには設計判断と各フェーズの記録がある。
+オフラインの歌詞動画メーカー lyrics-video-app の全文書を、1 行の説明付きで並べる。曲にタイミングを付けて動画を作るなら[ユーザーガイド](USER_GUIDE.md)から、コードを触るなら[開発](DEVELOPMENT.md)から読む。作業用ドキュメントには設計判断と各フェーズの記録がある。
 
 ## ガイド
 
 | 文書 | 説明 |
 |---|---|
-| [ユーザーガイド](USER_GUIDE.md) | セットアップ、`captions`・`compare`・`still` コマンド、`sync` ページでの字幕のタイミング付け、`render` での動画全体の書き出し、デザイン、曲ファイル、旧歌詞画像スクリプトからの移行。 |
+| [ユーザーガイド](USER_GUIDE.md) | セットアップ、`sync` ページでの字幕のタイミング付け、`still` での静止画、`render` かページからの動画全体の書き出し、デザイン、曲ファイル。 |
 | [開発](DEVELOPMENT.md) | セットアップ、テスト、規約、リポジトリを公開しても安全に保つためのルール。 |
 | [アーキテクチャ](ARCHITECTURE.md) | 層の分け方、曲ファイルから静止画と動画までの流れ、sync ページ、どの変更でも守る決まり、性能、新しい機能の置き場所。 |
 

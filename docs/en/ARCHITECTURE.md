@@ -14,7 +14,7 @@ public API (`audio_spectrum`).
 ```mermaid
 flowchart TB
   subgraph commands["Commands and the page"]
-    cli["cli.py: captions, compare, still, render, sync"]
+    cli["cli.py: still, render, sync"]
     web["web/: server and sync page"]
   end
   subgraph frames["Frames"]
@@ -41,9 +41,9 @@ flowchart TB
 | audio-spectrum-app | `audio_spectrum` (another repository) | Decode the song, analyse it and draw the spectrum over this app's backdrop, for stills and videos |
 | Commands and the page | `cli.py`, `web/` | Turn user actions into calls of the layers below, and write files |
 
-The caption images of the old workflow (`captions.py`, `caption_image.py`, `fonts.py`, `contact_sheet.py`) sit beside
-the frames layer. They are removed once the first whole video replaces the iMovie workflow
-([Phase 3 plan](../working/PHASE3_PLAN.md)).
+Two helpers of the frames layer come from the caption images of the old workflow, which were removed in version 0.2.0:
+`caption_image.py` draws the `classic` caption band with the old script's rules, and `contact_sheet.py` builds the
+comparison sheet of `still`. `fonts.py` opens font files for both.
 
 ## 2. From a song file to a still
 

@@ -30,7 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     song = load_song(args.song)
-    captions = read_lyrics(song.lyrics, song.look.separator)
+    captions = read_lyrics(song.lyrics, song.separator)
     first, second = captions[0].rows, captions[min(1, len(captions) - 1)].rows
     width, height = song.video.width, song.video.height
     print(f"{width}x{height}, {args.frames} frames per state, times in ms per frame")

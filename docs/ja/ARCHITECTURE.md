@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob be89ccbdc33c14499beee0a71f78bd956c2ac3bb -->
+<!-- source: docs/en/ARCHITECTURE.md blob 69759f326c045dcd61abe523b69a255289466f39 -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -15,7 +15,7 @@ lyrics-video-app の作りをまとめる。層の分け方、曲ファイルが
 ```mermaid
 flowchart TB
   subgraph commands["コマンドとページ"]
-    cli["cli.py：captions、compare、still、render、sync"]
+    cli["cli.py：still、render、sync"]
     web["web/：サーバーと sync ページ"]
   end
   subgraph frames["フレーム"]
@@ -42,8 +42,8 @@ flowchart TB
 | audio-spectrum-app | `audio_spectrum`（別リポジトリ） | 曲をデコードして解析し、このアプリの backdrop の上にスペクトラムを描く。静止画にも動画にも使う |
 | コマンドとページ | `cli.py`、`web/` | 利用者の操作を下の層の呼び出しに変え、ファイルを書く |
 
-旧来の字幕画像（`captions.py`、`caption_image.py`、`fonts.py`、`contact_sheet.py`）はフレームの層の横にある。
-最初の動画全体が iMovie のワークフローに代わった時点で削除する（[Phase 3 plan](../working/PHASE3_PLAN.md)）。
+フレームの層の補助のうち 2 つは、バージョン 0.2.0 で削除した旧ワークフローの字幕画像に由来する。
+`caption_image.py` は `classic` の字幕帯を旧スクリプトの決まりで描き、`contact_sheet.py` は `still` の比較画像を作る。`fonts.py` は両方のためにフォントファイルを開く。
 
 ## 2. 曲ファイルから静止画まで
 

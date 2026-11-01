@@ -9,8 +9,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
-from lyrics_video.caption_image import CaptionFont, draw_caption
-from lyrics_video.config import CaptionLook
+from lyrics_video.caption_image import CaptionFont, CaptionLook, draw_caption
 from lyrics_video.design import CaptionStyle, CreditsStyle, Panel, Shadow, TitleStyle
 from lyrics_video.errors import ConfigError
 from lyrics_video.fonts import load_font
@@ -219,11 +218,9 @@ def _band_caption(rows, style: CaptionStyle, font_path: Path, width: int, height
     font = CaptionFont(font_path)
     band_height = max(1, round(style.band_height * scale))
     band_scale = band_height / 232
-    look = CaptionLook(
-        size=(width, band_height), background=style.band_color, text_color=style.text_color, separator=";"
-    )
+    look = CaptionLook(size=(width, band_height), background=style.band_color, text_color=style.text_color)
     band = np.asarray(draw_caption(rows, look, font, band_scale), dtype=np.uint8)
-    coverage_look = CaptionLook(size=look.size, background=(0, 0, 0), text_color=(255, 255, 255), separator=";")
+    coverage_look = CaptionLook(size=look.size, background=(0, 0, 0), text_color=(255, 255, 255))
     coverage = np.asarray(draw_caption(rows, coverage_look, font, band_scale).convert("L"), dtype=np.uint8)
     alpha = np.maximum(coverage, round(style.band_opacity * 255)).astype(np.uint8)
     return Layer(0, height - band_height, np.dstack([band, alpha]))

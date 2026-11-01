@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob d32e5b193467b33f32f42cc6904df05a215fe6ab -->
+<!-- source: docs/en/DEVELOPMENT.md blob ccb08a36a78363511d22fc708161ca6e7515e432 -->
 [English](../en/DEVELOPMENT.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/DEVELOPMENT.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -36,10 +36,9 @@ uv run pytest
 | ファイル | 対象 |
 |---|---|
 | `test_lyrics.py` | 歌詞ファイル：行番号、行の分割、区切り文字、エラー |
-| `test_config.py` | 曲ファイル：既定値、パス、見本画像からの色、検証、例のファイル |
-| `test_fonts.py` | フォントファイルの収集と表示名 |
-| `test_caption_image.py` | 字幕画像：旧スクリプトを書き写したものとピクセル単位で一致すること、大きさ、配置 |
-| `test_cli.py` | `captions` と `compare`：ファイル名、上書き、エラー時にファイルを残さないこと、コマンドラインからのフォント指定 |
+| `test_config.py` | 曲ファイル：既定値、パス、区切り文字、削除したセクション、検証、例のファイル |
+| `test_caption_image.py` | `classic` の字幕帯：旧スクリプトを書き写したものとピクセル単位で一致すること、大きさ、配置 |
+| `test_cli.py` | コマンドライン：バージョン、モジュールとしての実行、削除したコマンド |
 | `test_design.py` | 組み込みデザイン、上書き、デザインファイル、不正な値 |
 | `test_layers.py` | 背景の拡大と切り取り（引き伸ばさない）、focus、dim、blur。曲名（字間、線）、字幕の帯・陰・枠、クレジット（位置、枠）、重ね合わせ |
 | `test_timing.py` | タイミングファイル（LRC）：読み込み、書き出し、往復、終わりの行、不正なファイル、変わった歌詞ファイルとの突き合わせ |
@@ -61,19 +60,6 @@ uv run pytest
 コミットの前に、ファイル一覧にこれらが紛れていないか確かめる。ユーザー名を含む絶対パスがないかも確かめる（`~/...` と書く）。
 
 ## 4. ツール
-
-### 字幕画像の比較：`compare_images.py`
-
-字幕画像が変わってはいけない変更をしたら、そのたびに使う。
-
-```bash
-uv run python tools/compare_images.py OLD_FOLDER NEW_FOLDER
-```
-
-- 2 つのフォルダの PNG をファイル名で組にする。たとえば旧歌詞画像スクリプトの出力とこのアプリの出力。
-- 組ごとに、差のあるピクセルの割合、最大の差、差のある場所を表示する。
-- 旧・新・差を縦に並べた画像を `work/compare_images/` に書き出す。
-- ファイル名ではなく番号を表示する（`--names` を付けると名前を表示）。そのため曲名やフォント名を出さずに、出力を報告に貼れる。
 
 ### backdrop の計測：`time_backdrop.py`
 

@@ -10,7 +10,6 @@ from typing import TextIO
 from audio_spectrum import RenderResult
 
 from lyrics_video import __version__
-from lyrics_video.captions import compare_fonts, make_captions
 from lyrics_video.config import Song, load_song
 from lyrics_video.errors import LyricsVideoError
 from lyrics_video.render import DEFAULT_CRF, PreparedRender, prepare_render, render
@@ -29,29 +28,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="lyrics-video", description="Make lyrics videos, fully offline.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     commands = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
-
-    captions = commands.add_parser(
-        "captions",
-        help="write one caption image per lyrics line",
-        description="Write one PNG per non-empty line of the song's lyrics file, as the old lyrics image script did.",
-    )
-    captions.add_argument("song", type=Path, help="the song file (TOML)")
-    captions.add_argument("--overwrite", action="store_true", help="replace existing images")
-
-    compare = commands.add_parser(
-        "compare",
-        help="write the comparison text in many fonts",
-        description=(
-            "Write every line of the comparison text in every font, and contact_sheet.png with the first line in all "
-            "fonts. Fonts given here replace the song file's compare.fonts and compare.font_dirs."
-        ),
-    )
-    compare.add_argument("song", type=Path, help="the song file (TOML)")
-    compare.add_argument("--font", type=Path, action="append", default=[], help="a font file (repeatable)")
-    compare.add_argument(
-        "--font-dir", type=Path, action="append", default=[], help="a folder whose fonts are all used (repeatable)"
-    )
-    compare.add_argument("--overwrite", action="store_true", help="replace existing images")
 
     still = commands.add_parser(
         "still",
@@ -133,21 +109,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "sync":
             run_sync(song, port=args.port, open_browser=not args.no_browser)
             return EXIT_OK
-        if args.command == "captions":
-            written = make_captions(song, overwrite=args.overwrite)
-        elif args.command == "still":
-            written = make_stills(
-                song,
-                args.time,
-                args.caption,
-                with_caption=not args.no_caption,
-                overwrite=args.overwrite,
-                designs=args.design,
-            )
-        else:
-            fonts = [p.expanduser() for p in args.font]
-            folders = [p.expanduser() for p in args.font_dir]
-            written = compare_fonts(song, fonts, folders, overwrite=args.overwrite)
+        written = make_stills(
+            song,
+            args.time,
+            args.caption,
+            with_caption=not args.no_caption,
+            overwrite=args.overwrite,
+            designs=args.design,
+        )
     except LyricsVideoError as error:
         print(f"error: {error}", file=sys.stderr)
         return EXIT_FAILED

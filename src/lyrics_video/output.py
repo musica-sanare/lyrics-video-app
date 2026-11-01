@@ -2,11 +2,18 @@
 
 import os
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image
 
 from lyrics_video.errors import OutputExistsError
+
+
+@dataclass(frozen=True)
+class Written:
+    folder: Path
+    files: list[Path]
 
 
 def write_images(images: dict[Path, Image.Image], overwrite: bool) -> None:

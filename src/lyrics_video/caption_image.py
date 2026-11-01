@@ -1,6 +1,7 @@
-"""Caption images as made by the old lyrics image script (2022), on current Pillow.
+"""Captions in a band, drawn with the rules of the old lyrics image script (2022) on current Pillow.
 
-The rules are kept exactly, including their quirks, so new images match the old ones (ADR-002): the font size starts
+The `classic` design draws its caption band this way. The rules are kept exactly, including their quirks, so captions
+look like the old caption images (ADR-002): the font size starts
 at 80 and shrinks in steps of 2 until every row fits with a margin; text is left-aligned; two rows are centered on
 the quarter lines; both rows are placed with the height of the first row. With `scale`, every length (start size,
 step, margins, left edge) is multiplied, so the same caption can be drawn for a band of another height.
@@ -11,7 +12,6 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from lyrics_video.config import CaptionLook
 from lyrics_video.errors import CaptionError
 from lyrics_video.fonts import load_font
 
@@ -21,6 +21,18 @@ FIT_MARGIN_X = 50
 FIT_MARGIN_Y = 50
 LEFT = 20
 LINE_SPACING = 4
+
+
+type RGB = tuple[int, int, int]
+
+
+@dataclass(frozen=True)
+class CaptionLook:
+    """A band of `size` filled with `background`, with the caption in `text_color`."""
+
+    size: tuple[int, int]
+    background: RGB
+    text_color: RGB
 
 
 @dataclass(frozen=True)

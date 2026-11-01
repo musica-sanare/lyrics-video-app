@@ -1,4 +1,4 @@
-<!-- source: README.md blob dd80caa836923a2285751aad256e8efdcf7bbe80 -->
+<!-- source: README.md blob 4eb4fd23ea32509ff7fde92c5b040813033da573 -->
 [English](README.md) | 日本語
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -14,8 +14,6 @@
 
 ## 今できること
 
-- `lyrics-video captions`：歌詞ファイルから、旧歌詞画像スクリプトと同じ字幕画像を作る。iMovie で使う。
-- `lyrics-video compare`：テキストを多くのフォントで並べて見せる。
 - `lyrics-video sync`：ブラウザでページを開き、曲を再生しながら字幕の時刻をタップして調整する。そこから動画も書き出せる。
 - `lyrics-video still`：将来の動画のフレーム（背景、曲名、その時点の字幕、クレジット、スペクトラム）を 3 つのデザインで描く。
   既定のデザインは `soft`。
@@ -28,9 +26,7 @@ audio-spectrum-app をこのリポジトリの隣（`../audio-spectrum-app`）�
 ```bash
 brew install uv ffmpeg
 uv sync
-mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # このあとフォント、色、歌詞ファイルを設定する
-uv run lyrics-video captions work/my-song/song.toml         # 字幕 1 行につき 1 枚の PNG
-uv run lyrics-video compare work/my-song/song.toml          # 比較用テキストを複数のフォントで
+mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # このあと曲、画像、フォント、歌詞を設定する
 uv run lyrics-video sync work/my-song/song.toml             # ブラウザで字幕にタイミングを付ける
 uv run lyrics-video still work/my-song/song.toml --time 60  # 指定した時刻の動画のフレーム
 uv run lyrics-video render work/my-song/song.toml           # 動画全体（work/my-song/videos/ に書き出す）
@@ -40,7 +36,7 @@ uv run lyrics-video render work/my-song/song.toml           # 動画全体（wor
 
 ## ドキュメント
 
-- [ユーザーガイド](docs/ja/USER_GUIDE.md)：セットアップ、コマンド、タイミング、曲ファイル、旧スクリプトからの移行
+- [ユーザーガイド](docs/ja/USER_GUIDE.md)：セットアップ、タイミング、静止画、動画全体、デザイン、曲ファイル
 - [開発](docs/ja/DEVELOPMENT.md)：セットアップ、テスト、規約
 - [アーキテクチャ](docs/ja/ARCHITECTURE.md)：コードの作りと、新しい機能の置き場所
 - [ドキュメント目次](docs/ja/README.md)：設計判断や各フェーズの記録を含む全文書

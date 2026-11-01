@@ -1,11 +1,10 @@
 import pytest
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 
-from lyrics_video.caption_image import START_SIZE, CaptionFont, draw_caption, fit_font_size
-from lyrics_video.config import CaptionLook
+from lyrics_video.caption_image import START_SIZE, CaptionFont, CaptionLook, draw_caption, fit_font_size
 from lyrics_video.errors import CaptionError
 
-LOOK = CaptionLook(size=(1440, 232), background=(0, 10, 67), text_color=(255, 255, 255), separator=";")
+LOOK = CaptionLook(size=(1440, 232), background=(0, 10, 67), text_color=(255, 255, 255))
 
 LINES = [
     "short",
@@ -93,7 +92,7 @@ def test_two_rows_sit_in_the_upper_and_lower_half(sans_font):
 
 
 def test_text_that_never_fits_is_an_error(sans_font):
-    tiny = CaptionLook(size=(60, 52), background=(0, 0, 0), text_color=(255, 255, 255), separator=";")
+    tiny = CaptionLook(size=(60, 52), background=(0, 0, 0), text_color=(255, 255, 255))
 
     with pytest.raises(CaptionError, match="does not fit"):
         draw_caption(("x",), tiny, CaptionFont(sans_font))

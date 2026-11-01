@@ -34,6 +34,11 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
   about 1 px apart ([Phase 0 plan](PHASE0_PLAN.md), "Feasibility check"). Text drawing stays in one module.
 - Consequences: Pillow is a dependency next to Skia. Skia's metrics would have changed sizes and positions. Which
   library draws captions inside videos is decided in Phase 1 with the caption design.
+- Update (2026-11-01, [Phase 3 plan](PHASE3_PLAN.md) Q5 and milestone 4): superseded for the caption PNGs. The
+  `captions` and `compare` commands and the song file's `[captions]` and `[compare]` sections were removed once the
+  first whole video replaced the iMovie workflow; old song files with those sections stop with an error that names
+  them, and `separator` moved to the top level. The old fitting and layout rules stay in `caption_image.py` for the
+  `classic` caption band (ADR-004).
 
 ## ADR-003: One TOML file per song; the old lyrics format
 
