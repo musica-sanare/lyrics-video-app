@@ -10,7 +10,7 @@ from typing import TextIO
 from audio_spectrum import RenderResult
 
 from lyrics_video import __version__
-from lyrics_video.app_bundle import APPLICATIONS, install_app
+from lyrics_video.app_bundle import APPLICATIONS, has_icon, install_app
 from lyrics_video.config import Song, load_song
 from lyrics_video.errors import LyricsVideoError
 from lyrics_video.render import DEFAULT_CRF, PreparedRender, prepare_render, render
@@ -127,6 +127,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--to", type=Path, default=APPLICATIONS, metavar="FOLDER", help="where to put it (~/Applications)"
     )
     install.add_argument("--overwrite", action="store_true", help="replace an app made by this command")
+    install.add_argument(
+        "--icon",
+        type=Path,
+        metavar="IMAGE",
+        help="your own square image (1024 px or larger) as the app's icon, instead of the drawn one",
+    )
     return parser
 
 
@@ -136,7 +142,7 @@ def main(argv: list[str] | None = None) -> int:
         start_app(port=args.port, open_browser=not args.no_browser)
         return EXIT_OK
     if args.command == "install-app":
-        return run_install(args.to, args.overwrite)
+        return run_install(args.to, args.overwrite, args.icon)
     try:
         song = load_song(args.song)
         if args.command == "render":
@@ -159,12 +165,14 @@ def main(argv: list[str] | None = None) -> int:
     return EXIT_OK
 
 
-def run_install(folder: Path, overwrite: bool) -> int:
+def run_install(folder: Path, overwrite: bool, icon: Path | None) -> int:
     try:
-        bundle = install_app(folder, overwrite)
+        bundle = install_app(folder, overwrite, icon)
     except LyricsVideoError as error:
         print(f"error: {error}", file=sys.stderr)
         return EXIT_FAILED
+    if not has_icon(bundle):
+        print("warning: iconutil is not available, so the app has the default icon", file=sys.stderr)
     print(f"Wrote {bundle}\nOpen it, or drag it to the Dock; its log is ~/Library/Logs/lyrics-video.log.")
     return EXIT_OK
 

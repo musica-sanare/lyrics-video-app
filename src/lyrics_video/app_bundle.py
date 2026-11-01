@@ -2,7 +2,8 @@
 
 The bundle is an `Info.plist` and a shell script. The script runs `lyrics-video start` with `uv` from this repository,
 in the background, and exits at once, so every click runs it again: a click while the app runs opens its page. Paths
-are found when installing and written into the script, so the bundle is made on each Mac and never committed.
+are found when installing and written into the script, so the bundle is made on each Mac and never committed. Its
+icon is drawn by `app_icon`, or made from the owner's image, when `iconutil` is available.
 """
 
 import plistlib
@@ -11,20 +12,28 @@ import shutil
 import tempfile
 from pathlib import Path
 
+from PIL import Image
+
 from lyrics_video import __version__
+from lyrics_video.app_icon import iconutil, load_image, write_icns
 from lyrics_video.errors import ConfigError, OutputExistsError
 
 APP_NAME = "Lyrics Video"
 BUNDLE_ID = "local.lyrics-video.app"
 EXECUTABLE = "lyrics-video"
+ICON = "AppIcon"
 APPLICATIONS = Path("~/Applications")
 LOG = Path("~/Library/Logs/lyrics-video.log")
 # The repository holding this file: src/lyrics_video/app_bundle.py.
 REPOSITORY = Path(__file__).resolve().parents[2]
 
 
-def install_app(folder: Path = APPLICATIONS, overwrite: bool = False) -> Path:
-    """Write `<folder>/Lyrics Video.app`. Replacing one needs `overwrite`, and only a bundle this command made."""
+def install_app(folder: Path = APPLICATIONS, overwrite: bool = False, icon: Path | None = None) -> Path:
+    """Write `<folder>/Lyrics Video.app`. Replacing one needs `overwrite`, and only a bundle this command made.
+
+    The icon is drawn, or made from the image `icon`. Without `iconutil` the drawn icon is left out (see `has_icon`);
+    an image given as `icon` then stops the install.
+    """
     folder = folder.expanduser()
     bundle = folder / f"{APP_NAME}.app"
     if bundle.exists():
@@ -32,10 +41,13 @@ def install_app(folder: Path = APPLICATIONS, overwrite: bool = False) -> Path:
             raise OutputExistsError(f"{bundle} exists; nothing was written (use --overwrite to replace it)")
         if _bundle_id(bundle) != BUNDLE_ID:
             raise ConfigError(f"{bundle} was not made by lyrics-video; move it away first")
+    source = load_image(icon) if icon is not None else None
+    if source is not None and iconutil() is None:
+        raise ConfigError("iconutil is not available (it comes with macOS), so --icon cannot be used")
     folder.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix=f".{APP_NAME}.", dir=folder))
     try:
-        _write_bundle(staging, _script(_find_tools()))
+        _write_bundle(staging, _script(_find_tools()), source)
         if bundle.exists():
             shutil.rmtree(bundle)
         staging.rename(bundle)
@@ -43,6 +55,10 @@ def install_app(folder: Path = APPLICATIONS, overwrite: bool = False) -> Path:
         shutil.rmtree(staging, ignore_errors=True)
         raise
     return bundle
+
+
+def has_icon(bundle: Path) -> bool:
+    return (bundle / "Contents" / "Resources" / f"{ICON}.icns").is_file()
 
 
 def _find_tools() -> dict[str, Path]:
@@ -77,9 +93,12 @@ def _script(tools: dict[str, Path]) -> str:
     )
 
 
-def _write_bundle(bundle: Path, script: str) -> None:
+def _write_bundle(bundle: Path, script: str, icon: Image.Image | None) -> None:
     contents = bundle / "Contents"
     (contents / "MacOS").mkdir(parents=True)
+    if icon is not None or iconutil() is not None:
+        (contents / "Resources").mkdir()
+        write_icns(contents / "Resources" / f"{ICON}.icns", icon)
     info = {
         "CFBundleName": APP_NAME,
         "CFBundleDisplayName": APP_NAME,
@@ -91,6 +110,8 @@ def _write_bundle(bundle: Path, script: str) -> None:
         # No window of its own: the script starts the server and exits, and the page opens in the browser.
         "LSUIElement": True,
     }
+    if has_icon(bundle):
+        info["CFBundleIconFile"] = ICON
     with (contents / "Info.plist").open("wb") as file:
         plistlib.dump(info, file)
     executable = contents / "MacOS" / EXECUTABLE

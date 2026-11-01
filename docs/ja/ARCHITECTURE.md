@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob a6c0b7b56b3d2db2ec291432261907e910dc96f0 -->
+<!-- source: docs/en/ARCHITECTURE.md blob a9a7d800484b8409f86ed6d0d77d86dd11db2387 -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -40,7 +40,7 @@ flowchart TB
 | 曲とデザイン | `config.py`、`design.py`、`designs/*.toml`、`lyrics.py`、`timing.py`、`errors.py` | 曲ファイル、上書きを反映したデザイン、歌詞ファイル、タイミングファイル（LRC）を読んで検証する。パスは曲ファイルを基準に解決する |
 | フレーム | `layers.py`、`backdrop.py`、`still.py`、`render.py` | フレームの部品（背景、曲名、字幕、クレジット）を描き、時刻に合わせてスペクトラムの下に重ね、静止画や動画のために audio-spectrum-app へ渡す |
 | audio-spectrum-app | `audio_spectrum`（別リポジトリ） | 曲をデコードして解析し、このアプリの backdrop の上にスペクトラムを描く。静止画にも動画にも使う |
-| コマンドとページ | `cli.py`、`web/`、`app_files.py`、`app_bundle.py` | 利用者の操作を下の層の呼び出しに変え、ファイルを書く。アプリ自身のファイルとアプリのバンドルも扱う |
+| コマンドとページ | `cli.py`、`web/`、`app_files.py`、`app_bundle.py`、`app_icon.py` | 利用者の操作を下の層の呼び出しに変え、ファイルを書く。アプリ自身のファイルとアプリのバンドルも扱う |
 
 フレームの層の補助のうち 2 つは、バージョン 0.2.0 で削除した旧ワークフローの字幕画像に由来する。
 `caption_image.py` は `classic` の字幕帯を旧スクリプトの決まりで描き、`contact_sheet.py` は `still` の比較画像を作る。`fonts.py` は両方のためにフォントファイルを開く。
@@ -131,7 +131,9 @@ flowchart LR
 - `lyrics-video install-app`（`app_bundle.py`）は `Lyrics Video.app` を書く。中身は `Info.plist` とシェルスクリプトで、スクリプトは `PATH` に
   `uv` と `ffmpeg` のフォルダを加え（Finder から起動したアプリの `PATH` は短い）、`uv run --project <リポジトリ> lyrics-video start` をバックグラウンドで
   実行してすぐ終わる。そのためクリックのたびにスクリプトが動き、`start` が動いているアプリのページを開く。パスはインストール時に調べて書くので、
-  バンドルは Mac ごとに作り、コミットしない。
+  バンドルは Mac ごとに作り、コミットしない。アイコン `Contents/Resources/AppIcon.icns` は、`app_icon.py` が Pillow で描くか
+  （図形とページの色だけを使い、リポジトリに画像ファイルを置かない）、オーナーの画像（`--icon`）から作り、macOS の `iconutil` で `.icns` にする。
+  `iconutil` がなければバンドルは標準のアイコンのままで、コマンドが警告を出す。
 - `lyrics-video start` は曲なしのアプリモードでサーバーを動かす。ポートとトークンをアプリのフォルダの `server.json` に記録し（`app_files`。
   一時ファイル経由で書くので、オーナーだけが読める）、2 回目の `start` はそのサーバーが `/api/ping` に答えればそのページを開く。アプリモードでは、
   10 分間リクエストがなく書き出しもなければサーバーは自分で止まる。ページは開いている間 30 秒ごとに `/api/ping` を送る。「終了」（`/api/quit`）は

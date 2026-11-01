@@ -58,6 +58,10 @@ This writes `~/Applications/Lyrics Video.app`. Drag it to the Dock.
   repository or reinstalling uv, run `uv run lyrics-video install-app --overwrite`.
 - Its messages go to `~/Library/Logs/lyrics-video.log`.
 - Quit on the page stops it; it also stops by itself 10 minutes after its last page was closed.
+- Its icon, a waveform between a green start mark and an orange end mark, is drawn when installing. To use an image
+  of your own, add `--icon IMAGE`: it is cropped to a square around its center and is sharpest at 1024 px or larger.
+  The image stays where it is, so give `--icon` again when installing again.
+- The Dock keeps the old icon after `--overwrite`. Remove the app from the Dock and drag it back once.
 
 ### A new song
 

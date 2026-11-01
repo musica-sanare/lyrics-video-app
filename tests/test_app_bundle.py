@@ -2,9 +2,11 @@ import plistlib
 import stat
 
 import pytest
+from PIL import Image
 
 from lyrics_video import app_bundle
-from lyrics_video.app_bundle import APP_NAME, BUNDLE_ID, REPOSITORY, install_app
+from lyrics_video.app_bundle import APP_NAME, BUNDLE_ID, REPOSITORY, has_icon, install_app
+from lyrics_video.app_icon import iconutil
 from lyrics_video.cli import EXIT_FAILED, EXIT_OK, main
 from lyrics_video.errors import ConfigError, OutputExistsError
 
@@ -13,7 +15,8 @@ from lyrics_video.errors import ConfigError, OutputExistsError
 def tools(monkeypatch):
     """uv and ffmpeg where Homebrew puts them, whether or not they are installed here."""
     found = {"uv": "/opt/homebrew/bin/uv", "ffmpeg": "/opt/homebrew/bin/ffmpeg"}
-    monkeypatch.setattr(app_bundle.shutil, "which", found.get)
+    which = app_bundle.shutil.which
+    monkeypatch.setattr(app_bundle.shutil, "which", lambda name: found.get(name) if name in found else which(name))
 
 
 def test_the_bundle_starts_this_repository_in_the_background(tmp_path, tools):
@@ -69,3 +72,63 @@ def test_the_install_app_command(tmp_path, tools, capsys):
 
     assert f"Wrote {tmp_path / APP_NAME}.app" in written and "Dock" in written
     assert "--overwrite" in capsys.readouterr().err
+
+
+needs_iconutil = pytest.mark.skipif(iconutil() is None, reason="iconutil comes with macOS only")
+
+
+@needs_iconutil
+def test_the_bundle_has_the_drawn_icon(tmp_path, tools):
+    bundle = install_app(tmp_path)
+
+    with (bundle / "Contents" / "Info.plist").open("rb") as file:
+        assert plistlib.load(file)["CFBundleIconFile"] == "AppIcon"
+    icns = bundle / "Contents" / "Resources" / "AppIcon.icns"
+    assert icns.read_bytes()[:4] == b"icns"
+    assert has_icon(bundle)
+
+
+@needs_iconutil
+def test_the_owners_image_becomes_the_icon(tmp_path, tools):
+    image = tmp_path / "mine.png"
+    Image.new("RGB", (1200, 1000), (200, 40, 40)).save(image)
+
+    bundle = install_app(tmp_path / "apps", icon=image)
+
+    with Image.open(bundle / "Contents" / "Resources" / "AppIcon.icns") as icon:
+        icon.size = (512, 512)
+        icon.load()
+        assert icon.convert("RGB").getpixel((256, 256)) == (200, 40, 40)
+
+
+def test_an_unreadable_icon_image_writes_nothing(tmp_path, tools):
+    image = tmp_path / "not-an-image.png"
+    image.write_text("text", encoding="utf-8")
+
+    with pytest.raises(ConfigError, match="cannot be read as an image"):
+        install_app(tmp_path / "apps", icon=image)
+
+    assert not (tmp_path / "apps").exists()
+
+
+def test_without_iconutil_the_app_has_the_default_icon(tmp_path, tools, monkeypatch, capsys):
+    monkeypatch.setattr(app_bundle, "iconutil", lambda: None)
+
+    assert main(["install-app", "--to", str(tmp_path)]) == EXIT_OK
+
+    bundle = tmp_path / f"{APP_NAME}.app"
+    assert not has_icon(bundle)
+    with (bundle / "Contents" / "Info.plist").open("rb") as file:
+        assert "CFBundleIconFile" not in plistlib.load(file)
+    assert "default icon" in capsys.readouterr().err
+
+
+def test_without_iconutil_an_icon_image_stops_the_install(tmp_path, tools, monkeypatch):
+    monkeypatch.setattr(app_bundle, "iconutil", lambda: None)
+    image = tmp_path / "mine.png"
+    Image.new("RGB", (1024, 1024)).save(image)
+
+    with pytest.raises(ConfigError, match="--icon"):
+        install_app(tmp_path / "apps", icon=image)
+
+    assert not (tmp_path / "apps").exists()

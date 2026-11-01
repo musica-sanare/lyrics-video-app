@@ -1,4 +1,4 @@
-<!-- source: docs/en/USER_GUIDE.md blob c8dde05a94efb74bba0db7031b96e7c0a1b3ee9f -->
+<!-- source: docs/en/USER_GUIDE.md blob a21814a8a223a6ce01ff5c7a5624e6fbaf20ece3 -->
 [English](../en/USER_GUIDE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/USER_GUIDE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -59,6 +59,10 @@ uv run lyrics-video install-app
   `uv run lyrics-video install-app --overwrite` を実行する。
 - メッセージは `~/Library/Logs/lyrics-video.log` に出る。
 - ページの「終了」で止まる。最後のページを閉じて 10 分たつと自動でも止まる。
+- アイコン（緑の開始マークとオレンジの終了マークにはさまれた波形）はインストール時に描かれる。自分の画像を使うなら
+  `--icon 画像` を付ける。画像は中央を正方形に切り抜いて使い、1024 px 以上あるといちばんくっきりする。画像はコピーしないので、
+  入れ直すときも `--icon` を付ける。
+- `--overwrite` のあと、Dock は古いアイコンを表示し続ける。一度 Dock からアプリを外し、ドラッグし直す。
 
 ### 新しい曲
 
