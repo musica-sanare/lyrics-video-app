@@ -10,6 +10,7 @@ image script plus layering in iMovie).
 Before changing code or docs, read:
 - [docs/working/HANDOFF.md](docs/working/HANDOFF.md) (why this repository exists, decisions so far, proposed phases)
 - `docs/en/README.md` (docs index), once it exists
+- [docs/en/ARCHITECTURE.md](docs/en/ARCHITECTURE.md) (layers, invariants, where new features fit)
 - `docs/working/DECISIONS.md` and the current phase plan (`docs/working/PHASE<N>_PLAN.md`), once they exist
 - `CLAUDE.local.md` if present (local paths, never committed)
 

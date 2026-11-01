@@ -7,9 +7,8 @@ title, lyrics captions that fade in and out at the bottom, credits, and an audio
 [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), with the song's audio. It replaces a manual
 workflow of caption images layered in a video editor.
 
-**Status:** Phase 1 (design) accepted. Phase 2 (timing of the lyrics) is in progress: captions placed by time and
-the `sync` page are implemented; its acceptance is next. Whole videos come in later phases. See the [Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md)
-and the [Phase 2 plan](docs/working/PHASE2_PLAN.md).
+**Status:** Phase 2 (timing of the lyrics) accepted: captions are placed by time from an LRC file made with the
+`sync` page. Whole videos come in Phase 3. See the [Phase 2 acceptance](docs/working/PHASE2_ACCEPTANCE.md).
 
 ## What it does today
 
@@ -40,6 +39,7 @@ Run `uv run pytest` for the tests.
 
 - [User guide](docs/en/USER_GUIDE.md): setup, the commands, timing, the song file and moving from the old script
 - [Development](docs/en/DEVELOPMENT.md): setup, tests and conventions
+- [Architecture](docs/en/ARCHITECTURE.md): how the code is built and where new features fit
 - [Documentation index](docs/en/README.md): every doc, including decisions and phase records
 
 ## License

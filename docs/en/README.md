@@ -12,6 +12,7 @@ for a song, start with the [User guide](USER_GUIDE.md). To work on the code, sta
 |---|---|
 | [User guide](USER_GUIDE.md) | Setup, the `captions`, `compare` and `still` commands, timing the captions with the `sync` page, designs, the song file, moving from the old lyrics image script. |
 | [Development](DEVELOPMENT.md) | Setup, tests, conventions and the rules that keep the repository safe to publish. |
+| [Architecture](ARCHITECTURE.md) | The layers, the way from a song file to a still, the sync page, rules every change keeps, performance and where new features fit. |
 
 ## Working docs (English only)
 
@@ -24,3 +25,4 @@ for a song, start with the [User guide](USER_GUIDE.md). To work on the code, sta
 | [Phase 1 plan](../working/PHASE1_PLAN.md) | The design of a lyrics video as configurable parts: frame model, backdrop, designs to compare, `still` command. |
 | [Phase 1 acceptance](../working/PHASE1_ACCEPTANCE.md) | Phase 1 acceptance report: the owner's choice of design, criteria, measured backdrop time, repository safety, open items. |
 | [Phase 2 plan](../working/PHASE2_PLAN.md) | Timing of the lyrics: an LRC file, a tapping and adjusting page, captions by time with lead and crossfades, the architecture document. |
+| [Phase 2 acceptance](../working/PHASE2_ACCEPTANCE.md) | Phase 2 acceptance report: the owner's choice of transition, criteria, measured backdrop time, repository safety, open items. |

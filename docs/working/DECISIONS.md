@@ -43,7 +43,7 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
   phases add sections to the same file. The lyrics file keeps the old format. Colors are `#RRGGBB` or a path to an
   image whose center pixel is used, so old sample images still work. Only `*.example.toml` files are committed.
 - Consequences: Settings shared by songs are repeated for now; shared defaults can be added later. The timing format
-  is chosen in Phase 2.
+  is chosen in Phase 2 (ADR-005).
 
 ## ADR-004: Text for video frames drawn with Pillow, composed in NumPy in the render workers
 
@@ -60,3 +60,36 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
   (classic) and 9.4 ms (soft), under the 10 ms target; frames without a caption 0.2 ms; credits fading in or out
   1 ms to 2 ms, except 27 ms for designs that darken the whole frame (classic), for about 3 s of a song. Rejected for
   now: Skia for text (different metrics from the caption PNGs; kept as the fallback if a later design is too slow).
+
+## ADR-005: Timing in an LRC file; captions placed by sung times and design settings
+
+- Context: ADR-003 left the timing format to Phase 2. Captions need start times, ends where the singing pauses, a
+  little lead and short fades; the owner's songs often pause ([Phase 2 plan](PHASE2_PLAN.md), options B and Q2 to Q4).
+- Decision:
+  - Times live in an LRC file next to the lyrics (`timing = "lyrics.lrc"` in the song file): `[mm:ss.xx]` and the
+    caption per line, a time with no text ending the caption above it, lines without a time kept as not timed yet.
+    Times are the sung times, written to the hundredth of a second.
+  - How captions enter and leave is a design setting, so it can change without timing again: `lead_seconds` (0.2),
+    `fade_seconds` (0.3) and `transition`. The default transition is `sequential` (the old caption fades out before
+    the new one fades in), chosen by the owner from stills of both on 2026-11-01 because the two texts never
+    overlap; `crossfade` stays available.
+  - A changed lyrics file is merged in order with the timing: unchanged lines keep their times, new lines have none.
+- Consequences: The text exists twice (lyrics file and LRC) once a song is timed; `still` reads the LRC. At most two
+  captions are blended at once; each process keeps the last three captions as 16-bit arrays so a crossfade frame stays
+  under 20 ms at 1080p. Rejected: times by line index in JSON or TOML (an added line shifts every later time), times
+  inside the lyrics file (breaks the old format).
+
+## ADR-006: The sync page as a local web page
+
+- Context: Tapping needs exact times from the audio's own clock, a waveform and exact stills
+  ([Phase 2 plan](PHASE2_PLAN.md), options A and C). audio-spectrum-app's GUI (its ADR-012) already solved the same
+  problems.
+- Decision: `lyrics-video sync` serves a plain HTML, CSS and JavaScript page from FastAPI and uvicorn, which are
+  normal dependencies. The server listens on `127.0.0.1` only, refuses foreign `Host` headers and API requests without
+  the per-session token, accepts the token in the URL for the audio route only (an `<audio>` element cannot send
+  headers), and sends no cross-origin headers. Stills go through one `Preview` and one `LyricsBackdrop` per session.
+  Edits stay in the page until Save, which writes the LRC through a temporary file and keeps a `.bak` copy. Page texts
+  in Japanese, English, Spanish and French.
+- Consequences: The page is checked by hand; the server is tested with FastAPI's test client. The keys were settled
+  with a mock-up first (`Space` start, `Enter` end, `Backspace` undo); setting a time to the playhead was added for
+  lines without a time. Rejected: a terminal tool (unknown player delay, no waveform) and writing times by hand.
