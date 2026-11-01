@@ -138,6 +138,23 @@
   "design.save_as_prompt": "Nom du nouveau design (toute chanson peut l'utiliser sous ce nom) :",
   "design.replace": "Le design {name} existe. Le remplacer ?",
   "design.saved_as": "Design {name} enregistré",
-  "design.use_now": "Design {name} enregistré. L'utiliser pour cette chanson ? Enregistrer l'écrit alors dans le fichier de la chanson."
+  "design.use_now": "Design {name} enregistré. L'utiliser pour cette chanson ? Enregistrer l'écrit alors dans le fichier de la chanson.",
+  "songs.button": "Chansons",
+  "songs.title": "Chansons",
+  "songs.no_song": "Aucune chanson n'est ouverte.",
+  "songs.back": "Revenir à {title}",
+  "songs.open": "Ouvrir une chanson…",
+  "songs.dialog_note": "La boîte de dialogue du Finder peut s'ouvrir derrière cette fenêtre.",
+  "songs.path_label": "Ou le chemin d'un fichier de chanson :",
+  "songs.open_path": "Ouvrir",
+  "songs.recent": "Chansons récentes",
+  "songs.none": "Aucune chanson ouverte pour l'instant.",
+  "songs.missing": "introuvable",
+  "songs.choose_prompt": "Choisissez un fichier de chanson (.toml)",
+  "songs.discard": "Les modifications non enregistrées seront perdues. Ouvrir l'autre chanson ?",
+  "quit.button": "Quitter",
+  "quit.unsaved": "Les modifications non enregistrées seront perdues. Quitter ?",
+  "quit.rendering": "Une vidéo est en cours d'exportation. L'annuler et quitter ?",
+  "quit.done": "Lyrics Video s'est arrêté. Vous pouvez fermer cet onglet."
  }
 }

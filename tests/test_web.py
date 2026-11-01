@@ -19,7 +19,7 @@ from lyrics_video.cli import EXIT_FAILED, main
 from lyrics_video.config import load_song
 from lyrics_video.still import make_stills
 from lyrics_video.web import app as web_app
-from lyrics_video.web.app import STATIC, SyncSession, create_app
+from lyrics_video.web.app import STATIC, Songs, SyncSession, create_app
 
 TOKEN = "test-token"
 HOST = "testserver"
@@ -642,3 +642,140 @@ def test_the_designs_folder_opens_in_the_finder(client, user_designs, monkeypatc
     post(client, "/api/design/folder", {})
 
     assert opened == [["open", str(user_designs)]] and user_designs.is_dir()
+
+
+# --- The start page, switching songs, quitting ----------------------------------------------------------------------
+
+
+class Dialog:
+    """Stands in for the Finder's dialog: answers with a path, or None as if cancelled."""
+
+    def __init__(self, answer):
+        self.answer = answer
+        self.asked = []
+
+    def __call__(self, prompt, extensions=()):
+        self.asked.append((prompt, extensions))
+        return self.answer
+
+
+def app_client(songs=None, stop=None, dialog=None):
+    stopped = []
+    app = create_app(
+        songs or Songs(), TOKEN, {HOST}, stop=stop or (lambda: stopped.append(True)), choose_file=dialog or Dialog(None)
+    )
+    client = TestClient(app)
+    client.stopped = stopped
+    return client
+
+
+def other_song(tmp_path, sans_font, title):
+    folder = tmp_path / title
+    folder.mkdir()
+    song = make_song(folder, sans_font)
+    song.write_text(song.read_text(encoding="utf-8").replace('title = "Title"', f'title = "{title}"'), encoding="utf-8")
+    return song
+
+
+def test_without_a_song_the_start_page(tmp_path):
+    client = app_client()
+
+    missing = get(client, "/api/song")
+
+    assert (missing.status_code, missing.json()["code"]) == (404, "no_song")
+    assert get(client, "/api/songs").json() == {"current": None, "recent": []}
+
+
+def test_opening_songs_one_after_the_other(tmp_path, sans_font):
+    client = app_client()
+    first, second = other_song(tmp_path, sans_font, "First"), other_song(tmp_path, sans_font, "Second")
+
+    post(client, "/api/songs/open", {"path": str(first)})
+    opened = post(client, "/api/songs/open", {"path": str(second)}).json()
+
+    assert opened["current"]["title"] == "Second"
+    assert [entry["title"] for entry in opened["recent"]] == ["Second", "First"]
+    assert get(client, "/api/song").json()["title"] == "Second"
+
+
+def test_a_song_that_does_not_load_keeps_the_open_one(tmp_path, sans_font):
+    client = app_client()
+    song = other_song(tmp_path, sans_font, "Good")
+    post(client, "/api/songs/open", {"path": str(song)})
+
+    response = post(client, "/api/songs/open", {"path": str(tmp_path / "nothing.toml")})
+
+    assert response.status_code == 400 and "not found" in response.json()["message"]
+    assert get(client, "/api/song").json()["title"] == "Good"
+
+
+def test_no_other_song_while_a_video_renders(render_client, tmp_path, sans_font, held):
+    post(render_client, "/api/timing", {"lines": TIMED})
+    post(render_client, "/api/render", {})
+
+    response = post(render_client, "/api/songs/open", {"path": str(other_song(tmp_path, sans_font, "Other"))})
+
+    assert (response.status_code, response.json()["code"]) == (409, "busy")
+
+
+def test_opening_another_song_closes_the_old_one(tmp_path, sans_font, monkeypatch):
+    first = SyncSession(load_song(other_song(tmp_path, sans_font, "First")))
+    closed = []
+    monkeypatch.setattr(first, "close", lambda: closed.append(True))
+    client = app_client(Songs(first))
+
+    post(client, "/api/songs/open", {"path": str(other_song(tmp_path, sans_font, "Second"))})
+
+    assert closed == [True]
+
+
+def test_choosing_a_song_file_in_the_finder(tmp_path):
+    chosen = tmp_path / "song.toml"
+    dialog = Dialog(chosen)
+    client = app_client(dialog=dialog)
+
+    answer = post(client, "/api/songs/choose", {"prompt": "Choose a song"}).json()
+    cancelled = post(app_client(dialog=Dialog(None)), "/api/songs/choose", {"prompt": "Choose a song"}).json()
+
+    assert answer == {"path": str(chosen)} and cancelled == {"path": None}
+    assert dialog.asked == [("Choose a song", ("toml",))]
+
+
+def test_quitting(tmp_path):
+    client = app_client()
+
+    assert post(client, "/api/quit", {}).status_code == 200
+    assert client.stopped == [True]
+
+
+def test_quitting_while_a_video_renders_needs_force(render_client, session, held):
+    stopped = []
+    client = app_client(Songs(session), stop=lambda: stopped.append(True))
+    post(client, "/api/timing", {"lines": TIMED})
+    post(client, "/api/render", {})
+
+    refused = post(client, "/api/quit", {})
+    forced = post(client, "/api/quit", {"force": True})
+
+    assert (refused.status_code, refused.json()["code"]) == (409, "busy")
+    assert forced.status_code == 200 and stopped == [True]
+    assert session.render.snapshot(session.song.path.parent)["state"] == "cancelled"
+
+
+def test_the_start_page_routes_need_the_token():
+    client = app_client()
+
+    assert client.get("/api/songs").status_code == 403
+    assert client.get("/api/ping").status_code == 403
+    for path in ("/api/songs/open", "/api/songs/choose", "/api/quit"):
+        assert client.post(path, json={"path": "x"}).status_code == 403
+
+
+def test_every_request_counts_as_the_page_being_open():
+    songs = Songs()
+    songs.last_request = 0.0
+    client = app_client(songs)
+
+    get(client, "/api/ping")
+
+    assert songs.last_request > 0.0

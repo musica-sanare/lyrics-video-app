@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob f6caeb81bae8375e8a8bb529bfea27f5bda83c95 -->
+<!-- source: docs/en/ARCHITECTURE.md blob 5581045003a9b0ce002ec9b73086afff956b3a88 -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -105,6 +105,7 @@ flowchart LR
   page["ブラウザのページ"]
   server["127.0.0.1 の web/app.py"]
   files["lyrics.txt、lyrics.lrc、song.toml、曲"]
+  page -->|"GET /api/songs、POST /api/songs/open、POST /api/quit"| server
   page -->|"GET /api/song"| server
   page -->|"GET /api/audio（範囲指定）"| server
   page -->|"POST /api/still"| server
@@ -118,6 +119,13 @@ flowchart LR
   server --> designs["名前付きデザインのフォルダ"]
 ```
 
+- `Songs` は開いている曲の `SyncSession` を持つか、何も持たない。何も持たないとき `/api/song` は 404 `no_song` を返し、ページは開始ページを出す
+  （最近の曲は `app_files` から。「曲を開く…」は `web/dialogs.py` が `osascript` で macOS の `choose file` を実行する）。ほかの曲を開くときは、
+  先に新しい曲を読み込んでから古いセッションを閉じる。書き出し中は断る。API へのリクエストのたびに時刻を `Songs.last_request` に記録する。
+- `lyrics-video start` は曲なしのアプリモードでサーバーを動かす。ポートとトークンをアプリのフォルダの `server.json` に記録し（`app_files`。
+  一時ファイル経由で書くので、オーナーだけが読める）、2 回目の `start` はそのサーバーが `/api/ping` に答えればそのページを開く。アプリモードでは、
+  10 分間リクエストがなく書き出しもなければサーバーは自分で止まる。ページは開いている間 30 秒ごとに `/api/ping` を送る。「終了」（`/api/quit`）は
+  セッションを閉じ（書き出しは求められたときだけ中止する）、応答を返してからサーバーを止める。
 - `SyncSession` は曲を一度だけデコードし、`Preview` と `LyricsBackdrop` を 1 つずつ持つ。静止画を描く前に backdrop の字幕を差し替える
   （`set_captions`）。描き終えた絵はそのまま使い回す。
 - デザインモードは、曲ファイルのデザインの上書きをページの中で編集する。静止画とプレビューのたびに、元にするデザインの名前と一緒に送る。

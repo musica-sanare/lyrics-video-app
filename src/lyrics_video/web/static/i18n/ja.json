@@ -138,6 +138,23 @@
   "design.save_as_prompt": "新しいデザインの名前（どの曲からもこの名前で使えます）:",
   "design.replace": "デザイン {name} はすでにあります。置き換えますか？",
   "design.saved_as": "デザイン {name} を保存しました",
-  "design.use_now": "デザイン {name} を保存しました。この曲に使いますか？ 保存すると曲ファイルに書き込みます。"
+  "design.use_now": "デザイン {name} を保存しました。この曲に使いますか？ 保存すると曲ファイルに書き込みます。",
+  "songs.button": "曲",
+  "songs.title": "曲",
+  "songs.no_song": "曲は開いていません。",
+  "songs.back": "{title} に戻る",
+  "songs.open": "曲を開く…",
+  "songs.dialog_note": "Finder のダイアログがこのウインドウの後ろに開くことがあります。",
+  "songs.path_label": "または曲ファイルのパス:",
+  "songs.open_path": "開く",
+  "songs.recent": "最近の曲",
+  "songs.none": "まだ開いた曲はありません。",
+  "songs.missing": "見つかりません",
+  "songs.choose_prompt": "曲ファイル（.toml）を選んでください",
+  "songs.discard": "保存していない変更は失われます。ほかの曲を開きますか？",
+  "quit.button": "終了",
+  "quit.unsaved": "保存していない変更は失われます。終了しますか？",
+  "quit.rendering": "動画を書き出し中です。中止して終了しますか？",
+  "quit.done": "Lyrics Video を終了しました。このタブは閉じてかまいません。"
  }
 }

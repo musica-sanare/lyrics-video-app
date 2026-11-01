@@ -112,6 +112,7 @@ flowchart LR
   page["Page in the browser"]
   server["web/app.py on 127.0.0.1"]
   files["lyrics.txt, lyrics.lrc, song.toml, song"]
+  page -->|"GET /api/songs, POST /api/songs/open, POST /api/quit"| server
   page -->|"GET /api/song"| server
   page -->|"GET /api/audio (ranges)"| server
   page -->|"POST /api/still"| server
@@ -125,6 +126,15 @@ flowchart LR
   server --> designs["Named designs folder"]
 ```
 
+- `Songs` holds the open song's `SyncSession`, or none: then `/api/song` answers 404 `no_song` and the page shows its
+  start page (recent songs from `app_files`, Open song… through `web/dialogs.py`, which runs macOS's `choose file` with
+  `osascript`). Opening another song loads it first, then closes the old session; it is refused while a render runs.
+  Every API request records the time in `Songs.last_request`.
+- `lyrics-video start` runs the server without a song in app mode: it records its port and token in
+  `server.json` in the app's folder (`app_files`, written through a temporary file, so readable by the owner only),
+  and a second `start` opens that server's page when it answers `/api/ping`. In app mode the server stops itself when
+  no request came for 10 minutes and nothing renders; the page asks `/api/ping` every 30 s while it is open. Quit
+  (`/api/quit`) closes the session, cancelling a render only when asked, and stops the server after answering.
 - `SyncSession` decodes the song once, keeps one `Preview` and one `LyricsBackdrop`, and replaces the backdrop's
   captions before each still (`set_captions`). Pictures already drawn are kept.
 - The Design mode edits the song file's design overrides in the page. Each still and preview sends them with the

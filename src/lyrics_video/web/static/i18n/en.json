@@ -138,6 +138,23 @@
   "design.save_as_prompt": "Name of the new design (any song can use it by this name):",
   "design.replace": "The design {name} exists. Replace it?",
   "design.saved_as": "Saved the design {name}",
-  "design.use_now": "Saved the design {name}. Use it for this song? Save then writes it to the song file."
+  "design.use_now": "Saved the design {name}. Use it for this song? Save then writes it to the song file.",
+  "songs.button": "Songs",
+  "songs.title": "Songs",
+  "songs.no_song": "No song is open.",
+  "songs.back": "Back to {title}",
+  "songs.open": "Open song…",
+  "songs.dialog_note": "The Finder's dialog may open behind this window.",
+  "songs.path_label": "Or the path of a song file:",
+  "songs.open_path": "Open",
+  "songs.recent": "Recent songs",
+  "songs.none": "No songs opened yet.",
+  "songs.missing": "missing",
+  "songs.choose_prompt": "Choose a song file (.toml)",
+  "songs.discard": "Unsaved changes will be lost. Open the other song?",
+  "quit.button": "Quit",
+  "quit.unsaved": "Unsaved changes will be lost. Quit?",
+  "quit.rendering": "A video is being rendered. Cancel it and quit?",
+  "quit.done": "Lyrics Video has stopped. You can close this tab."
  }
 }

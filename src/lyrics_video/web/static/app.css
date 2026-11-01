@@ -73,4 +73,18 @@ canvas[hidden], #help[hidden] { display: none; }
 .field .add-color, .field .remove-color { padding: 0 8px; }
 #design-fields .note { color: var(--muted); font-size: 12px; margin: 0 0 4px; }
 .field.changed .reset { visibility: visible; }
+body.home main, body.home #notices, body.home .song-only, body.home #render-bar { display: none; }
+body.stopped header, body.stopped main, body.stopped #notices, body.stopped #home, body.stopped #render-bar { display: none; }
+#home, #stopped { margin: 16px; max-width: 900px; }
+#home[hidden], #stopped[hidden] { display: none; }
+#home h2 { margin: 0 0 8px; }
+#home h3 { margin: 20px 0 6px; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+.home-actions { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 8px 0; }
+.home-actions .note { color: var(--muted); font-size: 12px; }
+#recent { list-style: none; padding: 0; margin: 0; background: var(--panel); border-radius: 8px; }
+#recent li { padding: 8px 12px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; gap: 12px; align-items: baseline; }
+#recent li:hover { background: var(--sel); }
+#recent li.missing { cursor: default; opacity: 0.5; }
+#recent strong { white-space: nowrap; }
+#recent .where { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #help kbd { background: #2a2f38; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; color: var(--text); }

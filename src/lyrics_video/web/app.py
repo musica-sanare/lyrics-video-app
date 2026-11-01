@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -21,13 +22,23 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from lyrics_video.backdrop import LyricsBackdrop, timed_captions
-from lyrics_video.config import Song, preset_values, save_user_design, song_design, spectrum_preset, write_design
+from lyrics_video.app_files import add_recent, recent_songs
+from lyrics_video.config import (
+    Song,
+    load_song,
+    preset_values,
+    save_user_design,
+    song_design,
+    spectrum_preset,
+    write_design,
+)
 from lyrics_video.design import Design, builtin_design_names, user_design_folder, user_design_names
 from lyrics_video.errors import ConfigError, LyricsVideoError, OutputExistsError
 from lyrics_video.fonts import FONT_FOLDERS, font_faces
 from lyrics_video.lyrics import read_lyrics
 from lyrics_video.render import PreparedRender, default_output, prepare_preview, prepare_render, preview_size, render
 from lyrics_video.timing import Merged, TimedLine, check_inside, check_lines, merge, read_lrc, write_lrc
+from lyrics_video.web import dialogs
 
 TOKEN_HEADER = "x-token"
 # Audio and video elements cannot send headers, so these routes also take the token as a query parameter.
@@ -90,6 +101,25 @@ class PreviewMissingError(LyricsVideoError):
     """No preview has been rendered yet; the page answers 404."""
 
     code = "no_preview"
+
+
+class NoSongError(LyricsVideoError):
+    """The page asked for the open song, but none is open (the start page)."""
+
+    code = "no_song"
+
+
+class OpenRequest(BaseModel):
+    path: str = Field(min_length=1)
+
+
+class DialogRequest(BaseModel):
+    prompt: str = Field(default="", max_length=dialogs.MAX_PROMPT)
+
+
+class QuitRequest(BaseModel):
+    force: bool = False
+    """Cancel a running render to quit."""
 
 
 class RenderRequest(BaseModel):
@@ -376,7 +406,69 @@ class SyncSession:
         return buffer.getvalue()
 
 
-def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> FastAPI:
+class Songs:
+    """The song open on the page, if any: one at a time, replaced when the page opens another.
+
+    `last_request` is when the page last asked for anything; the app stops itself after a while without requests.
+    """
+
+    def __init__(self, session: SyncSession | None = None):
+        self.session = session
+        self.lock = threading.Lock()
+        self.last_request = time.monotonic()
+        if session is not None:
+            add_recent(session.song.path, session.song.title)
+
+    def current(self) -> SyncSession:
+        if self.session is None:
+            raise NoSongError("no song is open")
+        return self.session
+
+    def open(self, path: Path) -> None:
+        """Open another song file. Refused while a video or preview renders; the old session is closed."""
+        with self.lock:
+            if self.session is not None and self.session.render.running():
+                raise RenderBusyError("a video is being rendered; open another song after it is done or cancelled")
+            session = SyncSession(load_song(path))
+            session.load()
+            old, self.session = self.session, session
+            if old is not None:
+                old.close()
+            add_recent(session.song.path, session.song.title)
+
+    def state(self) -> dict:
+        """The open song and the recent songs, for the start page."""
+        current = None
+        if self.session is not None:
+            song = self.session.song
+            current = {"path": str(song.path.resolve()), "title": song.title or song.path.parent.name}
+        return {"current": current, "recent": recent_songs()}
+
+    def rendering(self) -> bool:
+        return self.session is not None and self.session.render.running()
+
+    def quit(self, force: bool) -> None:
+        """Get ready to stop: refused while a render runs unless `force`, which cancels it."""
+        if self.rendering() and not force:
+            raise RenderBusyError("a video is being rendered; cancel it to quit")
+        self.close()
+
+    def close(self) -> None:
+        if self.session is not None:
+            self.session.close()
+
+
+def create_app(
+    songs: "Songs | SyncSession",
+    token: str,
+    allowed_hosts: set[str],
+    stop: Callable[[], None] = lambda: None,
+    choose_file: Callable[..., Path | None] = dialogs.choose_file,
+) -> FastAPI:
+    """The page and its API. `songs` holds the open song (a session alone opens that song); `stop` stops the server
+    (for Quit); `choose_file` shows the Finder's dialog (replaced in tests)."""
+    if isinstance(songs, SyncSession):
+        songs = Songs(songs)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     expected = token.encode()
 
@@ -391,6 +483,7 @@ def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> Fas
                 supplied = request.query_params.get("token", "")
             if not hmac.compare_digest(supplied.encode(), expected):
                 return _error(403, "forbidden", "missing or wrong session token")
+            songs.last_request = time.monotonic()
         return await call_next(request)
 
     @app.exception_handler(LyricsVideoError)
@@ -399,7 +492,7 @@ def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> Fas
             return _error(409, error.code, str(error))
         if isinstance(error, OutputExistsError):
             return _error(409, "output_exists", str(error))
-        if isinstance(error, PreviewMissingError):
+        if isinstance(error, (PreviewMissingError, NoSongError)):
             return _error(404, error.code, str(error))
         return _error(400, type(error).__name__, str(error))
 
@@ -409,49 +502,73 @@ def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> Fas
 
     app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
+    @app.get("/api/ping")
+    def ping() -> dict:
+        return {}
+
+    @app.get("/api/songs")
+    def song_list() -> dict:
+        return songs.state()
+
+    @app.post("/api/songs/open")
+    def open_song(request: OpenRequest) -> dict:
+        songs.open(Path(request.path).expanduser())
+        return songs.state()
+
+    @app.post("/api/songs/choose")
+    def choose_song(request: DialogRequest) -> dict:
+        chosen = choose_file(request.prompt, ("toml",))
+        return {"path": str(chosen) if chosen else None}
+
+    @app.post("/api/quit")
+    def quit_app(request: QuitRequest) -> dict:
+        songs.quit(request.force)
+        stop()
+        return {}
+
     @app.get("/api/song")
     def song() -> dict:
-        return session.load()
+        return songs.current().load()
 
     @app.get(AUDIO_ROUTE)
     def audio() -> FileResponse:
-        media_type = mimetypes.guess_type(session.song.audio.name)[0] or "application/octet-stream"
-        return FileResponse(session.song.audio, media_type=media_type)
+        media_type = mimetypes.guess_type(songs.current().song.audio.name)[0] or "application/octet-stream"
+        return FileResponse(songs.current().song.audio, media_type=media_type)
 
     @app.post("/api/timing")
     def save(request: TimingRequest) -> dict:
-        return session.save(request)
+        return songs.current().save(request)
 
     @app.post("/api/still")
     def still(request: StillRequest) -> Response:
-        return Response(session.still(request), media_type="image/png")
+        return Response(songs.current().still(request), media_type="image/png")
 
     @app.get("/api/render")
     def render_state() -> dict:
-        return session.render.snapshot(session.song.path.parent)
+        return songs.current().render.snapshot(songs.current().song.path.parent)
 
     @app.post("/api/render")
     def start_render(request: RenderRequest) -> dict:
-        session.start_render(request.overwrite)
-        return session.render.snapshot(session.song.path.parent)
+        songs.current().start_render(request.overwrite)
+        return songs.current().render.snapshot(songs.current().song.path.parent)
 
     @app.post("/api/render/cancel")
     def cancel_render() -> dict:
-        session.render.cancel.set()
-        return session.render.snapshot(session.song.path.parent)
+        songs.current().render.cancel.set()
+        return songs.current().render.snapshot(songs.current().song.path.parent)
 
     @app.post("/api/preview")
     def start_preview(request: PreviewRequest) -> dict:
-        session.start_preview(request)
-        return session.render.snapshot(session.song.path.parent)
+        songs.current().start_preview(request)
+        return songs.current().render.snapshot(songs.current().song.path.parent)
 
     @app.post("/api/design")
     def save_design(request: DesignRequest) -> dict:
-        return session.save_design(request)
+        return songs.current().save_design(request)
 
     @app.post("/api/design/save-as")
     def save_as(request: SaveAsRequest) -> dict:
-        return session.save_as(request)
+        return songs.current().save_as(request)
 
     @app.post("/api/design/folder")
     def show_design_folder() -> dict:
@@ -462,15 +579,16 @@ def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> Fas
 
     @app.get("/api/fonts")
     def fonts() -> list[dict]:
-        return session.font_list()
+        return songs.current().font_list()
 
     @app.get(PREVIEW_ROUTE)
     def preview_video() -> FileResponse:
-        return FileResponse(session.preview_video(), media_type="video/mp4", headers={"Cache-Control": "no-store"})
+        path = songs.current().preview_video()
+        return FileResponse(path, media_type="video/mp4", headers={"Cache-Control": "no-store"})
 
     @app.post("/api/render/reveal")
     def reveal() -> dict:
-        session.reveal()
+        songs.current().reveal()
         return {}
 
     return app

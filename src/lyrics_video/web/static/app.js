@@ -6,6 +6,8 @@
 const LANGUAGES = { ja: "日本語", en: "English", es: "Español", fr: "Français" };
 const STILL_DELAY_MS = 250;
 const RENDER_POLL_MS = 500;
+// The app stops itself after a while without requests, so an open page asks at least this often.
+const PING_MS = 30000;
 // The preview video follows the audio, which stays the one clock; it is moved when it drifts further than this.
 const PREVIEW_DRIFT_SECONDS = 0.1;
 const $ = (id) => document.getElementById(id);
@@ -80,6 +82,7 @@ async function setLanguage(language) {
   }
   if (state.render.snapshot) showRender(state.render.snapshot);
   if (state.mode === "design") showDesign();
+  if (!$("home").hidden) showHome();
   render();
 }
 
@@ -310,7 +313,7 @@ async function save() {
   }
 }
 
-const unsaved = () => state.dirty || state.design.dirty;
+const unsaved = () => Boolean(state.song) && (state.dirty || state.design.dirty);
 
 // --- Rendering the video -------------------------------------------------------------------------------------------
 
@@ -1356,6 +1359,89 @@ function tick() {
   requestAnimationFrame(tick);
 }
 
+// --- Songs: the start page, switching songs, quitting -----------------------------------------------------------------
+
+const shortPath = (path) => path.replace(/^\/Users\/[^/]+/, "~");
+
+async function showHome() {
+  document.body.classList.add("home");
+  $("home").hidden = false;
+  $("home-error").hidden = true;
+  try {
+    const { current, recent } = await (await api("/api/songs")).json();
+    $("home-current").innerHTML = current
+      ? `<button type="button" id="home-back">${escapeHtml(t("songs.back", { title: current.title }))}</button>`
+      : escapeHtml(t("songs.no_song"));
+    $("home-back")?.addEventListener("click", hideHome);
+    $("recent").innerHTML = recent.length
+      ? recent
+          .map(
+            (entry) =>
+              `<li class="${entry.exists ? "" : "missing"}" data-path="${escapeHtml(entry.path)}"><strong>${escapeHtml(entry.title || entry.path.split("/").at(-2) || entry.path)}</strong>` +
+              `<span class="where">${escapeHtml(shortPath(entry.path))}${entry.exists ? "" : ` (${escapeHtml(t("songs.missing"))})`}</span></li>`,
+          )
+          .join("")
+      : `<li class="missing">${escapeHtml(t("songs.none"))}</li>`;
+  } catch (error) {
+    showHomeError(error);
+  }
+}
+
+function hideHome() {
+  if (!state.song) return;
+  document.body.classList.remove("home");
+  $("home").hidden = true;
+  render();
+}
+
+function showHomeError(error) {
+  $("home-error").textContent = error.message ?? String(error);
+  $("home-error").hidden = false;
+}
+
+// The page starts again with the other song, so nothing of the old one stays in memory.
+async function openSong(path) {
+  if (!path) return;
+  if (state.song && unsaved() && !confirm(t("songs.discard"))) return;
+  try {
+    await api("/api/songs/open", { path });
+    state.dirty = false;
+    state.design.dirty = false;
+    location.reload();
+  } catch (error) {
+    showHomeError(error);
+  }
+}
+
+async function chooseSong() {
+  try {
+    const { path } = await (await api("/api/songs/choose", { prompt: t("songs.choose_prompt") })).json();
+    if (path) await openSong(path);
+  } catch (error) {
+    showHomeError(error);
+  }
+}
+
+async function quitApp(force = false) {
+  if (!force && unsaved() && !confirm(t("quit.unsaved"))) return;
+  try {
+    await api("/api/quit", { force });
+  } catch (error) {
+    if (error.code === "busy" && !force) {
+      if (confirm(t("quit.rendering"))) return quitApp(true);
+      return;
+    }
+    showError(error);
+    return;
+  }
+  state.dirty = false;
+  state.design.dirty = false;
+  clearInterval(state.ping);
+  audio.pause();
+  document.body.classList.add("stopped");
+  $("stopped").hidden = false;
+}
+
 async function start() {
   const params = new URLSearchParams(location.search);
   if (params.has("token")) {
@@ -1415,6 +1501,18 @@ async function start() {
   audio.addEventListener("seeked", () => {
     if (audio.paused) requestStill();
   });
+  $("songs").addEventListener("click", showHome);
+  $("quit").addEventListener("click", () => quitApp());
+  $("home-open").addEventListener("click", chooseSong);
+  $("home-path-open").addEventListener("click", () => openSong($("home-path").value.trim()));
+  $("home-path").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") openSong($("home-path").value.trim());
+  });
+  $("recent").addEventListener("click", (event) => {
+    const item = event.target.closest("li[data-path]");
+    if (item && !item.classList.contains("missing")) openSong(item.dataset.path);
+  });
+  state.ping = setInterval(() => api("/api/ping").catch(() => {}), PING_MS);
   requestAnimationFrame(tick);
   try {
     await loadSong();
@@ -1423,7 +1521,11 @@ async function start() {
     if (rendering()) pollRender();
     render();
   } catch (error) {
-    showError(error);
+    if (error.code === "no_song") {
+      setStatus("");
+      document.title = "Lyrics Video";
+      showHome();
+    } else showError(error);
   }
 }
 

@@ -15,6 +15,7 @@ from lyrics_video.errors import LyricsVideoError
 from lyrics_video.render import DEFAULT_CRF, PreparedRender, prepare_render, render
 from lyrics_video.still import make_stills
 from lyrics_video.web.server import run as run_sync
+from lyrics_video.web.server import start as start_app
 
 EXIT_OK = 0
 EXIT_FAILED = 1
@@ -100,11 +101,26 @@ def build_parser() -> argparse.ArgumentParser:
     sync.add_argument("song", type=Path, help="the song file (TOML)")
     sync.add_argument("--port", type=int, default=0, help="the port on 127.0.0.1; by default a free one")
     sync.add_argument("--no-browser", action="store_true", help="do not open the browser")
+
+    start = commands.add_parser(
+        "start",
+        help="open the app in the browser, without a song",
+        description=(
+            "Open the app's start page in the browser: recent songs and Open song. If the app is already running, "
+            "open its page instead of starting another. The app stops itself 10 minutes after its last page closed, "
+            "or with Quit on the page."
+        ),
+    )
+    start.add_argument("--port", type=int, default=0, help="the port on 127.0.0.1; by default a free one")
+    start.add_argument("--no-browser", action="store_true", help="do not open the browser")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    if args.command == "start":
+        start_app(port=args.port, open_browser=not args.no_browser)
+        return EXIT_OK
     try:
         song = load_song(args.song)
         if args.command == "render":

@@ -105,7 +105,22 @@ uv run lyrics-video sync work/my-song/song.toml
 ```
 
 Opens a page in the browser that plays the song next to its lines. The page only works on this Mac: the server
-listens on `127.0.0.1` and refuses other web pages. Stop it with `Ctrl+C` in the terminal.
+listens on `127.0.0.1` and refuses other web pages. Stop it with Quit on the page or `Ctrl+C` in the terminal.
+
+Without a song, start the app's start page instead:
+
+```bash
+uv run lyrics-video start
+```
+
+- The start page lists recent songs (click one to open it) and has "Open song…", which shows the Finder's dialog
+  for a song file (it may open behind the browser window; a path field works too). "Songs" in the page's top bar
+  comes back to it from a song.
+- One song is open at a time. Opening another asks first when something is unsaved, and waits while a video renders.
+- A second `start` opens the page of the app that is already running instead of starting another.
+- Quit on the page stops the app (after asking, when something is unsaved or a video renders). `start` also stops by
+  itself 10 minutes after its last page was closed; `sync` runs until Quit or `Ctrl+C`.
+- Recent songs and the running app are kept in `~/Library/Application Support/lyrics-video/`.
 
 1. **Tap:** press `P` to play, `Space` when the next line starts and `Enter` when the current line ends before a
    pause. `Backspace` undoes the last mark. The highlighted line starts next.

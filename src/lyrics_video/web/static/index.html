@@ -8,19 +8,41 @@
 </head>
 <body>
 <header>
-  <strong id="song-title"></strong>
-  <button id="play" type="button" data-i18n="play.play">Play</button>
-  <span id="time">0:00.00 / 0:00.00</span>
-  <span class="modes">
+  <button id="songs" type="button" data-i18n="songs.button">Songs</button>
+  <strong id="song-title" class="song-only"></strong>
+  <button id="play" class="song-only" type="button" data-i18n="play.play">Play</button>
+  <span id="time" class="song-only">0:00.00 / 0:00.00</span>
+  <span class="modes song-only">
     <button id="mode-tap" type="button" class="on" data-i18n="mode.tap">Tap</button><button id="mode-adjust" type="button" data-i18n="mode.adjust">Adjust</button><button id="mode-design" type="button" data-i18n="mode.design">Design</button>
   </span>
-  <label><span data-i18n="offset.label">Reaction offset</span> <input id="offset" type="number" value="0" step="10"> ms</label>
-  <button id="save" type="button" data-i18n="save.button">Save</button>
-  <button id="preview-video" type="button" data-i18n="preview_video.button">Preview video</button>
-  <button id="render" type="button" data-i18n="render.button">Render video</button>
+  <label class="song-only"><span data-i18n="offset.label">Reaction offset</span> <input id="offset" type="number" value="0" step="10"> ms</label>
+  <button id="save" class="song-only" type="button" data-i18n="save.button">Save</button>
+  <button id="preview-video" class="song-only" type="button" data-i18n="preview_video.button">Preview video</button>
+  <button id="render" class="song-only" type="button" data-i18n="render.button">Render video</button>
   <span id="status" role="status"></span>
   <label class="language"><span data-i18n="lang.label">Language</span> <select id="language"></select></label>
+  <button id="quit" type="button" data-i18n="quit.button">Quit</button>
 </header>
+
+<section id="home" hidden>
+  <h2 data-i18n="songs.title">Songs</h2>
+  <p id="home-current"></p>
+  <div class="home-actions">
+    <button id="home-open" type="button" data-i18n="songs.open">Open song…</button>
+    <span class="note" data-i18n="songs.dialog_note">The Finder's dialog may open behind this window.</span>
+  </div>
+  <div class="home-actions">
+    <label><span data-i18n="songs.path_label">Or the path of a song file:</span> <input id="home-path" type="text" size="50" placeholder="~/…/song.toml"></label>
+    <button id="home-path-open" type="button" data-i18n="songs.open_path">Open</button>
+  </div>
+  <div id="home-error" class="error" role="alert" hidden></div>
+  <h3 data-i18n="songs.recent">Recent songs</h3>
+  <ul id="recent"></ul>
+</section>
+
+<section id="stopped" hidden>
+  <p data-i18n="quit.done">Lyrics Video has stopped. You can close this tab.</p>
+</section>
 
 <div id="error" class="error" role="alert" hidden><strong data-i18n="error.title">Error</strong> <span id="error-message"></span> <button id="error-close" type="button">×</button></div>
 <div id="render-bar" class="render-bar" role="status" hidden>
