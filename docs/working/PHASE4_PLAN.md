@@ -2,7 +2,9 @@
 
 # Phase 4 plan: a preview of the video and design settings on the page
 
-Status: proposed on 2026-11-01, waiting for the owner's answers to the questions in the last section.
+Status: approved by the owner on 2026-11-01 with the recommended options (A1, B1, C1) and every recommended
+answer; the answers are recorded in the last section. Named designs (C3) and spectrum settings on the page are
+wanted in a later phase.
 
 ## Goal
 
@@ -17,9 +19,8 @@ Let the owner check a song's video and change its look before the long render, b
 3. **Saving a design.** The changes are written to the song file's `[design]` overrides, so `still`, `render` and the
    page all use them.
 
-Not in this phase: MusicXML draft timing and automatic alignment (the handoff's old Phase 4, now the next phase,
-see "After this phase"), editing the spectrum preset on the page (audio-spectrum-app's own page does that), other
-output sizes.
+Not in this phase (see "After this phase"): named designs for other songs and spectrum settings on the page (both
+wanted later), MusicXML draft timing and automatic alignment (the handoff's old Phase 4), other output sizes.
 
 Inputs: [Phase 3 acceptance](PHASE3_ACCEPTANCE.md) sections 6 and 7, [Architecture](../en/ARCHITECTURE.md),
 [Decisions](DECISIONS.md) ADR-004 to ADR-007, `design.py`, `layers.py`, `web/`, and audio-spectrum-app's embedding
@@ -69,7 +70,7 @@ The page's preview area is at most 40 % of the window's height, about 640 × 360
 | Option | For | Against | Recommendation |
 |---|---|---|---|
 | A1. A low-resolution preview video of the whole song (960 × 540 at 15 fps), rendered on request from the page's current times and design and played in the page in sync with the song | The real drawing path (design, captions by time, spectrum) for every caption change; about 20 s to 40 s; the whole song can then be watched or skipped through like the final video | A wait before watching; text and thin lines are softer than at 1080p; times changed afterwards need a new preview | **Recommended** |
-| A2. Short clips around the selected line (like audio-spectrum-app's "Play 5-second clip"): full size, one process, from 1 s before the line's caption appears to 1 s after it leaves | Exact frames; a few seconds per line; cheap to redo after a correction | One line at a time: checking a whole song means many clicks and waits | Optional addition (Q3) |
+| A2. Short clips around the selected line (like audio-spectrum-app's "Play 5-second clip"): full size, one process, from 1 s before the line's caption appears to 1 s after it leaves | Exact frames; a few seconds per line; cheap to redo after a correction | One line at a time: checking a whole song means many clicks and waits | Not now (Q3); added later if the whole-song preview is not enough |
 | A3. Frames drawn live by the server while the song plays (960 × 540, about 13 ms each, sent as JPEG) | No wait | At most about 10 to 20 frames a second after encoding and transfer; frames lag and drift from the audio; holds the session's `Preview` (not thread-safe) so stills wait; one core busy | Not recommended |
 | A4. Draw the design in the browser (canvas) while playing | Smooth and immediate | A second drawing path that differs from the video; breaks the rule that every preview goes through `LyricsBackdrop` | Rejected |
 
@@ -87,7 +88,7 @@ The page's preview area is at most 40 % of the window's height, about 640 × 360
 |---|---|---|---|
 | C1. In the song file's `[design]` table, as overrides of the base design (only the keys that differ), written with a TOML library that keeps the file's comments and layout, with a `.bak` copy | One file per song stays the single source; `still` and `render` read it already; nothing new to learn | A new dependency (`tomlkit`, MIT license, pure Python) to keep comments; the song file is now written by the page | **Recommended** |
 | C2. A separate design file next to the song file, named once in the song file (`design = "my-design.toml"`) | The song file is never rewritten; a design file can be shared | Two files to keep together; the song file must be edited once anyway; the design file holds every key, not just changes | Not recommended |
-| C3. In addition to C1, "Save as design" writes a named design to a user folder (`~/Library/Application Support/lyrics-video/designs/`), found by name after the built-in designs, like audio-spectrum-app's user presets | Reuse one look for every song by naming it | More code and texts; not needed for one song at a time | Optional (Q7) |
+| C3. In addition to C1, "Save as design" writes a named design to a user folder (`~/Library/Application Support/lyrics-video/designs/`), found by name after the built-in designs, like audio-spectrum-app's user presets | Reuse one look for every song by naming it | More code and texts; not needed for one song at a time | Later (Q7): wanted, in a later phase |
 
 ## Design
 
@@ -110,9 +111,6 @@ The page's preview area is at most 40 % of the window's height, about 640 × 360
 - Changing a time or a design setting after the preview marks it out of date: the note above the preview says so,
   and the changed lines are marked in the table, until "Preview video" is pressed again. The preview is not
   rebuilt automatically, so a render never starts while the owner is still tapping.
-- A2, if chosen (Q3): "Play this line as video" renders the selected line's window (1 s before its caption appears
-  to 1 s after it leaves) at full size in one process (about the clip's length, 4 s to 8 s for most lines), and
-  plays it in the same place.
 
 ### Design keys: what exists and what is new
 
@@ -172,8 +170,6 @@ test checks.
   rename.
 - Before writing, the server loads the result with `load_song`, so a song file the page writes always loads.
 - After Save the session reloads the song file, so `still`, `render` and the page agree.
-- C3, if chosen (Q7): "Save as design" writes the full design (base plus changes) to the user folder under a name;
-  built-in names are reserved; `design = "<name>"` then finds it.
 
 ### Tests
 
@@ -199,8 +195,8 @@ Generated tones, images and made-up lyrics; system fonts, skipped where missing;
   reference.
 - Architecture (English and Japanese): the preview task and its temporary folder, `set_design`, the page writing the
   song file; the sync page diagram gains the preview and design routes.
-- ADR-008: the preview video (A1, and A2 if chosen). ADR-009: design settings on the page and saved in the song file
-  (B1, C1, C3 if chosen), the new text keys.
+- ADR-008: the preview video (A1). ADR-009: design settings on the page and saved in the song file (B1, C1), the
+  new text keys.
 - README: status.
 
 ## Milestones and commits
@@ -208,12 +204,11 @@ Generated tones, images and made-up lyrics; system fonts, skipped where missing;
 | Milestone | Commit | Content |
 |---|---|---|
 | 0. Plan | `docs: add Phase 4 plan` | This plan |
-| 1. Preview video | `feat: preview the video on the sync page` | Preview task, temporary folder, route, video following the audio, out-of-date marks, texts in four languages; A2 if chosen; tests; user guide and architecture; preview time measured on the owner's song |
+| 1. Preview video | `feat: preview the video on the sync page` | Preview task, temporary folder, route, video following the audio, out-of-date marks, texts in four languages; tests; user guide and architecture; preview time measured on the owner's song |
 | 2. Text faces and title box | `feat: add bold, italic and a title box` | `font_face`, `bold`, `italic` for title, caption and credits; `title.panel`; `band` captions too; tests; user guide design key reference |
 | 3. Design panel | `feat: edit the design on the sync page` | Design mode, fields, font list, `set_design`, saving to `[design]` with `tomlkit`, texts in four languages; tests; user guide and architecture |
-| 4. User designs | `feat: save designs for other songs` | Only if Q7 says so |
-| 5. Owner's check | none | The owner sets the look of a song on the page, checks the timing with the preview video, renders it, and notes what was still missing; results go into the acceptance report |
-| 6. Acceptance | `docs: accept Phase 4` | ADR-008, ADR-009, `PHASE4_ACCEPTANCE.md`, version 0.3.0 |
+| 4. Owner's check | none | The owner sets the look of a song on the page, checks the timing with the preview video, renders it, and notes what was still missing; results go into the acceptance report |
+| 5. Acceptance | `docs: accept Phase 4` | ADR-008, ADR-009, `PHASE4_ACCEPTANCE.md`, version 0.3.0 |
 
 The `httpx2` warning (carried over) is looked at in milestone 1. If it needs a dependency or test setting change,
 that change gets its own commit (name proposed once the cause is known), not mixed into a feature commit.
@@ -248,7 +243,34 @@ The handoff's old Phase 4 moves to Phase 5, after P3-1 and P3-2, as the owner de
   helps check it.
 - Automatic alignment of lyrics to the sung audio, offline only.
 
+Also wanted in a later phase (owner, 2026-11-01); their order against MusicXML and alignment is decided when that
+phase is planned:
+
+- Named designs (C3): "Save as design" writes the full design to a user folder
+  (`~/Library/Application Support/lyrics-video/designs/`), found by name after the built-in designs, so another song
+  file uses it with `design = "<name>"`.
+- Spectrum settings on the page. The owner's goal is to set up and render a video in this app alone, without
+  audio-spectrum-app's own page. audio-spectrum-app's public API already offers what such a panel needs
+  (`preset_schema`, `override_preset`, `preset_to_toml`, `save_user_preset`); whether anything is missing is checked
+  when that phase is planned, and any change there is planned in its own repository.
+- Short full-size clips of the selected line (A2), only if the whole-song preview turns out not to be enough.
+
 ## Questions for the owner
+
+Answers (2026-11-01): the owner accepted every recommendation.
+
+- Q1: A1, B1 and C1.
+- Q2: 960 × 540 at 15 fps, the lighter load.
+- Q3: no line clips in this phase; considered later only if the preview is not enough.
+- Q4: bold and italic as on/off switches with fixed strengths.
+- Q5: a box around the title, plain or frosted.
+- Q6: `tomlkit` is added, with a `.bak` copy on each save.
+- Q7: named designs are wanted, in a later phase.
+- Q8: macOS's font folders, the folders of fonts the song file names, and a path field.
+- Q9: spectrum settings are wanted on the page in a later phase, so that a video can finally be set up and rendered
+  in this app alone.
+
+The questions as asked:
 
 - Q1. Options A to C: are the recommendations (A1 a low-resolution preview video of the whole song, B1 a Design mode
   on the `sync` page, C1 saving to the song file's `[design]`) fine?
