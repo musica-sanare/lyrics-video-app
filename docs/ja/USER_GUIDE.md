@@ -1,4 +1,4 @@
-<!-- source: docs/en/USER_GUIDE.md blob e7bddcb30d60a3079f64f95e5b1ddb02b1738a37 -->
+<!-- source: docs/en/USER_GUIDE.md blob 2e37b818c12d37651f0965f1629371cd08b2d443 -->
 [English](../en/USER_GUIDE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/USER_GUIDE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -264,9 +264,21 @@ size = 64
 
 [design.caption]
 size = 56
+bold = true                         # 合成の太字
+
+[design.title.panel]                # 曲名の背景のボックス
+color = "#000000"
+opacity = 0.5
+blur = 0                            # 0 なら単色の半透明、大きくするとすりガラス風
 ```
 
 どの部品も、自分の `font` を指定しなければ `fonts.default` を使う。色は `"#RRGGBB"` で書く。
+
+太字と斜体：
+
+- `bold` と `italic` は、どのフォントでも太く、または 12° 傾けて描く。日本語フォントには斜体の書体がないので、傾けるにはこの方法しかない。
+- 太い書体があるなら、合成の太字よりきれいに見える。そのファイルを `font` に指定する（ヒラギノはウェイトごとに W6 などのファイルがある）か、
+  フォントコレクション（`.ttc`）の中の書体を `font_face` に 0 から数えて指定する。
 
 ### デザインのキー
 
@@ -275,13 +287,13 @@ size = 56
 | 部品 | キー |
 |---|---|
 | `background` | `focus`（`[x, y]`、0〜1。切り取るときに残す位置）、`dim`（0〜1）、`blur` |
-| `title` | `enabled`、`position`（`"top-center"`、`"top-left"`）、`font`、`size`、`color`、`margin`、`letter_spacing`、`rule`、`rule_thickness`、`rule_gap`、`shadow` |
-| `caption` | `style`（`"band"`、`"gradient"`、`"panel"`）、`align`（`"left"`）、`font`、`text_color`、`lead_seconds`、`fade_seconds`、`transition`（`"sequential"`、`"crossfade"`）。帯：`band_color`、`band_opacity`、`band_height`。陰と枠：`size`（最大の文字の大きさ）、`line_spacing`、`margin_x`、`margin_bottom`、`gradient`、`panel`、`shadow` |
-| `credits` | `enabled`、`font`、`size`、`color`、`line_spacing`、`position`（`"center"`、`"bottom-right"`）、`margin_x`、`margin_bottom`、`dim`、`panel`、`show_seconds`、`fade_seconds`、`shadow` |
+| `title` | `enabled`、`position`（`"top-center"`、`"top-left"`）、`font`、`font_face`、`bold`、`italic`、`size`、`color`、`margin`、`letter_spacing`、`rule`、`rule_thickness`、`rule_gap`、`panel`（既定ではなし）、`shadow` |
+| `caption` | `style`（`"band"`、`"gradient"`、`"panel"`）、`align`（`"left"`）、`font`、`font_face`、`bold`、`italic`、`text_color`、`lead_seconds`、`fade_seconds`、`transition`（`"sequential"`、`"crossfade"`）。帯：`band_color`、`band_opacity`、`band_height`。陰と枠：`size`（最大の文字の大きさ）、`line_spacing`、`margin_x`、`margin_bottom`、`gradient`、`panel`、`shadow` |
+| `credits` | `enabled`、`font`、`font_face`、`bold`、`italic`、`size`、`color`、`line_spacing`、`position`（`"center"`、`"bottom-right"`）、`margin_x`、`margin_bottom`、`dim`、`panel`、`show_seconds`、`fade_seconds`、`shadow` |
 | `spectrum` | `set`：曲ファイルの `[spectrum] set` より先に適用するプリセットの上書き |
 | `shadow`（`title`、`caption`、`credits` の中） | `blur`（0 で影なし）、`offset`、`color`、`opacity` |
 | `gradient`（`caption` の中） | `height`、`color`、`opacity`（下端での不透明度） |
-| `panel`（`caption`、`credits` の中） | `color`、`opacity`（色の濃さ）、`blur`（背後のぼかし）、`radius`、`padding`（`[x, y]`） |
+| `panel`（`title`、`caption`、`credits` の中） | `color`、`opacity`（色の濃さ）、`blur`（背後のぼかし）、`radius`、`padding`（`[x, y]`） |
 
 ## 7. 曲ファイル
 

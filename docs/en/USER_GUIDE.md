@@ -276,9 +276,22 @@ size = 64
 
 [design.caption]
 size = 56
+bold = true                         # synthetic bold
+
+[design.title.panel]                # a box behind the title
+color = "#000000"
+opacity = 0.5
+blur = 0                            # 0: a plain see-through box; more: frosted glass
 ```
 
 Every part uses `fonts.default` unless it names its own `font`. Colors are `"#RRGGBB"`.
+
+Bold and italic:
+
+- `bold` and `italic` draw any font bolder or slanted (by 12°). Japanese fonts have no italic face, so this is the
+  only way to slant them.
+- A heavier font looks better than synthetic bold where one exists: name its file as `font` (Hiragino has one file
+  per weight, such as W6), or its face in a font collection (`.ttc`) as `font_face`, counted from 0.
 
 ### Design keys
 
@@ -287,13 +300,13 @@ Sizes are in pixels of a 1080-pixel-high frame; they scale with the video height
 | Part | Keys |
 |---|---|
 | `background` | `focus` (`[x, y]` from 0 to 1, the point kept in view when cropping), `dim` (0 to 1), `blur` |
-| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `size`, `color`, `margin`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `shadow` |
-| `caption` | `style` (`"band"`, `"gradient"`, `"panel"`), `align` (`"left"`), `font`, `text_color`, `lead_seconds`, `fade_seconds`, `transition` (`"sequential"`, `"crossfade"`); band: `band_color`, `band_opacity`, `band_height`; gradient and panel: `size` (largest font size), `line_spacing`, `margin_x`, `margin_bottom`, `gradient`, `panel`, `shadow` |
-| `credits` | `enabled`, `font`, `size`, `color`, `line_spacing`, `position` (`"center"`, `"bottom-right"`), `margin_x`, `margin_bottom`, `dim`, `panel`, `show_seconds`, `fade_seconds`, `shadow` |
+| `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `font_face`, `bold`, `italic`, `size`, `color`, `margin`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `panel` (none by default), `shadow` |
+| `caption` | `style` (`"band"`, `"gradient"`, `"panel"`), `align` (`"left"`), `font`, `font_face`, `bold`, `italic`, `text_color`, `lead_seconds`, `fade_seconds`, `transition` (`"sequential"`, `"crossfade"`); band: `band_color`, `band_opacity`, `band_height`; gradient and panel: `size` (largest font size), `line_spacing`, `margin_x`, `margin_bottom`, `gradient`, `panel`, `shadow` |
+| `credits` | `enabled`, `font`, `font_face`, `bold`, `italic`, `size`, `color`, `line_spacing`, `position` (`"center"`, `"bottom-right"`), `margin_x`, `margin_bottom`, `dim`, `panel`, `show_seconds`, `fade_seconds`, `shadow` |
 | `spectrum` | `set`: preset overrides applied before the song file's `[spectrum] set` |
 | `shadow` (in `title`, `caption`, `credits`) | `blur` (0 = no shadow), `offset`, `color`, `opacity` |
 | `gradient` (in `caption`) | `height`, `color`, `opacity` (at the bottom edge) |
-| `panel` (in `caption`, `credits`) | `color`, `opacity` (of the tint), `blur` (of the picture behind), `radius`, `padding` (`[x, y]`) |
+| `panel` (in `title`, `caption`, `credits`) | `color`, `opacity` (of the tint), `blur` (of the picture behind), `radius`, `padding` (`[x, y]`) |
 
 ## 7. The song file
 

@@ -1,11 +1,16 @@
-"""Opening font files."""
+"""Opening font files, and the strength of synthetic bold and italic."""
 
+import math
 from functools import lru_cache
 from pathlib import Path
 
 from PIL import ImageFont
 
 from lyrics_video.errors import FontError
+
+# Synthetic bold widens the outline by this share of the font size on each side; synthetic italic slants by 12°.
+BOLD_STROKE = 0.03
+ITALIC_SLANT = math.tan(math.radians(12))
 
 
 @lru_cache(maxsize=256)

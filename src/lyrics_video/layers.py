@@ -7,12 +7,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 from lyrics_video.caption_image import CaptionFont, CaptionLook, draw_caption
-from lyrics_video.design import CaptionStyle, CreditsStyle, Panel, Shadow, TitleStyle
+from lyrics_video.design import CaptionStyle, CreditsStyle, Panel, Shadow, TextFace, TitleStyle
 from lyrics_video.errors import ConfigError
-from lyrics_video.fonts import load_font
+from lyrics_video.fonts import BOLD_STROKE, ITALIC_SLANT, load_font
 
 # Credits shrink until their widest line fits in this share of the frame width.
 CREDITS_MAX_WIDTH = 0.9
@@ -93,6 +93,70 @@ def _font_for(part_font: Path | None, default_font: Path | None, part: str) -> P
     return font
 
 
+@dataclass(frozen=True)
+class _Text:
+    """A part's font at one size, with its synthetic bold (an outline `stroke` pixels wide) and italic (`slant`)."""
+
+    font: ImageFont.FreeTypeFont
+    stroke: float = 0.0
+    slant: float = 0.0
+
+    @property
+    def ascent(self) -> int:
+        return self.font.getmetrics()[0]
+
+    @property
+    def line_height(self) -> int:
+        ascent, descent = self.font.getmetrics()
+        return ascent + descent
+
+    def width(self, text: str, spacing: float = 0.0) -> float:
+        """The width the text covers, its outline and slant included."""
+        if spacing <= 0:
+            plain = self.font.getlength(text)
+        else:
+            plain = sum(self.font.getlength(character) for character in text) + spacing * (len(text) - 1)
+        return plain + 2 * self.stroke + self.slant * self.ascent
+
+
+def _text(style: TextFace, default_font: Path | None, part: str, size: float) -> _Text:
+    size = max(1, round(size))
+    font = load_font(_font_for(style.font, default_font, part), size, style.font_face)
+    return _Text(font, BOLD_STROKE * size if style.bold else 0.0, ITALIC_SLANT if style.italic else 0.0)
+
+
+def _fit(style: TextFace, default_font: Path | None, part: str, size: float, rows, max_width: float) -> _Text:
+    """The text at `size`, or smaller until the widest row fits in `max_width`."""
+    size = max(1, round(size))
+    while True:
+        text = _text(style, default_font, part, size)
+        if max(text.width(row) for row in rows) <= max_width or size == 1:
+            return text
+        size -= 1
+
+
+def _draw_text(mask: Image.Image, x: float, y: float, line: str, text: _Text, anchor: str = "la", spacing: float = 0.0):
+    """Draw `line` into `mask` with its ascender line at `y`; `anchor` "la", "ma" or "ra" places it by its left edge,
+    middle or right edge at `x`, slant included. `spacing` (extra space between characters) needs "la"."""
+    lean = text.slant * text.ascent
+    x -= {"la": 0.0, "ma": lean / 2, "ra": lean}[anchor]
+    target = mask if text.slant == 0 else Image.new("L", mask.size, 0)
+    draw = ImageDraw.Draw(target)
+    outline = {"stroke_width": text.stroke, "stroke_fill": 255} if text.stroke > 0 else {}
+    if spacing <= 0:
+        draw.text((x, y), line, fill=255, font=text.font, anchor=anchor, **outline)
+    else:
+        for character in line:
+            draw.text((x, y), character, fill=255, font=text.font, anchor="la", **outline)
+            x += text.font.getlength(character) + spacing
+    if text.slant:
+        baseline = y + text.ascent
+        slanted = target.transform(
+            mask.size, Image.Transform.AFFINE, (1, text.slant, -text.slant * baseline, 0, 1, 0), Image.Resampling.BICUBIC
+        )
+        mask.paste(ImageChops.lighter(mask, slanted))
+
+
 def _colored(mask: Image.Image, color: tuple[int, int, int], opacity: float = 1.0) -> Image.Image:
     layer = Image.new("RGBA", mask.size, (*color, 0))
     alpha = mask if opacity >= 1 else mask.point(lambda value: round(value * opacity))
@@ -116,37 +180,6 @@ def _cropped(image: Image.Image) -> Layer:
     if box is None:
         return Layer(0, 0, np.zeros((0, 0, 4), dtype=np.uint8))
     return Layer(box[0], box[1], np.asarray(image.crop(box), dtype=np.uint8))
-
-
-def _fit(font_path: Path, size: float, rows, max_width: float) -> ImageFont.FreeTypeFont:
-    """The font at `size`, or smaller until the widest row fits in `max_width`."""
-    size = max(1, round(size))
-    while True:
-        font = load_font(font_path, size)
-        if max(font.getlength(row) for row in rows) <= max_width or size == 1:
-            return font
-        size -= 1
-
-
-def _line_height(font: ImageFont.FreeTypeFont) -> int:
-    ascent, descent = font.getmetrics()
-    return ascent + descent
-
-
-def _spaced_width(text: str, font: ImageFont.FreeTypeFont, spacing: float) -> float:
-    if spacing <= 0:
-        return font.getlength(text)
-    return sum(font.getlength(character) for character in text) + spacing * (len(text) - 1)
-
-
-def _draw_spaced(draw, x: float, y: float, text: str, font, spacing: float) -> None:
-    """Text with its top-left corner (ascender line) at (x, y), with extra space between characters."""
-    if spacing <= 0:
-        draw.text((x, y), text, fill=255, font=font, anchor="la")
-        return
-    for character in text:
-        draw.text((x, y), character, fill=255, font=font, anchor="la")
-        x += font.getlength(character) + spacing
 
 
 def _rounded_mask(size: tuple[int, int], radius: float) -> Image.Image:
@@ -174,23 +207,49 @@ def _frosted(base: np.ndarray, box: tuple[int, int, int, int], panel: Panel, sca
 
 
 def title_layer(
-    title: str, style: TitleStyle, default_font: Path | None, width: int, height: int, scale: float
+    title: str,
+    style: TitleStyle,
+    default_font: Path | None,
+    width: int,
+    height: int,
+    scale: float,
+    base: np.ndarray | None = None,
 ) -> Layer | None:
+    """The title at the top, with its rule and box. `base` (the frame under it) is needed for the box."""
     if not style.enabled or not title:
         return None
-    font = load_font(_font_for(style.font, default_font, "title"), max(1, round(style.size * scale)))
+    text = _text(style, default_font, "title", style.size * scale)
     mask = Image.new("L", (width, height), 0)
-    draw = ImageDraw.Draw(mask)
     spacing = style.letter_spacing * scale
-    title_width = _spaced_width(title, font, spacing)
+    title_width = text.width(title, spacing)
     left = (width - title_width) / 2 if style.position == "top-center" else style.margin * scale
     top = style.margin * scale
-    _draw_spaced(draw, left, top, title, font, spacing)
+    _draw_text(mask, left, top, title, text, spacing=spacing)
     if style.rule:
         thickness = max(1, round(style.rule_thickness * scale))
-        rule_top = round(top + _line_height(font) + style.rule_gap * scale)
-        draw.rectangle([round(left), rule_top, round(left + title_width) - 1, rule_top + thickness - 1], fill=255)
-    return _cropped(_with_shadow(mask, style.color, style.shadow, scale))
+        rule_top = round(top + text.line_height + style.rule_gap * scale)
+        ImageDraw.Draw(mask).rectangle(
+            [round(left), rule_top, round(left + title_width) - 1, rule_top + thickness - 1], fill=255
+        )
+    picture = _with_shadow(mask, style.color, style.shadow, scale)
+    if style.panel is not None:
+        if base is None:
+            raise ValueError("a title panel needs the picture under it")
+        box = _padded(mask.getbbox(), style.panel, scale, width, height)
+        picture = Image.alpha_composite(_frosted(base, box, style.panel, scale), picture)
+    return _cropped(picture)
+
+
+def _padded(box, panel: Panel, scale: float, width: int, height: int) -> tuple[int, int, int, int]:
+    """`box` (left, top, right, bottom) grown by the panel's padding, inside the frame."""
+    pad_x, pad_y = panel.padding[0] * scale, panel.padding[1] * scale
+    left, top, right, bottom = box
+    return (
+        max(0, round(left - pad_x)),
+        max(0, round(top - pad_y)),
+        min(width, round(right + pad_x)),
+        min(height, round(bottom + pad_y)),
+    )
 
 
 def caption_layer(
@@ -203,42 +262,41 @@ def caption_layer(
     base: np.ndarray | None = None,
 ) -> Layer:
     """The caption in the design's style. `base` (the frame under it) is needed for the frosted panel."""
-    font_path = _font_for(style.font, default_font, "caption")
     if style.style == "band":
-        return _band_caption(rows, style, font_path, width, height, scale)
+        return _band_caption(rows, style, default_font, width, height, scale)
     if style.style == "gradient":
-        return _gradient_caption(rows, style, font_path, width, height, scale)
+        return _gradient_caption(rows, style, default_font, width, height, scale)
     if base is None:
         raise ValueError("a panel caption needs the picture under it")
-    return _panel_caption(rows, style, font_path, base, scale)
+    return _panel_caption(rows, style, default_font, base, scale)
 
 
-def _band_caption(rows, style: CaptionStyle, font_path: Path, width: int, height: int, scale: float) -> Layer:
+def _band_caption(rows, style: CaptionStyle, default_font: Path | None, width: int, height: int, scale: float) -> Layer:
     """A band along the bottom edge with the caption drawn by the old caption image rules, scaled to the band."""
-    font = CaptionFont(font_path)
+    font = CaptionFont(_font_for(style.font, default_font, "caption"), style.font_face)
     band_height = max(1, round(style.band_height * scale))
     band_scale = band_height / 232
-    look = CaptionLook(size=(width, band_height), background=style.band_color, text_color=style.text_color)
+    faces = {"bold": style.bold, "italic": style.italic}
+    look = CaptionLook((width, band_height), style.band_color, style.text_color, **faces)
     band = np.asarray(draw_caption(rows, look, font, band_scale), dtype=np.uint8)
-    coverage_look = CaptionLook(size=look.size, background=(0, 0, 0), text_color=(255, 255, 255))
+    coverage_look = CaptionLook(look.size, (0, 0, 0), (255, 255, 255), **faces)
     coverage = np.asarray(draw_caption(rows, coverage_look, font, band_scale).convert("L"), dtype=np.uint8)
     alpha = np.maximum(coverage, round(style.band_opacity * 255)).astype(np.uint8)
     return Layer(0, height - band_height, np.dstack([band, alpha]))
 
 
-def _rows_mask(rows, font, left: float, top: float, step: float, size: tuple[int, int]) -> Image.Image:
+def _rows_mask(rows, text: _Text, left: float, top: float, step: float, size: tuple[int, int]) -> Image.Image:
     mask = Image.new("L", size, 0)
-    draw = ImageDraw.Draw(mask)
     for number, row in enumerate(rows):
-        draw.text((left, top + number * step), row, fill=255, font=font, anchor="la")
+        _draw_text(mask, left, top + number * step, row, text)
     return mask
 
 
-def _gradient_caption(rows, style: CaptionStyle, font_path: Path, width: int, height: int, scale: float) -> Layer:
+def _gradient_caption(rows, style: CaptionStyle, default_font: Path | None, width: int, height: int, scale: float):
     """Left-aligned rows near the bottom edge over a shade that rises from it."""
     margin_x = style.margin_x * scale
-    font = _fit(font_path, style.size * scale, rows, width - 2 * margin_x)
-    line = _line_height(font)
+    text = _fit(style, default_font, "caption", style.size * scale, rows, width - 2 * margin_x)
+    line = text.line_height
     step = line * style.line_spacing
     block = step * (len(rows) - 1) + line
     shade_height = round(style.gradient.height * scale)
@@ -250,27 +308,27 @@ def _gradient_caption(rows, style: CaptionStyle, font_path: Path, width: int, he
     alpha = np.round(ramp * style.gradient.opacity * 255).astype(np.uint8)
     shade = Image.new("RGBA", (width, region_height), (*style.gradient.color, 0))
     shade.putalpha(Image.fromarray(np.repeat(alpha[:, None], width, axis=1)))
-    mask = _rows_mask(rows, font, margin_x, text_top, step, (width, region_height))
+    mask = _rows_mask(rows, text, margin_x, text_top, step, (width, region_height))
     picture = Image.alpha_composite(shade, _with_shadow(mask, style.text_color, style.shadow, scale))
     return Layer(0, height - region_height, np.asarray(picture, dtype=np.uint8))
 
 
-def _panel_caption(rows, style: CaptionStyle, font_path: Path, base: np.ndarray, scale: float) -> Layer:
+def _panel_caption(rows, style: CaptionStyle, default_font: Path | None, base: np.ndarray, scale: float) -> Layer:
     """Left-aligned rows in a frosted box near the bottom edge; the box has the same size for one and two rows."""
     height, width = base.shape[:2]
     pad_x, pad_y = style.panel.padding[0] * scale, style.panel.padding[1] * scale
     left, right = round(style.margin_x * scale), round(width - style.margin_x * scale)
-    font = _fit(font_path, style.size * scale, rows, right - left - 2 * pad_x)
-    line = _line_height(load_font(font_path, max(1, round(style.size * scale))))
+    text = _fit(style, default_font, "caption", style.size * scale, rows, right - left - 2 * pad_x)
+    line = _text(style, default_font, "caption", style.size * scale).line_height
     step = line * style.line_spacing
     box_height = round(step + line + 2 * pad_y)
     bottom = round(height - style.margin_bottom * scale)
     top = bottom - box_height
     picture = _frosted(base, (left, top, right, bottom), style.panel, scale)
-    own_line = _line_height(font)
+    own_line = text.line_height
     block = own_line * style.line_spacing * (len(rows) - 1) + own_line
     text_top = top + (box_height - block) / 2
-    mask = _rows_mask(rows, font, left + pad_x, text_top, own_line * style.line_spacing, (width, height))
+    mask = _rows_mask(rows, text, left + pad_x, text_top, own_line * style.line_spacing, (width, height))
     picture = Image.alpha_composite(picture, _with_shadow(mask, style.text_color, style.shadow, scale))
     return _cropped(picture)
 
@@ -287,36 +345,28 @@ def credits_layer(
     """The credits, centered or at the bottom right, over the frame darkened by `style.dim` and an optional panel."""
     if not style.enabled or not lines:
         return None
-    font_path = _font_for(style.font, default_font, "credits")
-    font = _fit(font_path, style.size * scale, lines, width * CREDITS_MAX_WIDTH)
-    line = _line_height(font)
+    text = _fit(style, default_font, "credits", style.size * scale, lines, width * CREDITS_MAX_WIDTH)
+    line = text.line_height
     step = line * style.line_spacing
     block = step * (len(lines) - 1) + line
-    widest = max(font.getlength(text) for text in lines)
+    widest = max(text.width(credit) for credit in lines)
     if style.position == "center":
         top, right = height / 2 - block / 2, width / 2 + widest / 2
     else:
         top, right = height - style.margin_bottom * scale - block, width - style.margin_x * scale
     left = right - widest
     mask = Image.new("L", (width, height), 0)
-    draw = ImageDraw.Draw(mask)
-    for number, text in enumerate(lines):
+    for number, credit in enumerate(lines):
         y = top + number * step
         if style.position == "center":
-            draw.text((width / 2, y), text, fill=255, font=font, anchor="ma")
+            _draw_text(mask, width / 2, y, credit, text, anchor="ma")
         else:
-            draw.text((right, y), text, fill=255, font=font, anchor="ra")
+            _draw_text(mask, right, y, credit, text, anchor="ra")
     picture = Image.new("RGBA", (width, height), (0, 0, 0, round(style.dim * 255)))
     if style.panel is not None:
         if base is None:
             raise ValueError("a credits panel needs the picture under it")
-        pad_x, pad_y = style.panel.padding[0] * scale, style.panel.padding[1] * scale
-        box = (
-            max(0, round(left - pad_x)),
-            max(0, round(top - pad_y)),
-            min(width, round(right + pad_x)),
-            min(height, round(top + block + pad_y)),
-        )
+        box = _padded((left, top, right, top + block), style.panel, scale, width, height)
         picture = Image.alpha_composite(picture, _frosted(base, box, style.panel, scale))
     picture = Image.alpha_composite(picture, _with_shadow(mask, style.color, style.shadow, scale))
     if style.dim > 0:

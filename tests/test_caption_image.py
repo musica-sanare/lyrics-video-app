@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 
@@ -96,3 +97,16 @@ def test_text_that_never_fits_is_an_error(sans_font):
 
     with pytest.raises(CaptionError, match="does not fit"):
         draw_caption(("x",), tiny, CaptionFont(sans_font))
+
+
+def test_bold_and_italic_bands_still_fit(sans_font):
+    rows = ("とても長い歌詞の行がここに入る",)
+    plain = draw_caption(rows, LOOK, CaptionFont(sans_font))
+    bold = draw_caption(rows, CaptionLook(LOOK.size, LOOK.background, LOOK.text_color, bold=True), CaptionFont(sans_font))
+    italic = draw_caption(rows, CaptionLook(LOOK.size, LOOK.background, LOOK.text_color, italic=True), CaptionFont(sans_font))
+
+    white = lambda image: (np.asarray(image) > 200).all(axis=2)  # noqa: E731
+    assert white(bold).sum() > white(plain).sum()
+    for image in (bold, italic):
+        columns = np.nonzero(white(image).any(axis=0))[0]
+        assert columns.max() < LOOK.size[0] - 10

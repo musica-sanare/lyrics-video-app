@@ -191,7 +191,7 @@ class LyricsBackdrop:
             design, scale = self.design, scale_for(height)
             style = design.background
             base = background(self.background_image, width, height, style.focus, style.dim, style.blur * scale)
-            title = title_layer(self.title, design.title, self.default_font, width, height, scale)
+            title = title_layer(self.title, design.title, self.default_font, width, height, scale, base)
             if title is not None:
                 blend(base, title)
             credits = credits_layer(self.credits, design.credits, self.default_font, width, height, scale, base)

@@ -223,3 +223,13 @@ def test_only_a_few_captions_are_kept_ready_to_blend(tmp_path, sans_font):
     assert len(backdrop._prepared_for(WIDTH, HEIGHT).wide) == WIDE_CAPTIONS
     assert np.array_equal(backdrop.frame(0, 1.5, WIDTH, HEIGHT), frames[0])
     assert np.array_equal(fresh.frame(0, 6.5, WIDTH, HEIGHT), frames[5])
+
+
+def test_a_title_box_over_the_background(tmp_path, sans_font):
+    title = {"margin": 40, "panel": {"color": "#000000", "opacity": 0.5, "blur": 0, "padding": [30, 20]}}
+    backdrop = make_backdrop(tmp_path, sans_font, captions=[], title=title)
+
+    frame = backdrop.frame(0, 10.0, WIDTH, HEIGHT)
+
+    assert frame[-1, 0].tolist() == [40, 80, 120], "the background elsewhere"
+    assert [40, 80, 120] != frame[int(40 * HEIGHT / 1080) + 2, WIDTH // 2].tolist(), "the box darkens the top"

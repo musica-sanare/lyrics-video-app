@@ -59,3 +59,20 @@ def test_caption_timing_settings():
         load_design("soft", {"caption": {"transition": "wipe"}})
     with pytest.raises(ConfigError, match="design.caption.lead_seconds"):
         load_design("soft", {"caption": {"lead_seconds": -1}})
+
+
+def test_text_faces_and_the_title_box():
+    for name in builtin_design_names():
+        design = load_design(name)
+        for part in (design.title, design.caption, design.credits):
+            assert (part.font_face, part.bold, part.italic) == (0, False, False)
+        assert design.title.panel is None
+
+    design = load_design(
+        "soft", {"title": {"bold": True, "font_face": 2, "panel": {"color": "#202020", "blur": 0}}, "caption": {"italic": True}}
+    )
+
+    assert (design.title.bold, design.title.font_face, design.caption.italic) == (True, 2, True)
+    assert design.title.panel.color == (32, 32, 32) and design.title.panel.blur == 0
+    with pytest.raises(ConfigError, match="design.credits.font_face"):
+        load_design("soft", {"credits": {"font_face": -1}})

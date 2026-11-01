@@ -68,6 +68,20 @@ class Gradient(_Part):
     """Opacity at the bottom edge."""
 
 
+class TextFace(_Part):
+    """The font of a text part and its synthetic styles, for faces a font does not have (Japanese fonts have no
+    italic, and few have more than one weight)."""
+
+    font: Path | None = None
+    """This part's font; by default the song file's `fonts.default`."""
+    font_face: int = Field(default=0, ge=0)
+    """The face inside a font collection (`.ttc`), from 0."""
+    bold: bool = False
+    """Synthetic bold: the outline of every character widened. A heavier font file looks better where there is one."""
+    italic: bool = False
+    """Synthetic italic: the text slanted."""
+
+
 class BackgroundStyle(_Part):
     focus: tuple[Fraction, Fraction] = (0.5, 0.5)
     """The point of the image kept in view when it is cropped, as fractions of its width and height."""
@@ -76,11 +90,9 @@ class BackgroundStyle(_Part):
     blur: Pixels = 0.0
 
 
-class TitleStyle(_Part):
+class TitleStyle(TextFace):
     enabled: bool = True
     position: Literal["top-center", "top-left"] = "top-center"
-    font: Path | None = None
-    """A font for the title only; by default the song file's `fonts.default`."""
     size: Pixels = 72.0
     color: Color = (255, 255, 255)
     margin: Pixels = 64.0
@@ -91,16 +103,17 @@ class TitleStyle(_Part):
     """A thin line under the title, as wide as it."""
     rule_thickness: Pixels = 2.0
     rule_gap: Pixels = 14.0
+    panel: Panel | None = None
+    """A box behind the title (and its rule): plain with `blur = 0`, frosted otherwise; none by default."""
     shadow: Shadow = Shadow()
 
 
-class CaptionStyle(_Part):
+class CaptionStyle(TextFace):
     style: Literal["band", "gradient", "panel"] = "band"
     """"band": today's caption images at video resolution, an opaque band along the bottom edge; "gradient": text
     over a shade rising from the bottom; "panel": text in a frosted rounded box near the bottom."""
     align: Literal["left"] = "left"
     """Only "left" for now; the setting exists so other alignments can be added without changing song files."""
-    font: Path | None = None
     text_color: Color = (255, 255, 255)
     lead_seconds: Seconds = 0.2
     """How long before its sung time a caption starts to appear."""
@@ -124,9 +137,8 @@ class CaptionStyle(_Part):
     shadow: Shadow = Shadow()
 
 
-class CreditsStyle(_Part):
+class CreditsStyle(TextFace):
     enabled: bool = True
-    font: Path | None = None
     size: Pixels = 44.0
     color: Color = (255, 255, 255)
     line_spacing: float = Field(default=1.6, ge=1.0)

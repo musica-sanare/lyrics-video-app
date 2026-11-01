@@ -3,7 +3,7 @@ import pytest
 from PIL import Image, ImageDraw
 
 from lyrics_video.design import CaptionStyle, CreditsStyle, TitleStyle
-from lyrics_video.errors import ConfigError
+from lyrics_video.errors import ConfigError, FontError
 from lyrics_video.layers import Layer, background, blend, caption_layer, credits_layer, title_layer
 
 GREY, RED = (128, 128, 128), (255, 0, 0)
@@ -216,3 +216,94 @@ def test_credits_in_a_panel(sans_font):
     layer = credits_layer(("Music: Someone",), style, sans_font, 960, 540, 0.5, base)
 
     assert layer.rgba[layer.rgba.shape[0] // 2, 5].tolist() == [100, 100, 100, 255]
+
+
+# --- Font faces, synthetic bold and italic, the title box ----------------------------------------------------------
+
+
+def ink(layer):
+    """How much text a layer holds: the sum of its opacity."""
+    return int(layer.rgba[:, :, 3].astype(np.int64).sum())
+
+
+def leftmost_column(alpha, rows):
+    """The first column with ink in each of `rows`."""
+    return [int(np.nonzero(alpha[row] > 128)[0].min()) for row in rows]
+
+
+def test_bold_widens_the_text(sans_font):
+    plain = title_layer("TITLE", TitleStyle(), sans_font, 1920, 1080, 1.0)
+    bold = title_layer("TITLE", TitleStyle(bold=True), sans_font, 1920, 1080, 1.0)
+
+    assert ink(bold) > ink(plain) * 1.2
+    assert bold.rgba.shape[1] > plain.rgba.shape[1]
+    assert abs((bold.left + bold.rgba.shape[1] / 2) - 960) <= 4, "still centered"
+
+
+def test_italic_slants_the_text_to_the_right(sans_font):
+    style = TitleStyle(position="top-left", shadow={"blur": 0})
+    plain = title_layer("I", style, sans_font, 1920, 1080, 1.0)
+    italic = title_layer("I", style.model_copy(update={"italic": True}), sans_font, 1920, 1080, 1.0)
+
+    height = italic.rgba.shape[0]
+    top, bottom = leftmost_column(italic.rgba[:, :, 3], [2, height - 3])
+    plain_top, plain_bottom = leftmost_column(plain.rgba[:, :, 3], [2, plain.rgba.shape[0] - 3])
+    assert top - bottom > 0.15 * height, "the top of the letter leans right"
+    assert abs(plain_top - plain_bottom) <= 1
+    assert abs(ink(italic) - ink(plain)) < ink(plain) * 0.05, "slanted, not thickened"
+
+
+def test_a_face_of_a_font_collection(latin_collection):
+    regular = title_layer("Title", TitleStyle(), latin_collection, 960, 540, 0.5)
+    bold = title_layer("Title", TitleStyle(font_face=1), latin_collection, 960, 540, 0.5)
+
+    assert ink(bold) > ink(regular) * 1.2
+    with pytest.raises(FontError, match="face 99"):
+        title_layer("Title", TitleStyle(font_face=99), latin_collection, 960, 540, 0.5)
+
+
+@pytest.mark.parametrize("caption", ["band", "gradient", "panel"])
+def test_every_caption_style_draws_bold_and_italic(sans_font, caption):
+    base = np.zeros((540, 960, 3), dtype=np.uint8)
+    style = CaptionStyle(style=caption, band_opacity=0.0, gradient={"opacity": 0.0}, panel={"opacity": 0.0, "blur": 0})
+    text = ("歌詞の行",)
+
+    plain = caption_layer(text, style, sans_font, 960, 540, 0.5, base)
+    bold = caption_layer(text, style.model_copy(update={"bold": True}), sans_font, 960, 540, 0.5, base)
+    italic = caption_layer(text, style.model_copy(update={"italic": True}), sans_font, 960, 540, 0.5, base)
+
+    white = lambda layer: int((layer.rgba[:, :, :3] > 200).all(axis=2).sum())  # noqa: E731
+    assert white(bold) > white(plain) * 1.1
+    assert not np.array_equal(italic.rgba, plain.rgba)
+
+
+@pytest.mark.parametrize("caption", ["gradient", "panel"])
+def test_bold_italic_rows_still_fit_the_margins(sans_font, caption):
+    base = np.zeros((1080, 1920, 3), dtype=np.uint8)
+    style = CaptionStyle(style=caption, margin_x=100, size=120, bold=True, italic=True, shadow={"blur": 0})
+
+    layer = caption_layer(("とても長い歌詞の行" * 4,), style, sans_font, 1920, 1080, 1.0, base)
+
+    columns = np.nonzero((layer.rgba[:, :, :3] == 255).all(axis=2).any(axis=0))[0]
+    assert layer.left + columns.max() <= 1920 - 100 + 2
+
+
+def test_bold_italic_credits_stay_inside_the_frame(sans_font):
+    style = CreditsStyle(position="bottom-right", dim=0, margin_x=50, bold=True, italic=True, shadow={"blur": 0})
+
+    layer = credits_layer(("Music: Someone",), style, sans_font, 1920, 1080, 1.0)
+
+    assert layer.left + layer.rgba.shape[1] <= 1920 - 50 + 2
+
+
+def test_a_box_behind_the_title(sans_font):
+    base = np.full((540, 960, 3), 200, dtype=np.uint8)
+    style = TitleStyle(margin=60, panel={"color": "#000000", "opacity": 0.5, "blur": 0, "padding": [20, 10]})
+
+    plain = title_layer("Title", TitleStyle(margin=60), sans_font, 960, 540, 0.5)
+    boxed = title_layer("Title", style, sans_font, 960, 540, 0.5, base)
+
+    assert boxed.rgba.shape[1] >= plain.rgba.shape[1] + 2 * 10 - 2, "padding on both sides"
+    assert boxed.rgba[boxed.rgba.shape[0] // 2, 2].tolist() == [100, 100, 100, 255], "half-dark plain box"
+    with pytest.raises(ValueError, match="title panel"):
+        title_layer("Title", style, sans_font, 960, 540, 0.5)
