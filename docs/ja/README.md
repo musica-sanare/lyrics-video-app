@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob 030a8fe13d8a3bb2ca9a33e6cfe13b5a4d5b1b99 -->
+<!-- source: docs/en/README.md blob cf89f87359a85a981c4bd36a947606a4f99d9225 -->
 [English](../en/README.md) | 日本語 · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -31,3 +31,4 @@
 | [Phase 3 acceptance](../working/PHASE3_ACCEPTANCE.md)（英語のみ） | Phase 3 の受け入れ報告：オーナーの最初の完成動画、基準、書き出し時間の計測、リポジトリの安全性、未決事項。 |
 | [Phase 4 plan](../working/PHASE4_PLAN.md)（英語のみ） | `sync` ページでの動画プレビューとデザイン設定：低解像度のプレビュー動画、太字・斜体・タイトルの背景ボックス、曲ファイルに保存するデザインモード。 |
 | [Phase 4 acceptance](../working/PHASE4_ACCEPTANCE.md)（英語のみ） | Phase 4 の受け入れ報告：オーナーの確認、基準、プレビューと静止画の計測時間、リポジトリの安全性、未決事項。 |
+| [Phase 5 plan](../working/PHASE5_PLAN.md)（英語のみ） | `sync` ページでのスペクトラム設定と名前付きデザイン：デザインの一部としてのスペクトラム、選んだスペクトラム設定、ユーザーフォルダに名前で保存するデザイン。 |
