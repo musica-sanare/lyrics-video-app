@@ -67,7 +67,9 @@ sequenceDiagram
 ```
 
 1. `config.load_song` reads the song file and resolves the design (a built-in name or a file, with the song file's
-   `[design]` overrides merged over it).
+   `[design]` overrides merged over it). `config.spectrum_preset` builds the spectrum's preset from the song file and
+   the design; `still`, `render`, the preview and the page all use it, and `load_song` calls it once so a wrong preset
+   key fails at once.
 2. `timing.read_lrc` reads the timing file; `backdrop.timed_captions` turns its lines into `TimedCaption`s. A caption
    ends at a pause, at the next caption's start or at the end of the song.
 3. `LyricsBackdrop` gets the design, the captions and the song's duration. `prepare` draws everything that never
@@ -134,12 +136,12 @@ flowchart LR
   (`config.write_design`). It replaces the `[design]` table through `tomlkit`, which keeps the rest of the file and
   its comments, and loads the new text before writing it, so a design that does not load changes nothing.
 - "Preview video" starts the same `RenderTask` with `prepare_preview` (`render.py`): the page's current lines and
-  design, saved or not, at most 960 × 540 and 15 fps, without audio (`preview_size`). The backdrop and the spectrum scale with the
-  frame height, so it shows the video's design, captions and spectrum. It goes to a temporary folder of the session,
-  replacing the previous preview only when done, and `GET /api/preview/video` serves it (the token is accepted in the
-  URL, as for the audio). The page plays it muted and keeps it within 0.1 s of the `<audio>` element, which stays
-  the one clock, and marks lines changed since the preview was made. `SyncSession.close` removes the folder when the
-  server stops.
+  design, saved or not, at most 960 × 540 and 15 fps, without audio (`preview_size`). The backdrop and the spectrum
+  scale with the frame height, so it shows the video's design, captions and spectrum. It goes to a temporary folder of
+  the session, replacing the previous preview only when done, and `GET /api/preview/video` serves it (the token is
+  accepted in the URL, as for the audio). The page plays it muted and keeps it within 0.1 s of the `<audio>` element,
+  which stays the one clock, and marks lines changed since the preview was made. `SyncSession.close` removes the folder
+  when the server stops.
 - "Render video" starts the session's `RenderTask`: `prepare_render` runs in the request, so its errors answer at
   once; `render` then runs in a background thread with `cancel` tied to the page's Cancel. The page polls the task's
   state. Only the saved timing file is rendered, one render (video or preview) at a time, and Save is refused while

@@ -83,3 +83,28 @@ def test_false_turns_off_a_box_of_the_base_design():
 
     assert design.credits.panel is None and design.title.panel is None
     assert load_design("panel").credits.panel is not None
+
+
+def test_spectrum_changes_become_preset_overrides():
+    spectrum = load_design(
+        "soft",
+        {
+            "spectrum": {
+                "preset": "bars",
+                "foreground": "#FFD84A",
+                "look": {"max_height": 0.4, "mirror": False},
+                "fill": {"colors": ["#FFFFFF", "#000000"]},
+                "set": ["fx.glow_strength=0.5"],
+            }
+        },
+    ).spectrum
+
+    assert spectrum.preset == "bars"
+    assert spectrum.overrides() == [
+        'foreground="#FFD84A"',
+        "look.max_height=0.4",
+        "look.mirror=false",
+        'fill.colors=["#FFFFFF", "#000000"]',
+        "fx.glow_strength=0.5",
+    ]
+    assert load_design("soft").spectrum.overrides() == []

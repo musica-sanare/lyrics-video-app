@@ -258,7 +258,7 @@ A frame is made of these parts, from bottom to top:
 | Title | `title`, drawn by the app |
 | Caption | The caption of the moment (section 4), fading in and out |
 | Credits | The `credits` lines, shown over the first and last seconds of the song, over a darkened frame |
-| Spectrum | Drawn by audio-spectrum-app with the `[spectrum]` preset and overrides |
+| Spectrum | Drawn by audio-spectrum-app with a preset and changes from the design and the song file (see "The spectrum") |
 
 ### Built-in designs
 
@@ -305,6 +305,32 @@ Bold and italic:
 - A heavier font looks better than synthetic bold where one exists: name its file as `font` (Hiragino has one file
   per weight, such as W6), or its face in a font collection (`.ttc`) as `font_face`, counted from 0.
 
+### The spectrum
+
+The design holds the spectrum too: an audio-spectrum-app preset and changes to its keys, written as the preset's own
+tables. A design saved with the spectrum therefore keeps the whole look of a video.
+
+```toml
+[design.spectrum]
+preset = "default"            # an audio-spectrum-app preset name, or a preset file relative to the song file
+foreground = "#FFFFFF"        # the line color
+
+[design.spectrum.look]
+baseline_y = 0.55             # keys of audio-spectrum-app's [look], [analysis], [fill] and [fx] tables
+max_height = 0.25
+```
+
+The spectrum is built in this order, from the base to the most specific:
+
+1. The preset: the song file's `[spectrum] preset` if it names one, else the design's `preset`, else `default`.
+2. The design's changes: `foreground`, then the `analysis`, `look`, `fill` and `fx` tables, then the design's `set`.
+3. The song file's `[spectrum] set`.
+
+The keys are audio-spectrum-app's; see its user guide. They are checked when the song file loads, so a wrong key
+stops every command at once with the song file's name. `look.kind` cannot be changed: the preset decides between the
+flat and the perspective look. The preset's `background` color is never seen, since the video's backdrop is drawn
+instead.
+
 ### Design keys
 
 Sizes are in pixels of a 1080-pixel-high frame; they scale with the video height.
@@ -315,7 +341,7 @@ Sizes are in pixels of a 1080-pixel-high frame; they scale with the video height
 | `title` | `enabled`, `position` (`"top-center"`, `"top-left"`), `font`, `font_face`, `bold`, `italic`, `size`, `color`, `margin`, `letter_spacing`, `rule`, `rule_thickness`, `rule_gap`, `panel` (none by default), `shadow` |
 | `caption` | `style` (`"band"`, `"gradient"`, `"panel"`), `align` (`"left"`), `font`, `font_face`, `bold`, `italic`, `text_color`, `lead_seconds`, `fade_seconds`, `transition` (`"sequential"`, `"crossfade"`); band: `band_color`, `band_opacity`, `band_height`; gradient and panel: `size` (largest font size), `line_spacing`, `margin_x`, `margin_bottom`, `gradient`, `panel`, `shadow` |
 | `credits` | `enabled`, `font`, `font_face`, `bold`, `italic`, `size`, `color`, `line_spacing`, `position` (`"center"`, `"bottom-right"`), `margin_x`, `margin_bottom`, `dim`, `panel`, `show_seconds`, `fade_seconds`, `shadow` |
-| `spectrum` | `set`: preset overrides applied before the song file's `[spectrum] set` |
+| `spectrum` | `preset`, `foreground`, the tables `analysis`, `look`, `fill`, `fx` (keys of an audio-spectrum-app preset), and `set` (`--set` overrides); see "The spectrum" |
 | `shadow` (in `title`, `caption`, `credits`) | `blur` (0 = no shadow), `offset`, `color`, `opacity` |
 | `gradient` (in `caption`) | `height`, `color`, `opacity` (at the bottom edge) |
 | `panel` (in `title`, `caption`, `credits`) | `color`, `opacity` (of the tint), `blur` (of the picture behind), `radius`, `padding` (`[x, y]`) |
@@ -336,8 +362,8 @@ A TOML file. Paths are relative to the song file; `~` is the home folder. Every 
 | `credits` | `[]` | Lines of credits, for example `["by Your Name"]` |
 | `design` | `"soft"` | A design name or file, or a `[design]` table with `name` and overrides (section 6) |
 | `fonts.default` | none | The font of every part of the video that does not name its own |
-| `spectrum.preset` | `"default"` | An audio-spectrum-app preset name or preset file |
-| `spectrum.set` | `[]` | Preset overrides, like audio-spectrum-app's `--set` |
+| `spectrum.preset` | the design's, else `"default"` | An audio-spectrum-app preset name or preset file; wins over the design's |
+| `spectrum.set` | `[]` | Preset overrides, like audio-spectrum-app's `--set`, applied after the design's changes |
 | `video.width`, `video.height`, `video.fps` | `1920`, `1080`, `30` | Frame size and rate |
 
 Fonts are not part of this repository and are never copied into it; the song file only points to them. Real song

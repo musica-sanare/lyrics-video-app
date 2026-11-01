@@ -2,8 +2,9 @@ import tomllib
 from pathlib import Path
 
 import pytest
+from audio_spectrum import load_preset, override_preset
 
-from lyrics_video.config import load_song, write_design
+from lyrics_video.config import load_song, spectrum_preset, write_design
 from lyrics_video.errors import ConfigError
 from lyrics_video.lyrics import read_lyrics
 
@@ -121,3 +122,65 @@ def test_the_song_keeps_the_design_name_as_written(tmp_path):
     song = load_song(write_song(tmp_path, 'design = "mine.toml"\n'))
 
     assert (song.design_name, song.design.name, song.design.title.size) == ("mine.toml", "mine", 50)
+
+
+# --- The spectrum ---------------------------------------------------------------------------------------------------
+
+
+def test_without_spectrum_settings_the_default_preset(tmp_path):
+    assert spectrum_preset(load_song(write_song(tmp_path, ""))) == load_preset("default")
+
+
+def test_the_song_files_spectrum_as_before(tmp_path):
+    song = load_song(write_song(tmp_path, '[spectrum]\npreset = "glow"\nset = ["look.max_height=0.2"]\n'))
+
+    assert spectrum_preset(song) == override_preset(load_preset("glow"), ["look.max_height=0.2"])
+
+
+def test_the_designs_spectrum(tmp_path):
+    song = load_song(
+        write_song(
+            tmp_path,
+            '[design]\nname = "soft"\n[design.spectrum]\npreset = "bars"\n[design.spectrum.look]\nmax_height = 0.4\n',
+        )
+    )
+
+    assert spectrum_preset(song) == override_preset(load_preset("bars"), ["look.max_height=0.4"])
+
+
+def test_the_song_files_spectrum_wins_over_the_designs(tmp_path):
+    song = load_song(
+        write_song(
+            tmp_path,
+            '[spectrum]\npreset = "glow"\nset = ["look.max_height=0.2"]\n'
+            '[design]\nname = "soft"\n[design.spectrum]\npreset = "bars"\n[design.spectrum.look]\nmax_height = 0.4\n'
+            "mirror = false\n",
+        )
+    )
+
+    expected = override_preset(load_preset("glow"), ["look.max_height=0.4", "look.mirror=false", "look.max_height=0.2"])
+    assert spectrum_preset(song) == expected
+
+
+def test_a_preset_file_named_by_the_design_is_relative_to_the_song_file(tmp_path):
+    (tmp_path / "mine.toml").write_text('name = "mine"\nforeground = "#FF0000"\n', encoding="utf-8")
+
+    song = load_song(write_song(tmp_path, '[design]\nname = "soft"\n[design.spectrum]\npreset = "mine.toml"\n'))
+
+    assert spectrum_preset(song).foreground == load_preset(str(tmp_path / "mine.toml")).foreground
+
+
+@pytest.mark.parametrize(
+    ("table", "message"),
+    [
+        ('[design.spectrum.look]\nkind = "perspective"\n', "look.kind"),
+        ("[design.spectrum.look]\nheight = 3\n", r"look\.flat\.height: Extra inputs"),
+    ],
+)
+def test_wrong_spectrum_changes_fail_when_the_song_file_loads(tmp_path, table, message):
+    path = write_song(tmp_path, f'[design]\nname = "soft"\n{table}')
+
+    with pytest.raises(ConfigError, match=message) as error:
+        load_song(path)
+
+    assert str(path) in str(error.value)

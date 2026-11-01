@@ -4,11 +4,11 @@ import dataclasses
 import math
 from pathlib import Path
 
-from audio_spectrum import AudioSpectrumError, Preview, load_preset, override_preset
+from audio_spectrum import AudioSpectrumError, Preview
 from PIL import Image
 
 from lyrics_video.backdrop import LyricsBackdrop, TimedCaption, timed_captions
-from lyrics_video.config import Song, song_design
+from lyrics_video.config import Song, song_design, spectrum_preset
 from lyrics_video.contact_sheet import contact_sheet
 from lyrics_video.errors import ConfigError, LyricsError, SpectrumError
 from lyrics_video.lyrics import read_lyrics
@@ -53,7 +53,7 @@ def make_stills(
             check_inside(timing, preview.duration, str(song.timing))
             captions = timed_captions(timing, preview.duration)
         for design in chosen:
-            preset = override_preset(load_preset(song.spectrum_preset), [*design.spectrum.set, *song.spectrum_set])
+            preset = spectrum_preset(song, design)
             backdrop = LyricsBackdrop.for_song(dataclasses.replace(song, design=design), captions, preview.duration)
             backdrop.prepare(video.width, video.height)
             frames = preview.frames(preset, times, video.width, video.height, backdrop=backdrop)

@@ -13,13 +13,11 @@ from audio_spectrum import (
     Preview,
     RenderJob,
     RenderResult,
-    load_preset,
-    override_preset,
     render_video,
 )
 
 from lyrics_video.backdrop import LyricsBackdrop, timed_captions
-from lyrics_video.config import Song, song_design
+from lyrics_video.config import Song, song_design, spectrum_preset
 from lyrics_video.errors import ConfigError, OutputExistsError, SpectrumError
 from lyrics_video.timing import TimedLine, check_inside, read_lrc
 
@@ -94,7 +92,7 @@ def prepare_render(
         captions = timed_captions(timing, song_seconds)
         backdrop = LyricsBackdrop.for_song(dataclasses.replace(song, design=chosen), captions, song_seconds)
         backdrop.prepare(video.width, video.height)
-        preset = override_preset(load_preset(song.spectrum_preset), [*chosen.spectrum.set, *song.spectrum_set])
+        preset = spectrum_preset(song, chosen)
     except AudioSpectrumError as error:
         raise SpectrumError(str(error)) from None
     job = RenderJob(
@@ -137,7 +135,7 @@ def prepare_preview(song: Song, lines: list[TimedLine], song_seconds: float, out
         captions = timed_captions(lines, song_seconds)
         backdrop = LyricsBackdrop.for_song(song, captions, song_seconds)
         backdrop.prepare(width, height)
-        preset = override_preset(load_preset(song.spectrum_preset), [*song.design.spectrum.set, *song.spectrum_set])
+        preset = spectrum_preset(song)
     except AudioSpectrumError as error:
         raise SpectrumError(str(error)) from None
     job = RenderJob(

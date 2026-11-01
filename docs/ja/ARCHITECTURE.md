@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob 312e3771dc29f933758f8f102838c5dc0d2a524a -->
+<!-- source: docs/en/ARCHITECTURE.md blob f6fc5365a640a4cb52f00002bb81ae3f30c9468c -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -67,6 +67,8 @@ sequenceDiagram
 ```
 
 1. `config.load_song` が曲ファイルを読み、デザインを決める。デザインは組み込みの名前かファイルで、曲ファイルの `[design]` の上書きをその上に重ねる。
+   `config.spectrum_preset` は曲ファイルとデザインからスペクトラムのプリセットを組み立てる。`still`、`render`、プレビュー、ページのすべてがこれを使い、
+   `load_song` も一度呼ぶので、プリセットのキーが間違っていればすぐに失敗する。
 2. `timing.read_lrc` がタイミングファイルを読み、`backdrop.timed_captions` がその行を `TimedCaption` に変える。
    字幕は、歌の途切れ、次の字幕の開始、曲の終わりのいずれかで終わる。
 3. `LyricsBackdrop` はデザイン、字幕、曲の長さを受け取る。`prepare` は変わらない部分をすべて先に描くので、ファイルやフォントが

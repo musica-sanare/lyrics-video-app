@@ -1,4 +1,4 @@
-<!-- source: docs/en/USER_GUIDE.md blob 1ff28cdb6134d85e6239d42cdc9162e0f08d0ace -->
+<!-- source: docs/en/USER_GUIDE.md blob 842c5c6d45ff21e2002b9ba856d9f9c02010c1e7 -->
 [English](../en/USER_GUIDE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/USER_GUIDE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -245,7 +245,7 @@ uv run lyrics-video render work/my-song/song.toml --start 60 --duration 15
 | 曲名 | `title`。アプリが描く |
 | 字幕 | その時点の字幕（4 節）。フェードイン・アウトする |
 | クレジット | `credits` の各行。曲の最初と最後の数秒、暗くした画面の上に出す |
-| スペクトラム | `[spectrum]` のプリセットと上書き設定に従い、audio-spectrum-app が描く |
+| スペクトラム | デザインと曲ファイルのプリセットと変更点に従い、audio-spectrum-app が描く（「スペクトラム」を参照） |
 
 ### 組み込みのデザイン
 
@@ -290,6 +290,31 @@ blur = 0                            # 0 なら単色の半透明、大きくす�
 - 太い書体があるなら、合成の太字よりきれいに見える。そのファイルを `font` に指定する（ヒラギノはウェイトごとに W6 などのファイルがある）か、
   フォントコレクション（`.ttc`）の中の書体を `font_face` に 0 から数えて指定する。
 
+### スペクトラム
+
+スペクトラムもデザインに含まれる。audio-spectrum-app のプリセットと、そのキーの変更点を、プリセットと同じ表の形で書く。
+そのため、スペクトラムごと保存したデザインには動画の見た目全体が入る。
+
+```toml
+[design.spectrum]
+preset = "default"            # audio-spectrum-app のプリセット名か、曲ファイルからの相対パスのプリセットファイル
+foreground = "#FFFFFF"        # 線の色
+
+[design.spectrum.look]
+baseline_y = 0.55             # audio-spectrum-app の [look]、[analysis]、[fill]、[fx] の表のキー
+max_height = 0.25
+```
+
+スペクトラムは、土台から順に次のように組み立てる。
+
+1. プリセット：曲ファイルの `[spectrum] preset` があればそれ、なければデザインの `preset`、それもなければ `default`。
+2. デザインの変更点：`foreground`、次に `analysis`、`look`、`fill`、`fx` の表、最後にデザインの `set`。
+3. 曲ファイルの `[spectrum] set`。
+
+キーは audio-spectrum-app のもので、意味はそのユーザーガイドにある。曲ファイルを読み込むときに確かめるので、キーが間違っていれば、
+どのコマンドも曲ファイル名を示してすぐ止まる。`look.kind` は変えられず、平面か遠近かはプリセットで決まる。
+プリセットの `background` の色は見えない。動画では代わりに backdrop を描くからだ。
+
 ### デザインのキー
 
 大きさは高さ 1080 ピクセルの画面でのピクセル数で書く。実際の値は動画の高さに合わせて拡大縮小する。
@@ -300,7 +325,7 @@ blur = 0                            # 0 なら単色の半透明、大きくす�
 | `title` | `enabled`、`position`（`"top-center"`、`"top-left"`）、`font`、`font_face`、`bold`、`italic`、`size`、`color`、`margin`、`letter_spacing`、`rule`、`rule_thickness`、`rule_gap`、`panel`（既定ではなし）、`shadow` |
 | `caption` | `style`（`"band"`、`"gradient"`、`"panel"`）、`align`（`"left"`）、`font`、`font_face`、`bold`、`italic`、`text_color`、`lead_seconds`、`fade_seconds`、`transition`（`"sequential"`、`"crossfade"`）。帯：`band_color`、`band_opacity`、`band_height`。陰と枠：`size`（最大の文字の大きさ）、`line_spacing`、`margin_x`、`margin_bottom`、`gradient`、`panel`、`shadow` |
 | `credits` | `enabled`、`font`、`font_face`、`bold`、`italic`、`size`、`color`、`line_spacing`、`position`（`"center"`、`"bottom-right"`）、`margin_x`、`margin_bottom`、`dim`、`panel`、`show_seconds`、`fade_seconds`、`shadow` |
-| `spectrum` | `set`：曲ファイルの `[spectrum] set` より先に適用するプリセットの上書き |
+| `spectrum` | `preset`、`foreground`、表 `analysis`、`look`、`fill`、`fx`（audio-spectrum-app のプリセットのキー）、`set`（`--set` の形の上書き）。「スペクトラム」を参照 |
 | `shadow`（`title`、`caption`、`credits` の中） | `blur`（0 で影なし）、`offset`、`color`、`opacity` |
 | `gradient`（`caption` の中） | `height`、`color`、`opacity`（下端での不透明度） |
 | `panel`（`title`、`caption`、`credits` の中） | `color`、`opacity`（色の濃さ）、`blur`（背後のぼかし）、`radius`、`padding`（`[x, y]`） |
@@ -321,8 +346,8 @@ blur = 0                            # 0 なら単色の半透明、大きくす�
 | `credits` | `[]` | クレジットの各行。例：`["by Your Name"]` |
 | `design` | `"soft"` | デザイン名かデザインファイル、または `name` と上書きを書いた `[design]` テーブル（6 節） |
 | `fonts.default` | なし | 自分のフォントを指定しない、動画のすべての部品のフォント |
-| `spectrum.preset` | `"default"` | audio-spectrum-app のプリセット名かプリセットファイル |
-| `spectrum.set` | `[]` | プリセットの上書き（audio-spectrum-app の `--set` と同じ） |
+| `spectrum.preset` | デザインのもの、なければ `"default"` | audio-spectrum-app のプリセット名かプリセットファイル。デザインの指定より優先する |
+| `spectrum.set` | `[]` | プリセットの上書き（audio-spectrum-app の `--set` と同じ）。デザインの変更点のあとに適用する |
 | `video.width`、`video.height`、`video.fps` | `1920`、`1080`、`30` | フレームの大きさとフレームレート |
 
 フォントはこのリポジトリに含めず、コピーもしない。曲ファイルはフォントの場所を指すだけ。実際の曲ファイルは

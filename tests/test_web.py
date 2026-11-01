@@ -548,3 +548,15 @@ def test_the_fonts_of_this_mac_and_of_the_song(client, sans_font, monkeypatch):
 
     assert {"path": str(sans_font), "face": 0, "name": "Hiragino Sans W3"} in fonts
     assert all(not font["name"].startswith(".") for font in fonts)
+
+
+def test_stills_follow_an_unsaved_spectrum(client):
+    taller = {"name": "soft", "overrides": {"spectrum": {"look": {"max_height": 0.9}}}}
+    wrong = {"name": "soft", "overrides": {"spectrum": {"look": {"kind": "perspective"}}}}
+
+    saved = post(client, "/api/still", {"lines": TIMED, "time": 1.0}).content
+    tall = post(client, "/api/still", {"lines": TIMED, "time": 1.0, "design": taller}).content
+    refused = post(client, "/api/still", {"lines": TIMED, "time": 1.0, "design": wrong})
+
+    assert tall != saved
+    assert refused.status_code == 400 and "look.kind" in refused.json()["message"]

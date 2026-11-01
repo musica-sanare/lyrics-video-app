@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import tomlkit
+from audio_spectrum import AudioSpectrumError, Preset, load_preset, override_preset
 from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt, ValidationError
 
 from lyrics_video.design import Design, load_design
@@ -26,8 +27,9 @@ class FontSettings(_Section):
 
 
 class SpectrumSettings(_Section):
-    preset: str = "default"
-    """An audio-spectrum-app preset: a name, or a path to a preset file."""
+    preset: str | None = None
+    """An audio-spectrum-app preset: a name, or a path to a preset file. Wins over the design's; `default` when
+    neither names one."""
     set: list[str] = []
     """Overrides like audio-spectrum-app's `--set`, applied after the design's."""
 
@@ -70,7 +72,8 @@ class Song:
     design_name: str = "soft"
     """The design as the song file names it: a built-in name or a design file."""
     design_overrides: dict[str, Any] = field(default_factory=dict)
-    spectrum_preset: str = "default"
+    spectrum_preset: str | None = None
+    """The song file's own preset, which wins over the design's."""
     spectrum_set: tuple[str, ...] = ()
     video: VideoSettings = field(default_factory=VideoSettings)
 
@@ -109,7 +112,7 @@ def parse_song(text: str, path: Path) -> Song:
         raise ConfigError(f"{path}: invalid song file\n{_describe(error)}") from None
 
     base = path.parent
-    return Song(
+    loaded = Song(
         path=path,
         lyrics=resolve_path(song.lyrics, base),
         separator=song.separator,
@@ -122,10 +125,28 @@ def parse_song(text: str, path: Path) -> Song:
         design=song_design(path, *_design_name(song.design)),
         design_name=_design_name(song.design)[0],
         design_overrides=_design_name(song.design)[1],
-        spectrum_preset=_preset_name_or_path(song.spectrum.preset, base),
+        spectrum_preset=_preset_name_or_path(song.spectrum.preset, base) if song.spectrum.preset else None,
         spectrum_set=tuple(song.spectrum.set),
         video=song.video,
     )
+    spectrum_preset(loaded)  # so a wrong preset or preset key fails now, with the song file's name
+    return loaded
+
+
+def spectrum_preset(song: Song, design: Design | None = None) -> Preset:
+    """The spectrum of `song` drawn with `design` (the song's by default).
+
+    From the base to the most specific: the song file's `[spectrum] preset`, else the design's, else `default`; then
+    the design's changes; then the song file's `[spectrum] set`. audio-spectrum-app checks every change.
+    """
+    design = design or song.design
+    name = song.spectrum_preset
+    if name is None:
+        name = _preset_name_or_path(design.spectrum.preset, song.path.parent) if design.spectrum.preset else "default"
+    try:
+        return override_preset(load_preset(name), [*design.spectrum.overrides(), *song.spectrum_set])
+    except AudioSpectrumError as error:
+        raise ConfigError(f"{song.path}: spectrum of design {design.name!r}: {error}") from None
 
 
 def _design_name(value: str | dict[str, Any]) -> tuple[str, dict[str, Any]]:

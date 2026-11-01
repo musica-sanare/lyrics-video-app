@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from audio_spectrum import AudioSpectrumError, Cancelled, Preview, load_preset, override_preset
+from audio_spectrum import AudioSpectrumError, Cancelled, Preview
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -21,7 +21,7 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from lyrics_video.backdrop import LyricsBackdrop, timed_captions
-from lyrics_video.config import Song, song_design, write_design
+from lyrics_video.config import Song, song_design, spectrum_preset, write_design
 from lyrics_video.design import Design, builtin_design_names
 from lyrics_video.errors import ConfigError, LyricsVideoError
 from lyrics_video.fonts import FONT_FOLDERS, font_faces
@@ -166,9 +166,7 @@ class SyncSession:
         self.lock = threading.Lock()
         try:
             self.preview = Preview(song.audio, song.video.fps)
-            self.preset = override_preset(
-                load_preset(song.spectrum_preset), [*song.design.spectrum.set, *song.spectrum_set]
-            )
+            self.preset = spectrum_preset(song)
         except AudioSpectrumError as error:
             raise ConfigError(str(error)) from None
         self.duration = self.preview.duration
@@ -225,12 +223,9 @@ class SyncSession:
         return song_design(self.song.path, request.name, request.overrides)
 
     def _preset_for(self, design: Design):
-        if design.spectrum.set == self.song.design.spectrum.set:
+        if design.spectrum == self.song.design.spectrum:
             return self.preset
-        try:
-            return override_preset(load_preset(self.song.spectrum_preset), [*design.spectrum.set, *self.song.spectrum_set])
-        except AudioSpectrumError as error:
-            raise ConfigError(str(error)) from None
+        return spectrum_preset(self.song, design)
 
     def font_list(self) -> list[dict]:
         """The faces of the font files on this Mac and next to the song file's fonts; listed once per session."""

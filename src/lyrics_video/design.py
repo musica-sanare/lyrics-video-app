@@ -4,6 +4,7 @@ A design is a built-in name (a TOML file in `designs/`) or a path to a TOML file
 `[design]` section merged over it.
 """
 
+import json
 import re
 import tomllib
 from importlib import resources
@@ -161,9 +162,31 @@ class CreditsStyle(TextFace):
     shadow: Shadow = Shadow()
 
 
+# The tables of an audio-spectrum-app preset that a design can change, besides its top-level `foreground`.
+PRESET_TABLES = ("analysis", "look", "fill", "fx")
+
+
 class SpectrumStyle(_Part):
+    """The spectrum: an audio-spectrum-app preset and changes to it. The changes are checked by audio-spectrum-app
+    when the song file loads, not here."""
+
+    preset: str | None = None
+    """A preset name, or a preset file relative to the song file; the song file's `[spectrum] preset` wins."""
+    foreground: str | None = None
+    analysis: dict[str, Any] = {}
+    look: dict[str, Any] = {}
+    fill: dict[str, Any] = {}
+    fx: dict[str, Any] = {}
     set: list[str] = []
-    """Preset overrides for audio-spectrum-app, like its `--set`, applied before the song file's."""
+    """Changes like audio-spectrum-app's `--set`, applied after the tables."""
+
+    def overrides(self) -> list[str]:
+        """The changes as `--set` overrides: `foreground`, the tables, then `set`. JSON writes every value the way
+        a preset file does (numbers, true and false, quoted strings, arrays)."""
+        changes = [f"foreground={json.dumps(self.foreground)}"] if self.foreground is not None else []
+        for table in PRESET_TABLES:
+            changes += [f"{table}.{key}={json.dumps(value)}" for key, value in getattr(self, table).items()]
+        return [*changes, *self.set]
 
 
 class Design(_Part):
