@@ -5,7 +5,8 @@ English | [日本語](../ja/USER_GUIDE.md) · [Docs index](README.md)
 How to set up lyrics-video-app, make caption images for a song, time its captions and look at frames of its video.
 It is for anyone making a lyrics video with the app. Whole videos come in later phases.
 
-Each song has a folder with a song file. Three commands read it and write images into folders next to it:
+Each song has a folder with a song file. Three commands read it and write images into folders next to it; `sync`
+opens a page in the browser to time the captions:
 
 ```mermaid
 flowchart LR
@@ -17,12 +18,15 @@ flowchart LR
   captions["captions"]
   compare["compare"]
   still["still"]
+  sync["sync (page)"]
   outCaptions["captions/: one PNG per caption"]
   outCompare["compare/: each font, contact sheet"]
   outStills["stills/: video frames"]
   song --> captions & compare & still
   lyrics --> captions & still
   timing --> still
+  lyrics & media --> sync
+  sync -->|Save| timing
   comparetxt --> compare
   media --> still
   captions --> outCaptions
@@ -136,13 +140,52 @@ uv run lyrics-video still work/my-song/song.toml --time 62.5 --design classic so
 
 ## 6. Timing of the captions
 
-The times of the captions are in a timed lyrics file (LRC) next to the lyrics file. Name it in the song file:
+The times of the captions are in a timed lyrics file (LRC) next to the lyrics file. Make it with `sync`, and name it
+in the song file so that `still` uses it:
 
 ```toml
 timing = "lyrics.lrc"
 ```
 
-A tapping page to make this file comes in a later version; until then it is written by hand.
+### Tapping and adjusting: `sync`
+
+```bash
+uv run lyrics-video sync work/my-song/song.toml
+```
+
+Opens a page in the browser that plays the song next to its lines. The page only works on this Mac: the server
+listens on `127.0.0.1` and refuses other web pages. Stop it with `Ctrl+C` in the terminal.
+
+1. **Tap:** press `P` to play, `Space` when the next line starts and `Enter` when the current line ends before a
+   pause. `Backspace` undoes the last mark. The highlighted line starts next.
+2. **Adjust:** click a time (or switch to Adjust) and correct it while listening and looking at the waveform. The
+   picture above the waveform is the exact frame of the video at the playhead whenever the song is paused.
+3. **Save:** the Save button or `⌘S` writes the timing file. Nothing is written before that, and leaving the page
+   with unsaved changes asks first.
+
+Keys in Adjust mode:
+
+| Key | Action |
+|---|---|
+| `↑` `↓`, `Tab` | Previous or next line; start or end time |
+| `←` `→`, `Shift`+`←` `→` | Move the selected times by 0.05 s or 0.5 s |
+| `Enter` | Set the selected time to the playhead (for lines without a time) |
+| `Shift`+click, `Shift`+`↑` `↓`, `⌘`+click, `⌘`+`A` | Select a range, one more line, or all lines to move together (`Esc` cancels) |
+| `R`, `Space` | Play from 2 s before the selected line; play or pause |
+| `Backspace`, `⌘S` | Undo (a shift of several lines is one step); save |
+
+The markers in the zoomed waveform can also be dragged.
+
+Details:
+
+- The timing file is the song file's `timing`, or the lyrics file's name with `.lrc` when the key is missing (the
+  page then says to add it). Save keeps the previous file as `<name>.bak`.
+- The first time, the lines come from the lyrics file. Later they come from the timing file. If the lyrics file has
+  changed since, the page lists the added and removed lines and keeps the times of unchanged lines (matched in
+  order). New lines have no time until you set one.
+- The reaction offset (in ms) is subtracted from every tapped time; it is 0 by default.
+- While the song plays, the picture is a simple preview with the design's lead, fade and transition.
+- The page speaks Japanese, English, Spanish and French.
 
 ### The timing file
 

@@ -7,8 +7,8 @@ title, lyrics captions that fade in and out at the bottom, credits, and an audio
 [audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app), with the song's audio. It replaces a manual
 workflow of caption images layered in a video editor.
 
-**Status:** Phase 1 (design) accepted. Phase 2 (timing of the lyrics) is planned and approved; its implementation
-has not started. Whole videos come in later phases. See the [Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md)
+**Status:** Phase 1 (design) accepted. Phase 2 (timing of the lyrics) is in progress: captions placed by time and
+the `sync` page are implemented; its acceptance is next. Whole videos come in later phases. See the [Phase 1 acceptance](docs/working/PHASE1_ACCEPTANCE.md)
 and the [Phase 2 plan](docs/working/PHASE2_PLAN.md).
 
 ## What it does today
@@ -16,8 +16,9 @@ and the [Phase 2 plan](docs/working/PHASE2_PLAN.md).
 - `lyrics-video captions` makes the caption images of the old lyrics image script from a lyrics file, for use in
   iMovie.
 - `lyrics-video compare` shows a text in many fonts.
-- `lyrics-video still` renders frames of the future video (background, title, caption, credits and spectrum) in
-  three designs, `soft` by default.
+- `lyrics-video sync` opens a page in the browser to tap and adjust the times of the captions while the song plays.
+- `lyrics-video still` renders frames of the future video (background, title, captions of the moment, credits and
+  spectrum) in three designs, `soft` by default.
 
 ## Quick start
 
@@ -29,6 +30,7 @@ uv sync
 mkdir -p work/my-song && cp examples/song.example.toml work/my-song/song.toml        # then set the font, colors and lyrics file
 uv run lyrics-video captions work/my-song/song.toml         # one PNG per caption line
 uv run lyrics-video compare work/my-song/song.toml          # the comparison text in several fonts
+uv run lyrics-video sync work/my-song/song.toml             # time the captions in the browser
 uv run lyrics-video still work/my-song/song.toml --time 60  # frames of the video at chosen times
 ```
 
@@ -36,7 +38,7 @@ Run `uv run pytest` for the tests.
 
 ## Documentation
 
-- [User guide](docs/en/USER_GUIDE.md): setup, the commands, the song file and moving from the old script
+- [User guide](docs/en/USER_GUIDE.md): setup, the commands, timing, the song file and moving from the old script
 - [Development](docs/en/DEVELOPMENT.md): setup, tests and conventions
 - [Documentation index](docs/en/README.md): every doc, including decisions and phase records
 

@@ -27,7 +27,8 @@ uv run pytest
 ```
 
 Tests use generated text, images and signals only (`tests/signals.py`), never real songs, lyrics or third-party
-fonts. Tests that need a font use macOS system fonts and are skipped where they are missing.
+fonts. Tests that need a font use macOS system fonts and are skipped where they are missing. The `sync` page itself
+(`src/lyrics_video/web/static/`) is checked by hand in a browser.
 
 | File | Covers |
 |---|---|
@@ -38,8 +39,10 @@ fonts. Tests that need a font use macOS system fonts and are skipped where they 
 | `test_cli.py` | `captions` and `compare`: file names, overwriting, no files on errors, fonts from the command line |
 | `test_design.py` | Built-in designs, overrides, design files, invalid values |
 | `test_layers.py` | Background cover and crop (never stretched), focus, dim and blur; title (spacing, rule), caption band, gradient and panel, credits (positions, panel); blending |
-| `test_backdrop.py` | Fades, captions and credits by time, pickling and other processes, a still equals the backdrop under the spectrum |
-| `test_still.py` | The `still` command: file names, captions, design and spectrum from the song file, several designs and the comparison, errors |
+| `test_timing.py` | Timing files (LRC): reading, writing, round trip, ends, invalid files, the merge with a changed lyrics file |
+| `test_backdrop.py` | Fades, captions by time (lead, crossfade, sequential, pauses, short captions, at most two at once), credits, pickling and other processes, a still equals the backdrop under the spectrum |
+| `test_still.py` | The `still` command: file names, captions by time or chosen, design and spectrum from the song file, several designs and the comparison, errors |
+| `test_web.py` | The `sync` server: token and host checks, the token in the URL for the audio only, range requests, loading, saving (backup, invalid times), stills equal to `still`, complete page messages in four languages |
 | `test_spectrum_dependency.py` | audio-spectrum-app is installed; a still is drawn over a supplied backdrop |
 
 ## 3. Local files
@@ -80,8 +83,10 @@ size.
 uv run python tools/time_backdrop.py work/my-song/song.toml --design classic soft panel
 ```
 
-The target is under 10 ms per 1080p frame with a caption
-([ADR-004](../working/DECISIONS.md#adr-004-text-for-video-frames-drawn-with-pillow-composed-in-numpy-in-the-render-workers)).
+It prints the mean time per frame without a caption, with a caption, while a caption fades in, while two captions
+crossfade, and while the credits fade in. The targets per 1080p frame are under 10 ms with a caption
+([ADR-004](../working/DECISIONS.md#adr-004-text-for-video-frames-drawn-with-pillow-composed-in-numpy-in-the-render-workers))
+and under 20 ms during a crossfade ([Phase 2 plan](../working/PHASE2_PLAN.md)).
 
 ## 5. Conventions
 

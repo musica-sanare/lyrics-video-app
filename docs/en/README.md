@@ -10,7 +10,7 @@ for a song, start with the [User guide](USER_GUIDE.md). To work on the code, sta
 
 | Document | Description |
 |---|---|
-| [User guide](USER_GUIDE.md) | Setup, the `captions`, `compare` and `still` commands, the timing of the captions, designs, the song file, moving from the old lyrics image script. |
+| [User guide](USER_GUIDE.md) | Setup, the `captions`, `compare` and `still` commands, timing the captions with the `sync` page, designs, the song file, moving from the old lyrics image script. |
 | [Development](DEVELOPMENT.md) | Setup, tests, conventions and the rules that keep the repository safe to publish. |
 
 ## Working docs (English only)

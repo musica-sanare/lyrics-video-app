@@ -9,6 +9,7 @@ from lyrics_video.captions import compare_fonts, make_captions
 from lyrics_video.config import load_song
 from lyrics_video.errors import LyricsVideoError
 from lyrics_video.still import make_stills
+from lyrics_video.web.server import run as run_sync
 
 EXIT_OK = 0
 EXIT_FAILED = 1
@@ -72,6 +73,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="designs to draw instead of the song file's (built-in names or files); with several, also a comparison",
     )
     still.add_argument("--overwrite", action="store_true", help="replace existing images")
+
+    sync = commands.add_parser(
+        "sync",
+        help="time the captions in the browser",
+        description=(
+            "Open a page in the browser to tap the start and end of each caption while the song plays, adjust the "
+            "times and save them to the timing file (the song file's timing, or the lyrics file's name with .lrc)."
+        ),
+    )
+    sync.add_argument("song", type=Path, help="the song file (TOML)")
+    sync.add_argument("--port", type=int, default=0, help="the port on 127.0.0.1; by default a free one")
+    sync.add_argument("--no-browser", action="store_true", help="do not open the browser")
     return parser
 
 
@@ -79,6 +92,9 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         song = load_song(args.song)
+        if args.command == "sync":
+            run_sync(song, port=args.port, open_browser=not args.no_browser)
+            return EXIT_OK
         if args.command == "captions":
             written = make_captions(song, overwrite=args.overwrite)
         elif args.command == "still":

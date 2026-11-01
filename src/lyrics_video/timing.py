@@ -8,6 +8,7 @@ shown. ID tags such as `[ti:...]` and empty lines are skipped.
 import difflib
 import os
 import re
+import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -94,10 +95,15 @@ def format_lrc(lines: list[TimedLine], separator: str) -> str:
     return "".join(f"{line}\n" for line in out)
 
 
-def write_lrc(path: Path, lines: list[TimedLine], separator: str) -> None:
-    """Write completely or not at all: a temporary file next to `path`, then a rename."""
+def write_lrc(path: Path, lines: list[TimedLine], separator: str, backup: bool = False) -> None:
+    """Write completely or not at all: a temporary file next to `path`, then a rename.
+
+    With `backup`, an existing file is first copied to `<name>.bak`.
+    """
+    check_lines(lines, separator, source=str(path))
     text = format_lrc(lines, separator)
-    parse_lrc(text, separator, source=str(path))
+    if backup and path.exists():
+        shutil.copy2(path, path.with_name(f"{path.name}.bak"))
     descriptor, temporary = tempfile.mkstemp(prefix=f".{path.stem}.", suffix=".lrc.tmp", dir=path.parent)
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8") as file:
@@ -112,6 +118,18 @@ def format_time(seconds: float) -> str:
     centiseconds = round(seconds * 100)
     minutes, rest = divmod(centiseconds, 6000)
     return f"[{minutes:02d}:{rest // 100:02d}.{rest % 100:02d}]"
+
+
+def check_lines(lines: list[TimedLine], separator: str, source: str = "timing") -> None:
+    """The checks of a timing file, for lines made elsewhere (the sync page); line numbers count the captions."""
+    for number, line in enumerate(lines, 1):
+        if not 1 <= len(line.rows) <= MAX_ROWS or not "".join(line.rows).strip():
+            raise LyricsError(f"{source}, line {number}: a caption has one or {MAX_ROWS} rows of text")
+        if any(separator in row or "\n" in row or "\r" in row for row in line.rows):
+            raise LyricsError(f"{source}, line {number}: a row contains {separator!r} or a line break")
+        if line.start is None and line.end is not None:
+            raise LyricsError(f"{source}, line {number}: an end time needs a start time")
+    _check_order(lines, list(range(1, len(lines) + 1)), source)
 
 
 def check_inside(lines: list[TimedLine], duration: float, source: str) -> None:

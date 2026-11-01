@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob b01395d73529f53681570987bd1eb447a0da5c6c -->
+<!-- source: docs/en/DEVELOPMENT.md blob 5a5354468c09f40baaf16cb411f50d913e70ef6a -->
 [English](../en/DEVELOPMENT.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/DEVELOPMENT.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -31,6 +31,7 @@ uv run pytest
 
 テストには生成したテキスト・画像・信号（`tests/signals.py`）だけを使い、実際の曲、歌詞、第三者のフォントは使わない。
 フォントが要るテストは macOS のシステムフォントを使い、フォントがない環境ではスキップする。
+`sync` のページ自体（`src/lyrics_video/web/static/`）はブラウザで手で確かめる。
 
 | ファイル | 対象 |
 |---|---|
@@ -41,8 +42,10 @@ uv run pytest
 | `test_cli.py` | `captions` と `compare`：ファイル名、上書き、エラー時にファイルを残さないこと、コマンドラインからのフォント指定 |
 | `test_design.py` | 組み込みデザイン、上書き、デザインファイル、不正な値 |
 | `test_layers.py` | 背景の拡大と切り取り（引き伸ばさない）、focus、dim、blur。曲名（字間、線）、字幕の帯・陰・枠、クレジット（位置、枠）、重ね合わせ |
-| `test_backdrop.py` | フェード、時刻ごとの字幕とクレジット、pickle と別プロセス、静止画がスペクトラムの下の backdrop と一致すること |
-| `test_still.py` | `still` コマンド：ファイル名、字幕、曲ファイルからのデザインとスペクトラム、複数のデザインと比較画像、エラー |
+| `test_timing.py` | タイミングファイル（LRC）：読み込み、書き出し、往復、終わりの行、不正なファイル、変わった歌詞ファイルとの突き合わせ |
+| `test_backdrop.py` | フェード、時刻ごとの字幕（先行、クロスフェード、順番の切り替え、歌の途切れ、短い字幕、同時に 2 つまで）、クレジット、pickle と別プロセス、静止画がスペクトラムの下の backdrop と一致すること |
+| `test_still.py` | `still` コマンド：ファイル名、時刻ごとまたは指定した字幕、曲ファイルからのデザインとスペクトラム、複数のデザインと比較画像、エラー |
+| `test_web.py` | `sync` のサーバー：トークンとホストの検査、URL のトークンは音声だけで有効、範囲リクエスト、読み込み、保存（バックアップ、不正な時刻）、`still` と同じ静止画、4 言語のページ用メッセージがそろっていること |
 | `test_spectrum_dependency.py` | audio-spectrum-app が入っていること、渡した背景（backdrop）の上に静止画が描かれること |
 
 ## 3. ローカルのファイル
@@ -79,8 +82,10 @@ uv run python tools/compare_images.py OLD_FOLDER NEW_FOLDER
 uv run python tools/time_backdrop.py work/my-song/song.toml --design classic soft panel
 ```
 
-目標は、字幕のある 1080p のフレーム 1 枚あたり 10 ms 未満
-（[ADR-004](../working/DECISIONS.md#adr-004-text-for-video-frames-drawn-with-pillow-composed-in-numpy-in-the-render-workers)、英語のみ）。
+字幕なし、字幕あり、字幕のフェードイン中、2 つの字幕のクロスフェード中、クレジットのフェードイン中の、それぞれ 1 フレームあたりの平均時間を表示する。
+1080p のフレーム 1 枚あたりの目標は、字幕ありで 10 ms 未満
+（[ADR-004](../working/DECISIONS.md#adr-004-text-for-video-frames-drawn-with-pillow-composed-in-numpy-in-the-render-workers)、英語のみ）、
+クロスフェード中で 20 ms 未満（[Phase 2 plan](../working/PHASE2_PLAN.md)、英語のみ）。
 
 ## 5. 規約
 

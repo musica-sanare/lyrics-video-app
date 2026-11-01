@@ -115,10 +115,8 @@ class LyricsBackdrop:
         default_font: Path | None = None,
     ):
         self.design = design
-        self.captions = sorted(captions, key=lambda caption: caption.start)
         self.duration = duration
-        self._windows = caption_windows(self.captions, design.caption, duration)
-        self._window_starts = [window.start for window in self._windows]
+        self.set_captions(captions)
         self.background_image = background_image
         self.title = title
         self.credits = credits
@@ -136,6 +134,12 @@ class LyricsBackdrop:
             credits=song.credits,
             default_font=song.default_font,
         )
+
+    def set_captions(self, captions: list[TimedCaption]) -> None:
+        """Show other captions; pictures already built are kept (the sync page changes times between stills)."""
+        self.captions = sorted(captions, key=lambda caption: caption.start)
+        self._windows = caption_windows(self.captions, self.design.caption, self.duration)
+        self._window_starts = [window.start for window in self._windows]
 
     def __getstate__(self) -> dict:
         state = self.__dict__.copy()
