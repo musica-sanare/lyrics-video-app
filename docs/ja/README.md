@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob 4a88ffe72ac4bf0b55ff9651e1b95eb989f593a5 -->
+<!-- source: docs/en/README.md blob 9e2f362de25cd0f55e6190cbc1829d00403c4fe3 -->
 [English](../en/README.md) | 日本語 · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -35,3 +35,4 @@
 | [Phase 5 acceptance](../working/PHASE5_ACCEPTANCE.md)（英語のみ） | Phase 5 の受け入れ報告：オーナーの確認、基準、静止画の計測時間、リポジトリの安全性、未決事項。 |
 | [Phase 6 plan](../working/PHASE6_PLAN.md)（英語のみ） | 日常の運用：Dock からのアプリ起動、最近の曲を並べる開始ページ、どのフォルダのファイルからでも作る新しい曲、ページでの曲の設定。 |
 | [Phase 6 acceptance](../working/PHASE6_ACCEPTANCE.md)（英語のみ） | Phase 6 の受け入れ報告：オーナーの確認とそこから出た二つの修正、基準、起動時間の計測、リポジトリの安全性、未決事項。 |
+| [Phase 7 plan](../working/PHASE7_PLAN.md)（英語のみ） | コードで描くアプリアイコンと、リポジトリ公開の準備：アイコン、公開前チェックリスト、タグ指定の audio-spectrum-app、`SECURITY.md`。 |

@@ -34,3 +34,4 @@ video, start with the [User guide](USER_GUIDE.md). To work on the code, start wi
 | [Phase 5 acceptance](../working/PHASE5_ACCEPTANCE.md) | Phase 5 acceptance report: the owner's check, criteria, measured still times, repository safety, open items. |
 | [Phase 6 plan](../working/PHASE6_PLAN.md) | Everyday use: starting the app from the Dock, a start page with recent songs, new songs from files in any folder, song settings on the page. |
 | [Phase 6 acceptance](../working/PHASE6_ACCEPTANCE.md) | Phase 6 acceptance report: the owner's check and its two fixes, criteria, measured start times, repository safety, open items. |
+| [Phase 7 plan](../working/PHASE7_PLAN.md) | An app icon drawn by code and preparing the repository to go public: the icon, the public release checklist, audio-spectrum-app by tag, `SECURITY.md`. |
