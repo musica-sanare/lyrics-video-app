@@ -3,13 +3,14 @@
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
-
 from typing import Any
 
+import tomlkit
 from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, PositiveInt, ValidationError
 
 from lyrics_video.design import Design, load_design
 from lyrics_video.errors import ConfigError
+from lyrics_video.output import write_text
 
 # Sections of the caption image commands, removed in version 0.2.0 (Phase 3 plan, "Removing captions and compare").
 REMOVED_SECTIONS = ("captions", "compare")
@@ -66,6 +67,8 @@ class Song:
     background_image: Path | None = None
     default_font: Path | None = None
     design: Design | None = None
+    design_name: str = "soft"
+    """The design as the song file names it: a built-in name or a design file."""
     design_overrides: dict[str, Any] = field(default_factory=dict)
     spectrum_preset: str = "default"
     spectrum_set: tuple[str, ...] = ()
@@ -79,10 +82,19 @@ def resolve_path(value: Path, base: Path) -> Path:
 
 def load_song(path: Path) -> Song:
     try:
-        data = tomllib.loads(path.read_text(encoding="utf-8"))
+        text = path.read_text(encoding="utf-8")
     except FileNotFoundError:
         raise ConfigError(f"{path}: song file not found") from None
-    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as error:
+    except (OSError, UnicodeDecodeError) as error:
+        raise ConfigError(f"{path}: cannot read the song file ({error})") from None
+    return parse_song(text, path)
+
+
+def parse_song(text: str, path: Path) -> Song:
+    """The song file's text, read as the song file at `path` (paths in it are relative to its folder)."""
+    try:
+        data = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as error:
         raise ConfigError(f"{path}: cannot read the song file ({error})") from None
     removed = [f"[{name}]" for name in REMOVED_SECTIONS if name in data]
     if removed:
@@ -108,6 +120,7 @@ def load_song(path: Path) -> Song:
         background_image=resolve_path(song.background_image, base) if song.background_image else None,
         default_font=resolve_path(song.fonts.default, base) if song.fonts.default else None,
         design=song_design(path, *_design_name(song.design)),
+        design_name=_design_name(song.design)[0],
         design_overrides=_design_name(song.design)[1],
         spectrum_preset=_preset_name_or_path(song.spectrum.preset, base),
         spectrum_set=tuple(song.spectrum.set),
@@ -135,6 +148,36 @@ def song_design(song_path: Path, name: str, overrides: dict[str, Any]) -> Design
         if getattr(design, part).font is not None
     }
     return design.model_copy(update=fonts)
+
+
+def write_design(path: Path, name: str, overrides: dict[str, Any]) -> Song:
+    """Replace the song file's design with `name` and `overrides`, as a `[design]` table; keep a `.bak` copy.
+
+    Everything outside `[design]` keeps its text and comments. The new file is loaded before it is written, so a
+    design that does not load changes nothing. Returns the song as it is now.
+    """
+    text = path.read_text(encoding="utf-8")
+    document = tomlkit.parse(text)
+    table = _table({"name": name, **overrides})
+    if isinstance(document.get("design"), dict):
+        document["design"] = table
+    else:
+        # A design given by name is a key above the first table; a table goes at the end instead.
+        document.pop("design", None)
+        if not document.as_string().endswith("\n\n"):
+            document.add(tomlkit.nl())
+        document.add("design", table)
+    new_text = tomlkit.dumps(document)
+    song = parse_song(new_text, path)
+    write_text(path, new_text, backup=True)
+    return song
+
+
+def _table(data: dict[str, Any]) -> tomlkit.items.Table:
+    table = tomlkit.table()
+    for key, value in data.items():
+        table.add(key, _table(value) if isinstance(value, dict) else value)
+    return table
 
 
 def _preset_name_or_path(value: str, base: Path) -> str:

@@ -1,7 +1,7 @@
 "use strict";
 // The sync page: tap the start and end of each caption while the song plays, adjust the times with the waveform and
-// exact stills of the video, check them in a quick preview video, then save the timing file. Nothing is written
-// without Save (the preview goes to a temporary folder of the server).
+// exact stills of the video, change the design, check both in a quick preview video, then save the timing file and
+// the song file's design. Nothing is written without Save (the preview goes to a temporary folder of the server).
 
 const LANGUAGES = { ja: "日本語", en: "English", es: "Español", fr: "Français" };
 const STILL_DELAY_MS = 250;
@@ -29,7 +29,9 @@ const state = {
   drag: null,
   still: { timer: null, serial: 0, url: null },
   render: { snapshot: null, timer: null }, // the server's render task (video or preview), polled while it runs
-  preview: { url: null, lines: null, pending: null }, // the last preview video and the lines it was made from
+  preview: { url: null, lines: null, design: null, pending: null }, // the last preview and what it was made from
+  // The Design mode: the base design's name, the song file's overrides as edited, and every base design's values.
+  design: { name: null, overrides: {}, bases: {}, panel: {}, dirty: false, fonts: null },
 };
 
 // --- Texts ---------------------------------------------------------------------------------------------------------
@@ -77,6 +79,7 @@ async function setLanguage(language) {
     requestStill();
   }
   if (state.render.snapshot) showRender(state.render.snapshot);
+  if (state.mode === "design") showDesign();
   render();
 }
 
@@ -106,6 +109,7 @@ async function api(path, body) {
 }
 
 const payload = () => state.lines.map(({ rows, start, end }) => ({ rows, start, end }));
+const designPayload = () => ({ name: state.design.name, overrides: state.design.overrides });
 
 function showError(error) {
   $("error-message").textContent = error.message ?? String(error);
@@ -135,6 +139,8 @@ async function loadSong() {
   state.song = await (await api("/api/song")).json();
   state.lines = state.song.lines.map((line) => ({ rows: line.rows, start: line.start, end: line.end }));
   state.dirty = state.song.changes.length > 0;
+  Object.assign(state.design, state.song.design, { overrides: structuredClone(state.song.design.overrides), dirty: false });
+  applyCaptionTiming();
   $("song-title").textContent = state.song.title;
   document.title = `${state.song.title} – lyrics-video sync`;
   audio.src = `/api/audio?token=${encodeURIComponent(state.token)}`;
@@ -283,17 +289,28 @@ function clearTime() {
 
 async function save() {
   try {
-    const result = await (await api("/api/timing", { lines: payload() })).json();
-    state.dirty = false;
-    state.song.timing_exists = true;
-    state.song.changes = [];
+    const written = [];
+    if (state.dirty || !state.design.dirty) {
+      const result = await (await api("/api/timing", { lines: payload() })).json();
+      state.dirty = false;
+      state.song.timing_exists = true;
+      state.song.changes = [];
+      written.push(result.timing_file);
+    }
+    if (state.design.dirty) {
+      const result = await (await api("/api/design", designPayload())).json();
+      state.design.dirty = false;
+      written.push(result.song_file);
+    }
     showNotices();
-    setStatus(t("save.done", { file: result.timing_file }));
+    setStatus(t("save.done", { file: written.join(", ") }));
     render();
   } catch (error) {
     showError(error);
   }
 }
+
+const unsaved = () => state.dirty || state.design.dirty;
 
 // --- Rendering the video -------------------------------------------------------------------------------------------
 
@@ -302,7 +319,7 @@ const renderingVideo = () => rendering() && state.render.snapshot.kind !== "prev
 
 // The server renders the saved timing file, so the button waits for Save; an existing video is replaced only on a yes.
 async function startRender(overwrite = false) {
-  if (state.dirty || !state.song?.timing_exists || rendering()) return;
+  if (unsaved() || !state.song?.timing_exists || rendering()) return;
   $("render").disabled = true;
   showRender({ kind: "video", state: "preparing" });
   try {
@@ -326,9 +343,10 @@ async function startPreview() {
   $("preview-video").disabled = true;
   showRender({ kind: "preview", state: "preparing" });
   const lines = payload();
+  const design = designPayload();
   try {
-    const snapshot = await (await api("/api/preview", { lines })).json();
-    state.preview.pending = lines;
+    const snapshot = await (await api("/api/preview", { lines, design })).json();
+    state.preview.pending = { lines, design: JSON.stringify(design) };
     showRender(snapshot);
     pollRender();
   } catch (error) {
@@ -339,7 +357,8 @@ async function startPreview() {
 }
 
 function previewReady() {
-  state.preview.lines = state.preview.pending;
+  state.preview.lines = state.preview.pending.lines;
+  state.preview.design = state.preview.pending.design;
   state.preview.pending = null;
   state.preview.url = `/api/preview/video?token=${encodeURIComponent(state.token)}&v=${Date.now()}`;
   video.src = state.preview.url;
@@ -355,7 +374,8 @@ function previewStale(i) {
   return lineKey(made[i]) !== lineKey(state.lines[i]);
 }
 
-const previewOutdated = () => state.lines.some((_, i) => previewStale(i));
+const previewDesignOutdated = () => state.preview.design != null && state.preview.design !== JSON.stringify(designPayload());
+const previewOutdated = () => previewDesignOutdated() || state.lines.some((_, i) => previewStale(i));
 
 function pollRender() {
   clearTimeout(state.render.timer);
@@ -509,7 +529,8 @@ function updatePreview() {
   if (withVideo) {
     followAudio();
     const { width, height, fps } = state.song.preview;
-    $("preview-note").textContent = t(previewOutdated() ? "preview_video.outdated" : "preview_video.playing", { width, height, fps });
+    const note = previewDesignOutdated() ? "preview_video.outdated_design" : previewOutdated() ? "preview_video.outdated" : "preview_video.playing";
+    $("preview-note").textContent = t(note, { width, height, fps });
     return;
   }
   const shown = shownCaptions(audio.currentTime);
@@ -540,14 +561,18 @@ function requestStill() {
     const time = Math.min(audio.currentTime, Math.max(0, duration() - 0.001));
     $("preview-note").textContent = t("preview.drawing");
     try {
-      const blob = await (await api("/api/still", { lines: payload(), time })).blob();
+      const blob = await (await api("/api/still", { lines: payload(), design: designPayload(), time })).blob();
       if (serial !== state.still.serial) return;
       if (state.still.url) URL.revokeObjectURL(state.still.url);
       state.still.url = URL.createObjectURL(blob);
       $("still").src = state.still.url;
       $("preview-note").textContent = t("preview.still", { time: formatTime(time) });
+      $("design-error").hidden = true;
     } catch (error) {
-      if (serial === state.still.serial) $("preview-note").textContent = t("preview.failed", { message: error.message });
+      if (serial !== state.still.serial) return;
+      $("preview-note").textContent = t("preview.failed", { message: error.message });
+      $("design-error").textContent = error.message;
+      $("design-error").hidden = state.mode !== "design";
     }
   }, STILL_DELAY_MS);
 }
@@ -557,6 +582,309 @@ function changed() {
   requestStill();
 }
 
+// --- Design --------------------------------------------------------------------------------------------------------
+
+// The settings shown in Design mode; the song file can set every other design key too. `when` hides a setting that
+// does not apply (for example the band color of a gradient caption).
+const range = (min, max, step) => ({ type: "range", min, max, step });
+const DESIGN_FIELDS = [
+  { part: "background", fields: [["dim", range(0, 1, 0.05)], ["blur", range(0, 40, 1)]] },
+  {
+    part: "title",
+    fields: [
+      ["enabled", { type: "bool" }],
+      ["position", { type: "select", options: ["top-center", "top-left"] }],
+      ["font", { type: "font" }],
+      ["size", range(20, 160, 1)],
+      ["color", { type: "color" }],
+      ["bold", { type: "bool" }],
+      ["italic", { type: "bool" }],
+      ["letter_spacing", range(0, 30, 1)],
+      ["rule", { type: "bool" }],
+      ["panel", { type: "panel" }],
+      ...panelFields(),
+      ["shadow.blur", range(0, 20, 1)],
+      ["shadow.opacity", range(0, 1, 0.05)],
+    ],
+  },
+  {
+    part: "caption",
+    fields: [
+      ["style", { type: "select", options: ["band", "gradient", "panel"] }],
+      ["font", { type: "font" }],
+      ["size", { ...range(20, 120, 1), when: (v) => v("style") !== "band" }],
+      ["text_color", { type: "color" }],
+      ["bold", { type: "bool" }],
+      ["italic", { type: "bool" }],
+      ["band_color", { type: "color", when: (v) => v("style") === "band" }],
+      ["band_opacity", { ...range(0, 1, 0.05), when: (v) => v("style") === "band" }],
+      ["band_height", { ...range(100, 500, 1), when: (v) => v("style") === "band" }],
+      ["gradient.color", { type: "color", when: (v) => v("style") === "gradient" }],
+      ["gradient.opacity", { ...range(0, 1, 0.05), when: (v) => v("style") === "gradient" }],
+      ["gradient.height", { ...range(50, 800, 10), when: (v) => v("style") === "gradient" }],
+      ...panelFields((v) => v("style") === "panel"),
+      ["shadow.blur", range(0, 20, 1)],
+      ["shadow.opacity", range(0, 1, 0.05)],
+      ["lead_seconds", range(0, 1, 0.05)],
+      ["fade_seconds", range(0, 1.5, 0.05)],
+      ["transition", { type: "select", options: ["sequential", "crossfade"] }],
+    ],
+  },
+  {
+    part: "credits",
+    fields: [
+      ["enabled", { type: "bool" }],
+      ["position", { type: "select", options: ["center", "bottom-right"] }],
+      ["font", { type: "font" }],
+      ["size", range(16, 100, 1)],
+      ["color", { type: "color" }],
+      ["bold", { type: "bool" }],
+      ["italic", { type: "bool" }],
+      ["dim", range(0, 1, 0.05)],
+      ["panel", { type: "panel" }],
+      ...panelFields(),
+      ["show_seconds", range(0, 20, 0.5)],
+      ["fade_seconds", range(0, 5, 0.1)],
+      ["shadow.blur", range(0, 20, 1)],
+      ["shadow.opacity", range(0, 1, 0.05)],
+    ],
+  },
+];
+
+// The box settings: a caption panel's whenever its style is "panel", a title or credits box while it is on.
+function panelFields(when = (v) => v("panel") != null) {
+  return [
+    ["panel.color", { type: "color", when }],
+    ["panel.opacity", { ...range(0, 1, 0.05), when }],
+    ["panel.blur", { ...range(0, 60, 1), when }],
+    ["panel.radius", { ...range(0, 80, 1), when }],
+  ];
+}
+
+const getPath = (object, path) => path.split(".").reduce((value, key) => (value == null ? undefined : value[key]), object);
+const hasPath = (object, path) => getPath(object, path) !== undefined;
+
+function setPath(object, path, value) {
+  const keys = path.split(".");
+  let target = object;
+  for (const key of keys.slice(0, -1)) {
+    if (typeof target[key] !== "object" || target[key] === null) target[key] = {};
+    target = target[key];
+  }
+  target[keys.at(-1)] = value;
+}
+
+// Removes the override and the tables it leaves empty; an empty box table stays, as it turns the box on.
+function deletePath(object, path) {
+  const keys = path.split(".");
+  const parents = [object];
+  for (const key of keys.slice(0, -1)) {
+    const next = parents.at(-1)[key];
+    if (typeof next !== "object" || next === null) return;
+    parents.push(next);
+  }
+  delete parents.at(-1)[keys.at(-1)];
+  for (let depth = keys.length - 1; depth > 0; depth--) {
+    const key = keys[depth - 1];
+    if (key === "panel" || Object.keys(parents[depth]).length) break;
+    delete parents[depth - 1][key];
+  }
+}
+
+const baseDesign = () => state.design.bases[state.design.name];
+
+// The design's own value of a setting; inside a box the base design does not have, the defaults of a box.
+function baseValue(path) {
+  const value = getPath(baseDesign(), path);
+  const box = path.match(/^(\w+)\.panel\.(\w+)$/);
+  if (box && getPath(baseDesign(), `${box[1]}.panel`) == null) return state.design.panel[box[2]];
+  return value;
+}
+
+function designValue(path) {
+  if (path.endsWith(".panel") && path.split(".").length === 2) {
+    const override = getPath(state.design.overrides, path);
+    if (override === false) return null;
+    return override !== undefined ? override : baseValue(path);
+  }
+  return hasPath(state.design.overrides, path) ? getPath(state.design.overrides, path) : baseValue(path);
+}
+
+const hex = (value) =>
+  Array.isArray(value) ? "#" + value.map((c) => c.toString(16).padStart(2, "0")).join("") : String(value ?? "#000000").toLowerCase();
+const same = (a, b) => (Array.isArray(a) || Array.isArray(b) || String(a).startsWith("#") ? hex(a) === hex(b) : a === b);
+
+function setDesignValue(path, value) {
+  if (same(value, baseValue(path))) deletePath(state.design.overrides, path);
+  else setPath(state.design.overrides, path, value);
+}
+
+function setBox(part, on) {
+  const path = `${part}.panel`;
+  const inBase = getPath(baseDesign(), path) != null;
+  if (on) {
+    if (getPath(state.design.overrides, path) === false || inBase) deletePath(state.design.overrides, path);
+    else setPath(state.design.overrides, path, {});
+  } else if (inBase) setPath(state.design.overrides, path, false);
+  else deletePath(state.design.overrides, path);
+}
+
+function changedSetting(path) {
+  if (path.endsWith(".font")) return hasPath(state.design.overrides, path) || hasPath(state.design.overrides, `${path}_face`);
+  return hasPath(state.design.overrides, path);
+}
+
+// The live preview while playing follows the caption timing of the design as edited.
+function applyCaptionTiming() {
+  if (!state.song) return;
+  state.song.lead = designValue("caption.lead_seconds");
+  state.song.fade = designValue("caption.fade_seconds");
+  state.song.transition = designValue("caption.transition");
+}
+
+function designChanged(rebuild) {
+  state.design.dirty = true;
+  applyCaptionTiming();
+  if (rebuild) showDesign();
+  else markChanged();
+  render();
+  requestStill();
+}
+
+function markChanged() {
+  for (const row of $("design-fields").querySelectorAll(".field")) row.classList.toggle("changed", changedSetting(row.dataset.path));
+}
+
+async function showDesign() {
+  if (!state.song) return;
+  if (!state.design.fonts) {
+    state.design.fonts = [];
+    try {
+      state.design.fonts = await (await api("/api/fonts")).json();
+    } catch (error) {
+      showError(error);
+    }
+  }
+  const select = $("design-base");
+  select.replaceChildren(...Object.keys(state.design.bases).map((name) => new Option(name, name)));
+  select.value = state.design.name;
+  const html = [];
+  for (const group of DESIGN_FIELDS) {
+    html.push(`<h3>${escapeHtml(t(`design_part.${group.part}`))}</h3>`);
+    const value = (key) => designValue(`${group.part}.${key}`);
+    for (const [key, field] of group.fields) {
+      if (field.when && !field.when(value)) continue;
+      html.push(fieldHtml(`${group.part}.${key}`, key, field));
+    }
+  }
+  $("design-fields").innerHTML = html.join("");
+  markChanged();
+}
+
+function fieldHtml(path, key, field) {
+  const value = designValue(path);
+  const id = `f-${path.replaceAll(".", "-")}`;
+  let control;
+  switch (field.type) {
+    case "range":
+      control =
+        `<input type="range" id="${id}" min="${field.min}" max="${field.max}" step="${field.step}" value="${value}">` +
+        `<input type="number" min="${field.min}" step="${field.step}" value="${value}">`;
+      break;
+    case "color":
+      control = `<input type="color" id="${id}" value="${hex(value)}"><input class="hex" type="text" value="${hex(value)}" maxlength="7">`;
+      break;
+    case "bool":
+      control = `<input type="checkbox" id="${id}" ${value ? "checked" : ""}>`;
+      break;
+    case "panel":
+      control = `<input type="checkbox" id="${id}" ${value != null ? "checked" : ""}>`;
+      break;
+    case "select":
+      control = `<select id="${id}">${field.options
+        .map((option) => `<option value="${option}" ${option === value ? "selected" : ""}>${escapeHtml(t(`design_value.${option}`))}</option>`)
+        .join("")}</select>`;
+      break;
+    case "font":
+      control = fontSelect(id, path);
+      break;
+  }
+  const label = escapeHtml(t(`design_field.${key.replace(".", "_")}`));
+  return `<div class="field" data-path="${path}" data-type="${field.type}"><label for="${id}">${label}</label><span class="control">${control}</span><button type="button" class="reset" title="${escapeHtml(t("design.reset"))}">↺</button></div>`;
+}
+
+// A font is a file and a face in it; the list holds the fonts of this Mac and the song file's, plus the one in use.
+function fontSelect(id, path) {
+  const current = hasPath(state.design.overrides, path) || hasPath(state.design.overrides, `${path}_face`)
+    ? JSON.stringify([designValue(path), designValue(`${path}_face`) ?? 0])
+    : "";
+  const base = baseValue(path);
+  const fallback = t("design.font_default", { font: base ? String(base).split("/").at(-1) : "fonts.default" });
+  const options = [`<option value="">${escapeHtml(fallback)}</option>`];
+  let found = current === "";
+  for (const font of state.design.fonts) {
+    const value = JSON.stringify([font.path, font.face]);
+    found ||= value === current;
+    options.push(`<option value='${escapeHtml(value)}' ${value === current ? "selected" : ""}>${escapeHtml(font.name)}</option>`);
+  }
+  if (!found) {
+    const [file, face] = JSON.parse(current);
+    options.push(`<option value='${escapeHtml(current)}' selected>${escapeHtml(`${String(file).split("/").at(-1)} (${face})`)}</option>`);
+  }
+  return `<select class="font" id="${id}">${options.join("")}</select>`;
+}
+
+function onDesignInput(event) {
+  const row = event.target.closest(".field");
+  if (!row) return;
+  const path = row.dataset.path;
+  const type = row.dataset.type;
+  const target = event.target;
+  if (type === "range") {
+    const number = Number(target.value);
+    if (Number.isNaN(number)) return;
+    for (const input of row.querySelectorAll("input")) if (input !== target) input.value = number;
+    setDesignValue(path, number);
+    designChanged(false);
+  } else if (type === "color") {
+    const value = target.value.trim();
+    if (!/^#[0-9a-fA-F]{6}$/.test(value)) return;
+    for (const input of row.querySelectorAll("input")) if (input !== target) input.value = value.toLowerCase();
+    setDesignValue(path, value.toUpperCase());
+    designChanged(false);
+  }
+}
+
+function onDesignChange(event) {
+  const row = event.target.closest(".field");
+  if (!row) return;
+  const path = row.dataset.path;
+  const type = row.dataset.type;
+  const target = event.target;
+  if (type === "bool") setDesignValue(path, target.checked);
+  else if (type === "panel") setBox(path.split(".")[0], target.checked);
+  else if (type === "select") setDesignValue(path, target.value);
+  else if (type === "font") {
+    deletePath(state.design.overrides, path);
+    deletePath(state.design.overrides, `${path}_face`);
+    if (target.value) {
+      const [file, face] = JSON.parse(target.value);
+      setPath(state.design.overrides, path, file);
+      if (face !== 0) setPath(state.design.overrides, `${path}_face`, face);
+    }
+  } else return;
+  designChanged(type !== "font");
+}
+
+function onDesignReset(event) {
+  const button = event.target.closest(".reset");
+  if (!button) return;
+  const path = button.closest(".field").dataset.path;
+  deletePath(state.design.overrides, path);
+  if (path.endsWith(".font")) deletePath(state.design.overrides, `${path}_face`);
+  designChanged(true);
+}
+
 // --- Drawing -------------------------------------------------------------------------------------------------------
 
 function render() {
@@ -564,6 +892,7 @@ function render() {
   const next = nextLine();
   const current = currentLine(now());
   const adjusting = state.mode === "adjust";
+  const designing = state.mode === "design";
   $("rows").innerHTML = state.lines
     .map((line, i) => {
       const classes = [
@@ -581,15 +910,19 @@ function render() {
     })
     .join("");
   $("help").innerHTML = withKeys(t(adjusting ? "help.adjust" : "help.tap"));
+  $("help").hidden = designing;
+  $("zoom").hidden = designing;
+  $("design").hidden = !designing;
   $("multi-info").textContent = state.multi.size > 1 ? t("adjust.multi", { count: state.multi.size }) : "";
-  $("save").classList.toggle("dirty", state.dirty);
+  $("save").classList.toggle("dirty", unsaved());
   $("save").disabled = renderingVideo();
   $("preview-video").disabled = rendering();
   $("preview-video").title = state.preview.url && previewOutdated() ? t("preview_video.stale_lines") : "";
-  $("render").disabled = state.dirty || !state.song.timing_exists || rendering();
-  $("render").title = state.dirty || !state.song.timing_exists ? t("render.unsaved") : "";
-  $("mode-tap").classList.toggle("on", !adjusting);
+  $("render").disabled = unsaved() || !state.song.timing_exists || rendering();
+  $("render").title = unsaved() || !state.song.timing_exists ? t("render.unsaved") : "";
+  $("mode-tap").classList.toggle("on", state.mode === "tap");
   $("mode-adjust").classList.toggle("on", adjusting);
+  $("mode-design").classList.toggle("on", designing);
   $("adjust").hidden = !adjusting;
   $("play").textContent = t(audio.paused ? "play.play" : "play.pause");
   draw();
@@ -705,6 +1038,7 @@ function togglePlay() {
 
 function setMode(mode) {
   state.mode = mode;
+  if (mode === "design") showDesign();
   render();
 }
 
@@ -736,6 +1070,11 @@ document.addEventListener("keydown", (event) => {
   } else if (key === "Backspace") {
     event.preventDefault();
     undo();
+  } else if (state.mode === "design") {
+    if (key === " ") {
+      event.preventDefault();
+      togglePlay();
+    }
   } else if (state.mode === "tap") {
     if (key === " ") {
       event.preventDefault();
@@ -859,7 +1198,7 @@ window.addEventListener("mouseup", () => {
 });
 
 window.addEventListener("beforeunload", (event) => {
-  if (state.dirty) event.preventDefault();
+  if (unsaved()) event.preventDefault();
 });
 
 window.addEventListener("resize", draw);
@@ -908,6 +1247,11 @@ async function start() {
   $("play").addEventListener("click", togglePlay);
   $("mode-tap").addEventListener("click", () => setMode("tap"));
   $("mode-adjust").addEventListener("click", () => setMode("adjust"));
+  $("mode-design").addEventListener("click", () => setMode("design"));
+  $("design-base").addEventListener("change", () => {
+    state.design.name = $("design-base").value;
+    designChanged(true);
+  });
   $("save").addEventListener("click", save);
   $("render").addEventListener("click", () => startRender());
   $("preview-video").addEventListener("click", startPreview);
@@ -919,6 +1263,9 @@ async function start() {
   $("clear-time").addEventListener("click", clearTime);
   $("select-all").addEventListener("click", selectAll);
   $("error-close").addEventListener("click", () => ($("error").hidden = true));
+  $("design-fields").addEventListener("input", onDesignInput);
+  $("design-fields").addEventListener("change", onDesignChange);
+  $("design-fields").addEventListener("click", onDesignReset);
   for (const button of document.querySelectorAll("#adjust [data-shift]")) {
     button.addEventListener("click", () => shift(Number(button.dataset.shift)));
   }

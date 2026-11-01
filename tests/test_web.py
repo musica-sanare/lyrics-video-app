@@ -478,3 +478,73 @@ def test_closing_the_session_removes_the_preview(render_client, session, held):
 
 def test_the_page_learns_the_preview_size(client):
     assert get(client, "/api/song").json()["preview"] == {"width": 480, "height": 270, "fps": 15.0}
+
+
+# --- The Design mode -----------------------------------------------------------------------------------------------
+
+BOLD_TITLE = {"name": "soft", "overrides": {"title": {"bold": True}}}
+
+
+def test_the_page_learns_the_design_and_its_bases(client):
+    design = get(client, "/api/song").json()["design"]
+
+    assert (design["name"], design["overrides"]) == ("soft", {})
+    assert set(design["bases"]) == {"classic", "panel", "soft"}
+    assert design["bases"]["soft"]["caption"]["style"] == "gradient"
+    assert design["bases"]["soft"]["title"]["color"] == [255, 255, 255]
+
+
+def test_stills_follow_the_unsaved_design(client, song):
+    saved = post(client, "/api/still", {"lines": TIMED, "time": 1.0}).content
+    bold = post(client, "/api/still", {"lines": TIMED, "time": 1.0, "design": BOLD_TITLE}).content
+    again = post(client, "/api/still", {"lines": TIMED, "time": 1.0}).content
+
+    assert bold != saved
+    assert again == saved
+    assert "bold" not in song.read_text(encoding="utf-8")
+
+
+def test_an_invalid_design_is_named(client):
+    response = post(client, "/api/still", {"lines": TIMED, "time": 1.0, "design": {"name": "soft", "overrides": {"title": {"size": -5}}}})
+
+    assert response.status_code == 400
+    assert "design.title.size" in response.json()["message"]
+
+
+def test_saving_the_design_writes_the_song_file(client, song):
+    response = post(client, "/api/design", BOLD_TITLE)
+
+    assert response.json() == {"song_file": "song.toml"}
+    assert "[design.title]\nbold = true" in song.read_text(encoding="utf-8")
+    assert (song.parent / "song.toml.bak").exists()
+    assert get(client, "/api/song").json()["design"]["overrides"] == {"title": {"bold": True}}
+    assert load_song(song).design.title.bold
+
+
+def test_no_design_is_saved_while_a_video_renders(render_client, song, held):
+    post(render_client, "/api/timing", {"lines": TIMED})
+    post(render_client, "/api/render", {})
+
+    response = post(render_client, "/api/design", BOLD_TITLE)
+
+    assert (response.status_code, response.json()["code"]) == (409, "busy")
+    assert "bold" not in song.read_text(encoding="utf-8")
+
+
+def test_the_preview_uses_the_unsaved_design(render_client, monkeypatch):
+    started = []
+    monkeypatch.setattr(web_app, "render", lambda prepared, progress=None, cancel=None: started.append(prepared))
+
+    post(render_client, "/api/preview", {"lines": TIMED, "design": BOLD_TITLE})
+    wait_for_render(render_client)
+
+    assert started[0].job.backdrop.design.title.bold
+
+
+def test_the_fonts_of_this_mac_and_of_the_song(client, sans_font, monkeypatch):
+    monkeypatch.setattr(web_app, "FONT_FOLDERS", ())
+
+    fonts = get(client, "/api/fonts").json()
+
+    assert {"path": str(sans_font), "face": 0, "name": "Hiragino Sans W3"} in fonts
+    assert all(not font["name"].startswith(".") for font in fonts)

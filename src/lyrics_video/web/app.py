@@ -11,6 +11,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
+from typing import Any
 
 from audio_spectrum import AudioSpectrumError, Cancelled, Preview, load_preset, override_preset
 from fastapi import FastAPI, Request
@@ -20,8 +21,10 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from lyrics_video.backdrop import LyricsBackdrop, timed_captions
-from lyrics_video.config import Song
+from lyrics_video.config import Song, song_design, write_design
+from lyrics_video.design import Design, builtin_design_names
 from lyrics_video.errors import ConfigError, LyricsVideoError
+from lyrics_video.fonts import FONT_FOLDERS, font_faces
 from lyrics_video.lyrics import read_lyrics
 from lyrics_video.render import PreparedRender, default_output, prepare_preview, prepare_render, preview_size, render
 from lyrics_video.timing import Merged, TimedLine, check_inside, check_lines, merge, read_lrc, write_lrc
@@ -47,7 +50,19 @@ class TimingRequest(BaseModel):
     lines: list[LineData]
 
 
-class StillRequest(TimingRequest):
+class DesignRequest(BaseModel):
+    """A design as the Design mode edits it: the base design's name and the song file's overrides."""
+
+    name: str
+    overrides: dict[str, Any] = {}
+
+
+class PreviewRequest(TimingRequest):
+    design: DesignRequest | None = None
+    """The page's design, saved or not; the song file's when missing."""
+
+
+class StillRequest(PreviewRequest):
     time: float = Field(ge=0.0)
 
 
@@ -157,6 +172,7 @@ class SyncSession:
         except AudioSpectrumError as error:
             raise ConfigError(str(error)) from None
         self.duration = self.preview.duration
+        self.fonts: list[dict] | None = None
         self.backdrop = LyricsBackdrop.for_song(song, [], self.duration)
         self.backdrop.prepare(song.video.width, song.video.height)
         self.render = RenderTask()
@@ -190,9 +206,60 @@ class SyncSession:
             "fade": style.fade_seconds,
             "transition": style.transition,
             "preview": {"width": width, "height": height, "fps": fps},
+            "design": self.design_state(),
             "lines": [dataclasses.asdict(line) for line in merged.lines],
             "changes": [dataclasses.asdict(change) for change in merged.changes],
         }
+
+    def design_state(self) -> dict:
+        """The song file's design, and the values of each design the page can start from (to show what changed)."""
+        names = builtin_design_names()
+        if self.song.design_name not in names:
+            names.append(self.song.design_name)
+        bases = {name: self._design(DesignRequest(name=name)).model_dump(mode="json") for name in names}
+        return {"name": self.song.design_name, "overrides": self.song.design_overrides, "bases": bases}
+
+    def _design(self, request: DesignRequest | None) -> Design:
+        if request is None:
+            return self.song.design
+        return song_design(self.song.path, request.name, request.overrides)
+
+    def _preset_for(self, design: Design):
+        if design.spectrum.set == self.song.design.spectrum.set:
+            return self.preset
+        try:
+            return override_preset(load_preset(self.song.spectrum_preset), [*design.spectrum.set, *self.song.spectrum_set])
+        except AudioSpectrumError as error:
+            raise ConfigError(str(error)) from None
+
+    def font_list(self) -> list[dict]:
+        """The faces of the font files on this Mac and next to the song file's fonts; listed once per session."""
+        if self.fonts is None:
+            design = self.song.design
+            named = [self.song.default_font, design.title.font, design.caption.font, design.credits.font]
+            folders = [*FONT_FOLDERS, *{font.parent for font in named if font is not None}]
+            home = Path.home()
+            self.fonts = [
+                {
+                    "path": f"~/{face.path.relative_to(home)}" if face.path.is_relative_to(home) else str(face.path),
+                    "face": face.face,
+                    "name": f"{face.family} {face.style}".strip(),
+                }
+                for face in font_faces(folders)
+            ]
+        return self.fonts
+
+    def save_design(self, request: DesignRequest) -> dict:
+        """Write the design into the song file's `[design]` (keeping a `.bak`); the session then uses the saved file."""
+        if self.render.running_video():
+            raise RenderBusyError("a video is being rendered; save after it is done or cancelled")
+        self._design(request)
+        song = write_design(self.song.path, request.name, request.overrides)
+        with self.lock:
+            self.song = song
+            self.preset = self._preset_for(song.design)
+            self.backdrop.set_design(song.design)
+        return {"song_file": song.path.name}
 
     def lines(self, request: TimingRequest) -> list[TimedLine]:
         lines = [TimedLine(tuple(line.rows), line.start, line.end) for line in request.lines]
@@ -223,9 +290,10 @@ class SyncSession:
         finally:
             self.starting.release()
 
-    def start_preview(self, request: TimingRequest) -> None:
-        """Render the preview from the page's current lines, saved or not, into the session's temporary folder."""
+    def start_preview(self, request: PreviewRequest) -> None:
+        """Render the preview from the page's current lines and design, saved or not, into a temporary folder."""
         lines = self.lines(request)
+        song = dataclasses.replace(self.song, design=self._design(request.design))
         if not self.starting.acquire(blocking=False):
             raise RenderBusyError("a video is already being rendered")
         try:
@@ -233,7 +301,7 @@ class SyncSession:
             if self.preview_folder is None:
                 self.preview_folder = Path(tempfile.mkdtemp(prefix="lyrics-video-preview-"))
             output = self.preview_folder / PREVIEW_FILE
-            self.render.start(prepare_preview(self.song, lines, self.duration, output), kind="preview")
+            self.render.start(prepare_preview(song, lines, self.duration, output), kind="preview")
         finally:
             self.starting.release()
 
@@ -264,11 +332,14 @@ class SyncSession:
 
     def still(self, request: StillRequest) -> bytes:
         lines = self.lines(request)
+        design = self._design(request.design)
         video = self.song.video
         with self.lock:
+            self.backdrop.set_design(design)
             self.backdrop.set_captions(timed_captions(lines, self.duration))
+            preset = self._preset_for(design)
             try:
-                [frame] = self.preview.frames(self.preset, [request.time], video.width, video.height, backdrop=self.backdrop)
+                [frame] = self.preview.frames(preset, [request.time], video.width, video.height, backdrop=self.backdrop)
             except AudioSpectrumError as error:
                 raise ConfigError(str(error)) from None
         buffer = io.BytesIO()
@@ -339,9 +410,17 @@ def create_app(session: SyncSession, token: str, allowed_hosts: set[str]) -> Fas
         return session.render.snapshot(session.song.path.parent)
 
     @app.post("/api/preview")
-    def start_preview(request: TimingRequest) -> dict:
+    def start_preview(request: PreviewRequest) -> dict:
         session.start_preview(request)
         return session.render.snapshot(session.song.path.parent)
+
+    @app.post("/api/design")
+    def save_design(request: DesignRequest) -> dict:
+        return session.save_design(request)
+
+    @app.get("/api/fonts")
+    def fonts() -> list[dict]:
+        return session.font_list()
 
     @app.get(PREVIEW_ROUTE)
     def preview_video() -> FileResponse:

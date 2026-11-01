@@ -1,6 +1,7 @@
-"""Writing images without overwriting by accident and without leaving half-written files."""
+"""Writing files without overwriting by accident and without leaving half-written files."""
 
 import os
+import shutil
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -29,6 +30,23 @@ def write_images(images: dict[Path, Image.Image], overwrite: bool) -> None:
     for path, image in images.items():
         path.parent.mkdir(parents=True, exist_ok=True)
         _write_png(path, image)
+
+
+def write_text(path: Path, text: str, backup: bool = False) -> None:
+    """Write completely or not at all: a temporary file next to `path`, then a rename.
+
+    With `backup`, an existing file is first copied to `<name>.bak`.
+    """
+    if backup and path.exists():
+        shutil.copy2(path, path.with_name(f"{path.name}.bak"))
+    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.stem}.", suffix=f"{path.suffix}.tmp", dir=path.parent)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as file:
+            file.write(text)
+        os.replace(temporary, path)
+    except BaseException:
+        Path(temporary).unlink(missing_ok=True)
+        raise
 
 
 def _write_png(path: Path, image: Image.Image) -> None:

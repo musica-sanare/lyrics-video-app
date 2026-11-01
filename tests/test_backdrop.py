@@ -233,3 +233,19 @@ def test_a_title_box_over_the_background(tmp_path, sans_font):
 
     assert frame[-1, 0].tolist() == [40, 80, 120], "the background elsewhere"
     assert [40, 80, 120] != frame[int(40 * HEIGHT / 1080) + 2, WIDTH // 2].tolist(), "the box darkens the top"
+
+
+def test_another_design_keeps_the_background_image(tmp_path, sans_font):
+    backdrop = make_backdrop(tmp_path, sans_font)
+    backdrop.frame(0, 4.0, WIDTH, HEIGHT)
+    picture = backdrop._backgrounds[(WIDTH, HEIGHT)]
+    bolder = load_design("classic", {"title": {"bold": True}, "caption": {"fade_seconds": 1.0}})
+
+    backdrop.set_design(bolder)
+    frame = backdrop.frame(0, 2.0, WIDTH, HEIGHT)
+
+    assert backdrop._backgrounds[(WIDTH, HEIGHT)] is picture
+    fresh = make_backdrop(tmp_path, sans_font, title={"bold": True}, caption={"fade_seconds": 1.0})
+    assert np.array_equal(frame, fresh.frame(0, 2.0, WIDTH, HEIGHT)), "drawn as a new backdrop, timing included"
+    backdrop.set_design(load_design("classic", {"background": {"dim": 0.5}}))
+    assert (WIDTH, HEIGHT) not in backdrop._backgrounds

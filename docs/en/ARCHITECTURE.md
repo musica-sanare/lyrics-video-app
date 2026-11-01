@@ -109,11 +109,12 @@ its preview video come from the server and are drawn by `LyricsBackdrop`.
 flowchart LR
   page["Page in the browser"]
   server["web/app.py on 127.0.0.1"]
-  files["lyrics.txt, lyrics.lrc, song"]
+  files["lyrics.txt, lyrics.lrc, song.toml, song"]
   page -->|"GET /api/song"| server
   page -->|"GET /api/audio (ranges)"| server
   page -->|"POST /api/still"| server
-  page -->|"POST /api/timing (Save)"| server
+  page -->|"POST /api/timing, POST /api/design (Save)"| server
+  page -->|"GET /api/fonts"| server
   page -->|"POST /api/preview, GET /api/preview/video"| server
   page -->|"POST /api/render, GET /api/render"| server
   server --> files
@@ -122,11 +123,18 @@ flowchart LR
 
 - `SyncSession` decodes the song once, keeps one `Preview` and one `LyricsBackdrop`, and replaces the backdrop's
   captions before each still (`set_captions`). Pictures already drawn are kept.
+- The Design mode edits the song file's design overrides in the page. Each still and preview sends them with the
+  base design's name; the server validates them as the song file would (`song_design`) and passes the result to
+  `LyricsBackdrop.set_design`, which draws again but keeps the scaled background image unless the background settings
+  changed. `/api/song` also sends every base design's values, so the page shows what changed; `/api/fonts` lists the
+  faces of the macOS font folders and of the folders of the song file's fonts (`fonts.font_faces`), once per session.
 - The page plays the song from `/api/audio` with range requests and records key presses at the audio element's time.
   It decodes the same audio in the browser for the waveform.
-- The page keeps all edits in memory. Only Save writes the timing file.
-- "Preview video" starts the same `RenderTask` with `prepare_preview` (`render.py`): the page's current lines, saved
-  or not, at most 960 × 540 and 15 fps, without audio (`preview_size`). The backdrop and the spectrum scale with the
+- The page keeps all edits in memory. Only Save writes: the timing file, and for a changed design the song file
+  (`config.write_design`). It replaces the `[design]` table through `tomlkit`, which keeps the rest of the file and
+  its comments, and loads the new text before writing it, so a design that does not load changes nothing.
+- "Preview video" starts the same `RenderTask` with `prepare_preview` (`render.py`): the page's current lines and
+  design, saved or not, at most 960 × 540 and 15 fps, without audio (`preview_size`). The backdrop and the spectrum scale with the
   frame height, so it shows the video's design, captions and spectrum. It goes to a temporary folder of the session,
   replacing the previous preview only when done, and `GET /api/preview/video` serves it (the token is accepted in the
   URL, as for the audio). The page plays it muted and keeps it within 0.1 s of the `<audio>` element, which stays
@@ -147,7 +155,8 @@ flowchart LR
   `test_stills_are_the_frames_of_the_video`).
 - **Nothing is written without an explicit command or Save.** Commands draw every image before writing any, refuse to
   overwrite without `--overwrite`, and write each file through a temporary file and a rename. The page writes only on
-  Save (keeping the previous timing file as `.bak`) and on "Render video", which asks before replacing a video. The
+  Save (keeping the previous timing file and song file as `.bak`) and on "Render video", which asks before replacing a
+  video. The
   preview video is the one exception: it goes to a temporary folder of the session, never next to the song, and is
   removed when the server stops.
 - **The page cannot be driven by other web pages.** The server listens on `127.0.0.1`, refuses foreign `Host` headers
@@ -183,4 +192,5 @@ See the phase acceptance reports for the full tables.
 | A new design | A TOML file in `src/lyrics_video/designs/` | Built-in designs are found by file name |
 | A new part of the frame | A style in `design.py`, a layer in `layers.py`, composition in `LyricsBackdrop` | Draw once in `_prepared_for` if it never changes; blend per frame only while it changes |
 | Another timing source (MusicXML, alignment) | A reader that returns `TimedLine`s | `timing.py` writes them as LRC; the backdrop needs no change |
+| A new setting in the Design mode | `DESIGN_FIELDS` in `app.js`, its label in every `web/static/i18n/<code>.json` | The key must exist in `design.py`; the page edits it as an override |
 | A new page language | `web/static/i18n/<code>.json` and `LANGUAGES` in `app.js` | A test keeps every message file complete |

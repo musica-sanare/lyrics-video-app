@@ -48,9 +48,27 @@ tr.stale td.n { box-shadow: inset 3px 0 var(--end); }
 #live { position: absolute; inset: 0; background: linear-gradient(160deg, #3a4a63, #1b2230); }
 .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 2.5% 5%; background: linear-gradient(transparent, #000000aa); font-size: clamp(14px, 2.6vw, 30px); white-space: pre-line; opacity: 0; }
 canvas { width: 100%; background: var(--panel); border-radius: 8px; display: block; }
+canvas[hidden], #help[hidden] { display: none; }
 #overview { height: 70px; cursor: pointer; }
 #zoom { height: 150px; }
 #adjust { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 #adjust[hidden] { display: none; }
 #help { color: var(--muted); font-size: 13px; background: var(--panel); border-radius: 8px; padding: 8px 12px; overflow: auto; }
+#design { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1; }
+#design[hidden] { display: none; }
+.design-top { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.design-top .note { color: var(--muted); font-size: 12px; }
+#design .error { margin: 0; }
+#design-fields { overflow: auto; flex: 1; background: var(--panel); border-radius: 8px; padding: 4px 12px 12px; }
+#design-fields h3 { margin: 12px 0 4px; font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.field { display: grid; grid-template-columns: 11em 1fr 2em; gap: 8px; align-items: center; padding: 3px 0; }
+.field label { color: var(--muted); }
+.field.changed label { color: var(--text); font-weight: 600; }
+.field .control { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.field input[type=range] { flex: 1; min-width: 80px; accent-color: var(--accent); }
+.field input[type=color] { width: 3em; height: 1.9em; padding: 0 2px; }
+.field input.hex { width: 6.5em; font-variant-numeric: tabular-nums; }
+.field select.font { flex: 1; min-width: 0; }
+.field .reset { padding: 0 6px; visibility: hidden; }
+.field.changed .reset { visibility: visible; }
 #help kbd { background: #2a2f38; border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; color: var(--text); }

@@ -1,4 +1,4 @@
-<!-- source: docs/en/ARCHITECTURE.md blob 80543a156fbd6b06902d1143a66650f7668bed89 -->
+<!-- source: docs/en/ARCHITECTURE.md blob 312e3771dc29f933758f8f102838c5dc0d2a524a -->
 [English](../en/ARCHITECTURE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/ARCHITECTURE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -102,11 +102,12 @@ sync ページは再生中の簡易表示のために、同じ区間を JavaScri
 flowchart LR
   page["ブラウザのページ"]
   server["127.0.0.1 の web/app.py"]
-  files["lyrics.txt、lyrics.lrc、曲"]
+  files["lyrics.txt、lyrics.lrc、song.toml、曲"]
   page -->|"GET /api/song"| server
   page -->|"GET /api/audio（範囲指定）"| server
   page -->|"POST /api/still"| server
-  page -->|"POST /api/timing（保存）"| server
+  page -->|"POST /api/timing、POST /api/design（保存）"| server
+  page -->|"GET /api/fonts"| server
   page -->|"POST /api/preview、GET /api/preview/video"| server
   page -->|"POST /api/render、GET /api/render"| server
   server --> files
@@ -115,9 +116,15 @@ flowchart LR
 
 - `SyncSession` は曲を一度だけデコードし、`Preview` と `LyricsBackdrop` を 1 つずつ持つ。静止画を描く前に backdrop の字幕を差し替える
   （`set_captions`）。描き終えた絵はそのまま使い回す。
+- デザインモードは、曲ファイルのデザインの上書きをページの中で編集する。静止画とプレビューのたびに、元にするデザインの名前と一緒に送る。
+  サーバーは曲ファイルと同じ規則（`song_design`）で検証し、結果を `LyricsBackdrop.set_design` に渡す。描き直すが、背景の設定が変わらなければ
+  縮小済みの背景画像はそのまま使う。`/api/song` は元にできる各デザインの値も送るので、ページは変えた設定を示せる。`/api/fonts` は macOS の
+  フォントフォルダと、曲ファイルのフォントがあるフォルダの書体を一覧にする（`fonts.font_faces`）。一覧はセッションごとに一度だけ作る。
 - ページは `/api/audio` から範囲リクエストで曲を再生し、キーを押した時点の audio 要素の時刻を記録する。波形用に同じ音声をブラウザでもデコードする。
-- 編集はすべてページのメモリに置く。タイミングファイルに書くのは保存のときだけ。
-- 「プレビュー動画」は同じ `RenderTask` を `prepare_preview`（`render.py`）で始める。ページ上の今の行（保存前でもよい）から、
+- 編集はすべてページのメモリに置く。書き込むのは保存のときだけで、タイミングファイルと、デザインを変えたときは曲ファイル
+  （`config.write_design`）に書く。`[design]` テーブルを `tomlkit` で差し替えるので、ファイルのほかの部分とコメントは残る。
+  書く前に新しい内容を読み込んで確かめるため、読み込めないデザインでは何も変わらない。
+- 「プレビュー動画」は同じ `RenderTask` を `prepare_preview`（`render.py`）で始める。ページ上の今の行とデザイン（保存前でもよい）から、
   最大 960 × 540、15 fps、音声なしで作る（`preview_size`）。backdrop もスペクトラムもフレームの高さに合わせて縮むので、
   動画と同じデザイン・字幕・スペクトラムが映る。出力はセッションの一時フォルダで、前のプレビューは完成したときに置き換える。
   `GET /api/preview/video` が配信し、トークンは音声と同じく URL でも受け付ける。ページは音を消して再生し、唯一の時計である
@@ -134,7 +141,7 @@ flowchart LR
 - **静止画は動画のフレームと一致する。** プレビューはすべて `LyricsBackdrop` と audio-spectrum-app の `Preview` を通し、別の描画経路を作らない。
   テストで確かめている（`test_a_still_is_the_backdrop_with_the_spectrum_drawn_over_it`、`test_stills_are_the_frames_of_the_video`）。
 - **明示的なコマンドか保存なしには何も書かない。** コマンドはすべての画像を描き終えてから書き、`--overwrite` なしには上書きせず、
-  各ファイルを一時ファイルと名前の変更で書く。ページが書くのは保存のとき（前のタイミングファイルを `.bak` として残す）と「動画を書き出す」のときだけで、
+  各ファイルを一時ファイルと名前の変更で書く。ページが書くのは保存のとき（前のタイミングファイルと曲ファイルを `.bak` として残す）と「動画を書き出す」のときだけで、
   既存の動画を置き換える前には確認する。例外はプレビュー動画で、曲の横ではなくセッションの一時フォルダに書き、サーバーを止めると消す。
 - **ほかの Web ページからページを操作させない。** サーバーは `127.0.0.1` で待ち受け、想定外の `Host` ヘッダーとセッショントークンのない
   API リクエストを拒む（URL のトークンは音声とプレビュー動画だけで有効）。クロスオリジン用のヘッダーは送らない。
@@ -166,4 +173,5 @@ backdrop は audio-spectrum-app のワーカーで、スペクトラム（1080p 
 | 新しいデザイン | `src/lyrics_video/designs/` の TOML ファイル | 組み込みデザインはファイル名で見つける |
 | フレームの新しい部品 | `design.py` のスタイル、`layers.py` の層、`LyricsBackdrop` での重ね方 | 変わらないものは `_prepared_for` で一度だけ描き、変わる間だけフレームごとに重ねる |
 | 別のタイミングの出どころ（MusicXML、自動合わせ） | `TimedLine` の一覧を返す読み込み関数 | `timing.py` が LRC として書く。backdrop は変えなくてよい |
+| デザインモードの新しい設定 | `app.js` の `DESIGN_FIELDS` と、すべての `web/static/i18n/<code>.json` のラベル | キーは `design.py` にあること。ページはそれを上書きとして編集する |
 | ページの新しい言語 | `web/static/i18n/<code>.json` と `app.js` の `LANGUAGES` | すべてのメッセージファイルがそろっているかをテストで確かめる |

@@ -122,6 +122,8 @@ class LyricsBackdrop:
         self.credits = credits
         self.default_font = default_font
         self._prepared: dict[tuple[int, int], _Prepared] = {}
+        # The scaled background image per frame size, kept when the design changes but the background does not.
+        self._backgrounds: dict[tuple[int, int], np.ndarray] = {}
 
     @classmethod
     def for_song(cls, song: Song, captions: list[TimedCaption], duration: float) -> "LyricsBackdrop":
@@ -141,9 +143,21 @@ class LyricsBackdrop:
         self._windows = caption_windows(self.captions, self.design.caption, self.duration)
         self._window_starts = [window.start for window in self._windows]
 
+    def set_design(self, design: Design) -> None:
+        """Draw with another design (the sync page's Design mode). Pictures are drawn again, except the background
+        image when the design's background settings are unchanged; scaling a large photo is the slow part."""
+        if design == self.design:
+            return
+        if design.background != self.design.background:
+            self._backgrounds = {}
+        self.design = design
+        self._prepared = {}
+        self.set_captions(self.captions)
+
     def __getstate__(self) -> dict:
         state = self.__dict__.copy()
         state["_prepared"] = {}
+        state["_backgrounds"] = {}
         return state
 
     def prepare(self, width: int, height: int) -> None:
@@ -189,8 +203,12 @@ class LyricsBackdrop:
     def _prepared_for(self, width: int, height: int) -> _Prepared:
         if (width, height) not in self._prepared:
             design, scale = self.design, scale_for(height)
-            style = design.background
-            base = background(self.background_image, width, height, style.focus, style.dim, style.blur * scale)
+            if (width, height) not in self._backgrounds:
+                style = design.background
+                self._backgrounds[(width, height)] = background(
+                    self.background_image, width, height, style.focus, style.dim, style.blur * scale
+                )
+            base = self._backgrounds[(width, height)].copy()
             title = title_layer(self.title, design.title, self.default_font, width, height, scale, base)
             if title is not None:
                 blend(base, title)

@@ -12,7 +12,7 @@
   <button id="play" type="button" data-i18n="play.play">Play</button>
   <span id="time">0:00.00 / 0:00.00</span>
   <span class="modes">
-    <button id="mode-tap" type="button" class="on" data-i18n="mode.tap">Tap</button><button id="mode-adjust" type="button" data-i18n="mode.adjust">Adjust</button>
+    <button id="mode-tap" type="button" class="on" data-i18n="mode.tap">Tap</button><button id="mode-adjust" type="button" data-i18n="mode.adjust">Adjust</button><button id="mode-design" type="button" data-i18n="mode.design">Design</button>
   </span>
   <label><span data-i18n="offset.label">Reaction offset</span> <input id="offset" type="number" value="0" step="10"> ms</label>
   <button id="save" type="button" data-i18n="save.button">Save</button>
@@ -59,6 +59,14 @@
       <span id="multi-info"></span>
     </div>
     <div id="help"></div>
+    <div id="design" hidden>
+      <div class="design-top">
+        <label><span data-i18n="design.base">Design</span> <select id="design-base"></select></label>
+        <span class="note" data-i18n="design.note">Changes show in the still; Save writes them to the song file.</span>
+      </div>
+      <div id="design-error" class="error" role="alert" hidden></div>
+      <div id="design-fields"></div>
+    </div>
   </div>
 </main>
 <audio id="audio" preload="auto"></audio>

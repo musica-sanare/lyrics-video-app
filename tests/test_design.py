@@ -76,3 +76,10 @@ def test_text_faces_and_the_title_box():
     assert design.title.panel.color == (32, 32, 32) and design.title.panel.blur == 0
     with pytest.raises(ConfigError, match="design.credits.font_face"):
         load_design("soft", {"credits": {"font_face": -1}})
+
+
+def test_false_turns_off_a_box_of_the_base_design():
+    design = load_design("panel", {"credits": {"panel": False}, "title": {"panel": False}})
+
+    assert design.credits.panel is None and design.title.panel is None
+    assert load_design("panel").credits.panel is not None

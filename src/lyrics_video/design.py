@@ -82,6 +82,10 @@ class TextFace(_Part):
     """Synthetic italic: the text slanted."""
 
 
+# A box that a design may have; `false` turns off the box of the base design (TOML has no null).
+OptionalPanel = Annotated[Panel | None, BeforeValidator(lambda value: None if value is False else value)]
+
+
 class BackgroundStyle(_Part):
     focus: tuple[Fraction, Fraction] = (0.5, 0.5)
     """The point of the image kept in view when it is cropped, as fractions of its width and height."""
@@ -103,7 +107,7 @@ class TitleStyle(TextFace):
     """A thin line under the title, as wide as it."""
     rule_thickness: Pixels = 2.0
     rule_gap: Pixels = 14.0
-    panel: Panel | None = None
+    panel: OptionalPanel = None
     """A box behind the title (and its rule): plain with `blur = 0`, frosted otherwise; none by default."""
     shadow: Shadow = Shadow()
 
@@ -149,7 +153,7 @@ class CreditsStyle(TextFace):
     """Bottom-right: distance from the bottom edge."""
     dim: Fraction = 0.5
     """How much the frame is darkened behind the credits."""
-    panel: Panel | None = None
+    panel: OptionalPanel = None
     """A frosted box behind the credits; none by default."""
     show_seconds: Seconds = 6.0
     """How long the credits stay at the start and at the end of the song."""

@@ -6,16 +6,14 @@ shown. ID tags such as `[ti:...]` and empty lines are skipped.
 """
 
 import difflib
-import os
 import re
-import shutil
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 from lyrics_video.errors import LyricsError
 from lyrics_video.lyrics import MAX_ROWS, Caption
+from lyrics_video.output import write_text
 
 TIME_TAG = re.compile(r"\[(\d+):(\d{2})(?:[.:](\d{1,3}))?\]")
 ID_TAG = re.compile(r"\[[A-Za-z]+:[^\]]*\]\s*")
@@ -96,22 +94,9 @@ def format_lrc(lines: list[TimedLine], separator: str) -> str:
 
 
 def write_lrc(path: Path, lines: list[TimedLine], separator: str, backup: bool = False) -> None:
-    """Write completely or not at all: a temporary file next to `path`, then a rename.
-
-    With `backup`, an existing file is first copied to `<name>.bak`.
-    """
+    """Write completely or not at all; with `backup`, an existing file is first copied to `<name>.bak`."""
     check_lines(lines, separator, source=str(path))
-    text = format_lrc(lines, separator)
-    if backup and path.exists():
-        shutil.copy2(path, path.with_name(f"{path.name}.bak"))
-    descriptor, temporary = tempfile.mkstemp(prefix=f".{path.stem}.", suffix=".lrc.tmp", dir=path.parent)
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as file:
-            file.write(text)
-        os.replace(temporary, path)
-    except BaseException:
-        Path(temporary).unlink(missing_ok=True)
-        raise
+    write_text(path, format_lrc(lines, separator), backup)
 
 
 def format_time(seconds: float) -> str:

@@ -6,7 +6,7 @@ How to set up lyrics-video-app, time the captions of a song, look at frames of i
 video. It is for anyone making a lyrics video with the app.
 
 Each song has a folder with a song file. The commands read it and write images or the video into folders next to it;
-`sync` opens a page in the browser to time the captions:
+`sync` opens a page in the browser to time the captions and set the design:
 
 ```mermaid
 flowchart LR
@@ -24,6 +24,7 @@ flowchart LR
   timing --> still & render
   lyrics & media --> sync
   sync -->|Save| timing
+  sync -->|"Save (design)"| song
   media --> still & render
   render --> outVideos
   still --> outStills
@@ -110,20 +111,29 @@ listens on `127.0.0.1` and refuses other web pages. Stop it with `Ctrl+C` in the
    pause. `Backspace` undoes the last mark. The highlighted line starts next.
 2. **Adjust:** click a time (or switch to Adjust) and correct it while listening and looking at the waveform. The
    picture above the waveform is the exact frame of the video at the playhead whenever the song is paused.
-3. **Preview video:** before the long render, makes a quick video of the whole song and plays it in the page while
+3. **Design:** change the look of the background, title, captions and credits; the still shows each change at once.
+   - Start from a built-in design (or the song file's design file) and change single settings: colors, opacities,
+     sizes, fonts, bold and italic, boxes behind the title and credits, shadows, and the caption timing (lead, fade,
+     change between lines). A changed setting is shown in bold; ↺ takes it back to the design's value.
+   - The font list holds the fonts of this Mac and of the folders of the fonts your song file names.
+   - Save writes the changes into the song file's `[design]` table (only the changed settings) and keeps the previous
+     song file as `song.toml.bak`. Everything else in the song file stays as it was, comments included, except
+     comments inside `[design]`. Other settings stay editable in the song file (section 6).
+4. **Preview video:** before the long render, makes a quick video of the whole song and plays it in the page while
    the song plays, to check every caption change with the design and the spectrum.
-   - It is made from the lines as they are on the page, saved or not, in about a tenth of the song's length (about
-     20 s for a 5-minute song). It is smaller than the video (960 × 540 at 15 frames a second) and has no sound of its
-     own: it follows the song in the page.
+   - It is made from the lines and the design as they are on the page, saved or not, in about a tenth of the song's
+     length (about 20 s for a 5-minute song). It is smaller than the video (960 × 540 at 15 frames a second) and has
+     no sound of its own: it follows the song in the page.
    - Lines changed after the preview are marked in the table, and the note above the picture says the preview is
-     out of date; press the button again to see them. Paused, the picture is the exact still as before.
+     out of date (also after a design change); press the button again to see them. Paused, the picture is the exact
+     still as before.
    - Cancel keeps the previous preview. The preview is kept in a temporary folder and removed when the server stops;
      nothing is written next to the song.
-4. **Save:** the Save button or `⌘S` writes the timing file. Nothing is written before that, and leaving the page
-   with unsaved changes asks first.
-5. **Render video:** renders the whole video from the saved timing, as the `render` command does (section 5), into
-   `videos/<song file name>.mp4`.
-   - The button waits until everything is saved, so the video always matches the timing file.
+5. **Save:** the Save button or `⌘S` writes the timing file, and the design into the song file when it changed.
+   Nothing is written before that, and leaving the page with unsaved changes asks first.
+6. **Render video:** renders the whole video from the saved timing and design, as the `render` command does
+   (section 5), into `videos/<song file name>.mp4`.
+   - The button waits until everything is saved, so the video always matches the timing file and the song file.
    - A bar shows the progress and the time left. Cancel stops the render and leaves no file.
    - An existing video is replaced only after you confirm. When the video is done, "Show in Finder" selects it.
    - While the render runs, stills still work, but Save waits until the render is done or cancelled.
@@ -264,7 +274,8 @@ Captions are left-aligned with up to two rows in every design, as today.
 
 ### Changing single values
 
-Write a `[design]` table with the design's `name` and the parts to change:
+Change them in the Design mode of the `sync` page (section 4), or write a `[design]` table with the design's `name`
+and the parts to change:
 
 ```toml
 [design]
@@ -290,6 +301,7 @@ Bold and italic:
 
 - `bold` and `italic` draw any font bolder or slanted (by 12°). Japanese fonts have no italic face, so this is the
   only way to slant them.
+- `panel = false` turns off a box that the design has (the `panel` design's credits box, for example).
 - A heavier font looks better than synthetic bold where one exists: name its file as `font` (Hiragino has one file
   per weight, such as W6), or its face in a font collection (`.ttc`) as `font_face`, counted from 0.
 
