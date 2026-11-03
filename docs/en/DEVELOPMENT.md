@@ -9,15 +9,28 @@ To use the app on a song instead, see the [User guide](USER_GUIDE.md).
 
 ```bash
 brew install uv ffmpeg
-git clone https://github.com/musica-sanare/audio-spectrum-app ../audio-spectrum-app   # once, next to this repository
+git clone https://github.com/musica-sanare/lyrics-video-app
+cd lyrics-video-app
 uv sync
 ```
 
 - `uv` manages Python 3.13 and all dependencies (`pyproject.toml`, `uv.lock`).
-- audio-spectrum-app is a path dependency (`../audio-spectrum-app`, editable, version 0.5.0 or later), so changes
-  there are picked up without reinstalling
+- audio-spectrum-app comes from its public GitHub repository at the tag `v0.5.0`, locked to its commit in `uv.lock`
   ([ADR-001](../working/DECISIONS.md#adr-001-a-separate-repository-that-draws-under-audio-spectrum-apps-spectrum)).
   Only its public API, the names exported by `audio_spectrum`, may be used.
+- To change both repositories together, clone audio-spectrum-app next to this one and layer it over the locked
+  version for a run. The project's environment and `uv.lock` stay as they are.
+
+  ```bash
+  git clone https://github.com/musica-sanare/audio-spectrum-app ../audio-spectrum-app
+  ```
+
+  ```bash
+  uv run --with-editable ../audio-spectrum-app pytest
+  ```
+
+- To move to a new release of audio-spectrum-app, change its tag in `pyproject.toml` (`[tool.uv.sources]`) and run
+  `uv lock`.
 - Add a dependency with `uv add <package>`. Keep dependencies few and widely used.
 
 ## 2. Tests

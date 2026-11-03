@@ -24,7 +24,7 @@ dev = [
 ]
 
 [tool.uv.sources]
-audio-spectrum-app = { path = "../audio-spectrum-app", editable = true }
+audio-spectrum-app = { git = "https://github.com/musica-sanare/audio-spectrum-app", tag = "v0.5.0" }
 
 [build-system]
 requires = ["hatchling"]

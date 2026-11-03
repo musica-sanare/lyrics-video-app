@@ -1,4 +1,4 @@
-<!-- source: README.md blob 020c6184c1359ead478a9e847badc04dadb82812 -->
+<!-- source: README.md blob 852aa323bd8c4544759c8d996099585ba5fdedf6 -->
 [English](README.md) | 日本語
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -25,11 +25,11 @@
 
 ## クイックスタート
 
-audio-spectrum-app をこのリポジトリの隣（`../audio-spectrum-app`）に置いておく必要がある。
-
 ```bash
 brew install uv ffmpeg
-uv sync
+git clone https://github.com/musica-sanare/lyrics-video-app
+cd lyrics-video-app
+uv sync                           # audio-spectrum-app 0.5.0 も GitHub から取得する
 uv run lyrics-video install-app   # ~/Applications に Lyrics Video.app ができる。Dock にドラッグする
 ```
 

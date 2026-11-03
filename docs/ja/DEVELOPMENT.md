@@ -1,4 +1,4 @@
-<!-- source: docs/en/DEVELOPMENT.md blob ccb08a36a78363511d22fc708161ca6e7515e432 -->
+<!-- source: docs/en/DEVELOPMENT.md blob 43e46ec9423488a83ce5208753fcd015d7fe81df -->
 [English](../en/DEVELOPMENT.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/DEVELOPMENT.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -12,15 +12,27 @@ lyrics-video-app のコードを扱うためのセットアップ、確認方法
 
 ```bash
 brew install uv ffmpeg
-git clone https://github.com/musica-sanare/audio-spectrum-app ../audio-spectrum-app   # 最初に一度だけ、このリポジトリの隣に
+git clone https://github.com/musica-sanare/lyrics-video-app
+cd lyrics-video-app
 uv sync
 ```
 
 - Python 3.13 とすべての依存は `uv` で管理する（`pyproject.toml`、`uv.lock`）。
-- audio-spectrum-app はパス依存（`../audio-spectrum-app`、editable、バージョン 0.5.0 以上）なので、向こうの変更は
-  再インストールなしで反映される
+- audio-spectrum-app は公開されている GitHub リポジトリのタグ `v0.5.0` から取り、そのコミットを `uv.lock` に固定する
   （[ADR-001](../working/DECISIONS.md#adr-001-a-separate-repository-that-draws-under-audio-spectrum-apps-spectrum)、英語のみ）。
   使ってよいのは公開 API、つまり `audio_spectrum` がエクスポートする名前だけ。
+- 両方のリポジトリを一緒に変えるときは、audio-spectrum-app をこのリポジトリの隣に clone し、実行ごとに固定版の上へ重ねる。
+  プロジェクトの環境と `uv.lock` は変わらない。
+
+  ```bash
+  git clone https://github.com/musica-sanare/audio-spectrum-app ../audio-spectrum-app
+  ```
+
+  ```bash
+  uv run --with-editable ../audio-spectrum-app pytest
+  ```
+
+- audio-spectrum-app の新しいリリースに移るときは、`pyproject.toml`（`[tool.uv.sources]`）のタグを変えて `uv lock` を実行する。
 - 依存は `uv add <package>` で追加する。数は少なく、広く使われているものにとどめる。
 
 ## 2. テスト

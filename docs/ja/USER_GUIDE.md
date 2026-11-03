@@ -1,4 +1,4 @@
-<!-- source: docs/en/USER_GUIDE.md blob a21814a8a223a6ce01ff5c7a5624e6fbaf20ece3 -->
+<!-- source: docs/en/USER_GUIDE.md blob 74abd6774c9af1389642561f990b59196ade7ee3 -->
 [English](../en/USER_GUIDE.md) | 日本語 · [目次に戻る](README.md)
 
 > この文書は[英語版](../en/USER_GUIDE.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -36,11 +36,12 @@ flowchart LR
 
 ```bash
 brew install uv ffmpeg
+git clone https://github.com/musica-sanare/lyrics-video-app
+cd lyrics-video-app
 uv sync
 ```
 
-audio-spectrum-app をこのリポジトリの隣（`../audio-spectrum-app`）に置いておく必要がある。[開発](DEVELOPMENT.md) §1 を参照。
-すべてオフラインで動く。
+`uv sync` は最初に一度だけ、GitHub の audio-spectrum-app を含む依存をダウンロードする。そのあとはすべてオフラインで動く。
 
 ## 2. 普段の使い方
 

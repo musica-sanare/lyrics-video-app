@@ -31,8 +31,9 @@ If any path does not exist, report it rather than silently inventing its content
 
 ## Engineering
 - Python 3.13 managed with `uv`; ffmpeg is an external tool (`brew install ffmpeg`).
-- audio-spectrum-app is a path dependency (`../audio-spectrum-app`, editable) while both change; it can later pin a
-  tagged release (the first is `v0.5.0`).
+- audio-spectrum-app is a Git dependency on a tag of its public GitHub repository (`v0.5.0`). To change both
+  repositories together, layer the sibling checkout over it for a run: `uv run --with-editable ../audio-spectrum-app`
+  (see `docs/en/DEVELOPMENT.md` §1).
 - Automated tests use generated text, images and signals only, never real songs, lyrics or third-party fonts. Tests
   that need a font use macOS system fonts and are skipped where they are missing.
 

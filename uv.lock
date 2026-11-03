@@ -36,30 +36,12 @@ wheels = [
 [[package]]
 name = "audio-spectrum-app"
 version = "0.5.0"
-source = { editable = "../audio-spectrum-app" }
+source = { git = "https://github.com/musica-sanare/audio-spectrum-app?tag=v0.5.0#dc7ce4f0306364b1c3654d837eec919fe92cd441" }
 dependencies = [
     { name = "numpy" },
     { name = "pydantic" },
     { name = "skia-python" },
     { name = "soundfile" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "fastapi", marker = "extra == 'gui'", specifier = ">=0.162.0" },
-    { name = "numpy", specifier = ">=2.5.4" },
-    { name = "pydantic", specifier = ">=2.14.1" },
-    { name = "skia-python", specifier = ">=144.1" },
-    { name = "soundfile", specifier = ">=0.14.0" },
-    { name = "uvicorn", marker = "extra == 'gui'", specifier = ">=0.54.0" },
-]
-provides-extras = ["gui"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "audio-spectrum-app", extras = ["gui"] },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "pytest" },
 ]
 
 [[package]]
@@ -208,7 +190,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "audio-spectrum-app", editable = "../audio-spectrum-app" },
+    { name = "audio-spectrum-app", git = "https://github.com/musica-sanare/audio-spectrum-app?tag=v0.5.0" },
     { name = "fastapi", specifier = ">=0.162.0" },
     { name = "pillow", specifier = ">=13.0.0" },
     { name = "pydantic", specifier = ">=2.14.2" },

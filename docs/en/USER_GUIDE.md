@@ -35,11 +35,13 @@ flowchart LR
 
 ```bash
 brew install uv ffmpeg
+git clone https://github.com/musica-sanare/lyrics-video-app
+cd lyrics-video-app
 uv sync
 ```
 
-audio-spectrum-app must be checked out next to this repository (`../audio-spectrum-app`); see
-[Development](DEVELOPMENT.md) §1. Everything runs offline.
+`uv sync` downloads the dependencies once, including audio-spectrum-app from GitHub. After that, everything runs
+offline.
 
 ## 2. Everyday use
 

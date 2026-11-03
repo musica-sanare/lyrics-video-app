@@ -24,11 +24,11 @@ it, all on one page. See the [Phase 6 acceptance](docs/working/PHASE6_ACCEPTANCE
 
 ## Quick start
 
-audio-spectrum-app must be checked out next to this repository (`../audio-spectrum-app`).
-
 ```bash
 brew install uv ffmpeg
-uv sync
+git clone https://github.com/musica-sanare/lyrics-video-app
+cd lyrics-video-app
+uv sync                           # also fetches audio-spectrum-app 0.5.0 from GitHub
 uv run lyrics-video install-app   # Lyrics Video.app in ~/Applications; drag it to the Dock
 ```
 

@@ -57,8 +57,11 @@ Items marked `要確認` wait for the owner. Results are recorded with their dat
   (BSD-3-Clause), pydantic (MIT), tomlkit (MIT), Pillow (MIT-CMU), NumPy (BSD-3-Clause and others), skia-python
   (BSD), soundfile (BSD-3-Clause). The repository distributes source only, no wheels or binaries. ffmpeg is installed
   by the user and not distributed.
-- [ ] README status and quick start (English and Japanese): deferred to milestone 3 of the Phase 7 plan, which
-  replaces the path dependency with audio-spectrum-app's tag `v0.5.0` and checks the quick start from a fresh clone.
+- [x] README quick start (English and Japanese), 2026-11-03: audio-spectrum-app is public and a Git dependency on
+  its tag `v0.5.0`. A clone of this repository was made into an empty folder with no audio-spectrum-app next to it,
+  an empty uv cache and Git credentials turned off. There `uv sync`, `uv run pytest` (309 passed) and
+  `uv run lyrics-video install-app` (into a temporary folder) worked. The README status is updated at the Phase 7
+  acceptance.
 - [x] `SECURITY.md` added: reports go to GitHub's private vulnerability reporting; it names the local web server and
   the app's files as the parts in scope.
 - [x] `CONTRIBUTING.md` and templates: not wanted (Q1).
