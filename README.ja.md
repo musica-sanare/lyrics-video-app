@@ -1,4 +1,4 @@
-<!-- source: README.md blob 852aa323bd8c4544759c8d996099585ba5fdedf6 -->
+<!-- source: README.md blob fe9ac2711487ca72a960e253e93b4b653f729396 -->
 [English](README.md) | 日本語
 
 > この文書は[英語版](README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -9,9 +9,9 @@
 クレジット、[audio-spectrum-app](https://github.com/musica-sanare/audio-spectrum-app) が描くオーディオスペクトラムと、
 曲の音声でできている。動画編集ソフトで字幕画像を重ねていた手作業を、これで置き換える。
 
-**状況：** Phase 6（普段の使い方）は受け入れ済みで、バージョンは 0.5.0。Dock からアプリを起動し、どのフォルダのファイルからでも新しい曲を作れる。
-タイミング付け、スペクトラムを含む見た目の設定、動画全体の数十秒でのプレビュー、書き出しまで、一つのページで済む。
-詳しくは [Phase 6 acceptance](docs/working/PHASE6_ACCEPTANCE.md)（英語のみ）を参照。
+**状況：** Phase 7 は受け入れ済みで、バージョンは 0.6.0。専用のアイコンで Dock からアプリを起動し、どのフォルダのファイルからでも新しい曲を
+作れる。タイミング付け、スペクトラムを含む見た目の設定、動画全体の数十秒でのプレビュー、書き出しまで、一つのページで済む。
+clone したら `uv sync` だけでインストールできる。詳しくは [Phase 7 acceptance](docs/working/PHASE7_ACCEPTANCE.md)（英語のみ）を参照。
 
 ## 今できること
 

@@ -6,8 +6,8 @@ The repository is private. Making it public is the owner's decision and action. 
 will be visible on GitHub, not only the current tree. The procedure behind each item is the `claude-shared-rules`
 repository's `docs/en/PUBLIC_RELEASE.md`; the decisions are in the [Phase 7 plan](PHASE7_PLAN.md) (Q1 to Q5).
 
-Items marked `要確認` wait for the owner. Results are recorded with their date (all checks so far: 2026-11-01, on
-`dev` at `8dd64da`).
+Items marked `要確認` wait for the owner. Results are recorded with their date: 2026-11-01 on `dev` at `8dd64da`,
+2026-11-03 on the Phase 7 acceptance commit unless stated otherwise.
 
 ## 1. Scope
 
@@ -42,13 +42,13 @@ Items marked `要確認` wait for the owner. Results are recorded with their dat
   - macOS system fonts (Hiragino) are named by path in docs, tests and `contact_sheet.py`; the files are not
     distributed.
   - The app icon is drawn by `app_icon.py` from shapes; no image is committed.
-  - The example lyrics (`examples/lyrics.example.txt`) and the test texts were written for this repository.
-    `要確認`: confirm that none of them is a line of your own songs.
+  - The example lyrics (`examples/lyrics.example.txt`) and the test texts were written for this repository. The
+    owner confirmed on 2026-11-03 that none of them is a line of their songs.
 - [x] Internal notes: `CLAUDE.md` and `docs/working/` (plans, acceptance reports, ADRs, `HANDOFF.md`) stay public
   (Q1). They were written for a public repository; a search found no local paths, personal data or song names.
   `CLAUDE.local.md` and `.claude/` are ignored and were never committed.
-- [ ] GitHub-side data. `要確認` (owner, on GitHub): there are no pull requests and no workflows; check that the
-  repository also has no issues, releases or wiki pages that should not be public.
+- [x] GitHub-side data: there are no pull requests and no workflows. The owner checked on 2026-11-03 that there are
+  no issues, releases or wiki pages that should not be public.
 
 ## 4. Presentation
 
@@ -60,8 +60,8 @@ Items marked `要確認` wait for the owner. Results are recorded with their dat
 - [x] README quick start (English and Japanese), 2026-11-03: audio-spectrum-app is public and a Git dependency on
   its tag `v0.5.0`. A clone of this repository was made into an empty folder with no audio-spectrum-app next to it,
   an empty uv cache and Git credentials turned off. There `uv sync`, `uv run pytest` (309 passed) and
-  `uv run lyrics-video install-app` (into a temporary folder) worked. The README status is updated at the Phase 7
-  acceptance.
+  `uv run lyrics-video install-app` (into a temporary folder) worked. The README status names Phase 7 and version
+  0.6.0.
 - [x] `SECURITY.md` added: reports go to GitHub's private vulnerability reporting; it names the local web server and
   the app's files as the parts in scope.
 - [x] `CONTRIBUTING.md` and templates: not wanted (Q1).
@@ -72,8 +72,11 @@ Items marked `要確認` wait for the owner. Results are recorded with their dat
   there is no CI (Q1).
 - [x] Dependency audit (2026-11-01): `uv audit --frozen` (uv 0.13.5, built in, experimental; it looks up the locked
   versions in the OSV database): no known vulnerabilities in 33 packages.
-- [ ] Secret scan and audit repeated on the final commit: at the Phase 7 acceptance, and again after the owner's
-  pushes (section 1).
+- [x] Repeated for the Phase 7 acceptance (2026-11-03): `uv run pytest`, 309 passed; `uv audit --frozen`, no known
+  vulnerabilities in 33 packages; `gitleaks git --log-opts="--all" --redact .` over 51 commits and `gitleaks dir
+  --redact .` over the working tree with the acceptance changes, no leaks found; identities, co-author lines and home
+  paths checked again, all clean.
+- [ ] Secret scan repeated over the refs on GitHub after the owner's pushes (section 1).
 - [ ] Mermaid diagrams changed in Phases 3 to 6 render on GitHub: `要確認` (owner), after the next push. They are in
   `docs/en/ARCHITECTURE.md`, `docs/en/USER_GUIDE.md` and their Japanese twins.
 

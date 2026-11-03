@@ -24,6 +24,7 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
   audio-spectrum-app is made public first or together with this repository, and the README links to it. Rejected: a
   Git submodule (more steps to clone and update, nothing gained over a pinned tag) and a PyPI release (not needed
   for now).
+- Update (2026-11-03, Phase 7): done; see ADR-015.
 
 ## ADR-002: Pillow for the caption PNGs
 
@@ -227,6 +228,7 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
   Moving the repository or `uv` needs `install-app --overwrite`. The app has the default icon. Rejected: a
   `.command` file (opens Terminal), `uv tool install` alone (still a terminal), a native window (a new GUI
   dependency).
+- Update (2026-11-03, Phase 7): the app has its own icon; see ADR-014.
 
 ## ADR-013: New songs from files where they are
 
@@ -246,3 +248,35 @@ first ones: [Handoff](HANDOFF.md) and the [Phase 0 plan](PHASE0_PLAN.md).
 - Consequences: Songs live wherever the owner wants and the video lands next to the song file. Moving or renaming a
   file breaks the song until it is chosen again on the page. Rejected: a library folder in Application Support
   (another fixed place), copying the files (duplicates large audio, two lyrics files drift apart).
+
+## ADR-014: An app icon drawn by code
+
+- Context: Lyrics Video.app showed the generic app icon in the Dock. An image file in the repository would bring a
+  binary into Git and a question of its origin and license ([Phase 7 plan](PHASE7_PLAN.md), options A and B).
+- Decision:
+  - `app_icon.py` draws the icon with Pillow from shapes and the page's colors only: a waveform between a green start
+    mark and an orange end mark, like the sync page (B2, chosen by the owner from three candidates). Below 128 px the
+    waveform has fewer, wider bars.
+  - `install-app` draws the ten sizes of an `.iconset`, turns them into `Contents/Resources/AppIcon.icns` with macOS's
+    `iconutil`, and names it in `Info.plist` (`CFBundleIconFile`).
+  - `install-app --icon IMAGE` uses the owner's own image instead, cropped to a square and scaled down only. The image
+    is never copied into the repository.
+  - Without `iconutil` the bundle keeps the default icon and the command warns; with `--icon` it stops instead.
+- Consequences: No image file in the repository and nothing to license; the drawing is reviewable code and sharp at
+  every size. The Dock caches icons, so after `--overwrite` the app is removed from the Dock and dragged back once. An
+  own image must be given again at each install. Rejected: a committed image file (A2).
+
+## ADR-015: audio-spectrum-app by its Git tag
+
+- Context: A clone of this repository installed only with audio-spectrum-app checked out next to it (ADR-001). Both
+  repositories go public, audio-spectrum-app first (Phase 7 plan, option C).
+- Decision:
+  - `pyproject.toml` takes audio-spectrum-app from its public GitHub repository at the tag `v0.5.0`; `uv.lock` pins
+    the tag's commit.
+  - Working on both repositories together layers the sibling checkout over the locked version for one run:
+    `uv run --with-editable ../audio-spectrum-app`. The project's environment and `uv.lock` stay unchanged.
+  - Moving to a new release changes the tag and runs `uv lock`.
+- Consequences: `git clone` and `uv sync` alone install the app; this was checked from a clean folder without
+  credentials. The first `uv sync` needs the network, as for every other dependency; everyday use stays offline. A
+  change in audio-spectrum-app reaches this app only through a new tag. Rejected: the path dependency (C1) and a PyPI
+  release (C3).

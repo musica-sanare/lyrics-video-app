@@ -1,4 +1,4 @@
-<!-- source: docs/en/README.md blob 4a828152aed084e7eec41a747e6c59c7146e50ee -->
+<!-- source: docs/en/README.md blob ed272bf226b83e51271705f128a298a5d6d1acac -->
 [English](../en/README.md) | 日本語 · [リポジトリの README](../../README.ja.md)
 
 > この文書は[英語版](../en/README.md)の翻訳。内容が異なる場合は英語版が優先する。
@@ -37,4 +37,5 @@
 | [Phase 6 plan](../working/PHASE6_PLAN.md)（英語のみ） | 日常の運用：Dock からのアプリ起動、最近の曲を並べる開始ページ、どのフォルダのファイルからでも作る新しい曲、ページでの曲の設定。 |
 | [Phase 6 acceptance](../working/PHASE6_ACCEPTANCE.md)（英語のみ） | Phase 6 の受け入れ報告：オーナーの確認とそこから出た二つの修正、基準、起動時間の計測、リポジトリの安全性、未決事項。 |
 | [Phase 7 plan](../working/PHASE7_PLAN.md)（英語のみ） | コードで描くアプリアイコンと、リポジトリ公開の準備：アイコン、公開前チェックリスト、タグ指定の audio-spectrum-app、`SECURITY.md`。 |
+| [Phase 7 acceptance](../working/PHASE7_ACCEPTANCE.md)（英語のみ） | Phase 7 の受け入れ報告：オーナーが選んだアイコン、基準、新しい clone での確認、アイコン作成時間の計測、リポジトリの安全性、未決事項。 |
 | [Public release checklist](../working/PUBLIC_RELEASE.md)（英語のみ） | 公開前のすべての確認と結果・日付、公開の切り替えと直後の GitHub 設定のオーナー手順。 |
