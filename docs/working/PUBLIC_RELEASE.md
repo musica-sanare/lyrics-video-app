@@ -2,21 +2,20 @@
 
 # Public release checklist
 
-The repository is private. Making it public is the owner's decision and action. Every item below covers all refs that
+The repository is public since 2026-11-03. Making it public was the owner's decision and action. Every item below covers all refs that
 will be visible on GitHub, not only the current tree. The procedure behind each item is the `claude-shared-rules`
 repository's `docs/en/PUBLIC_RELEASE.md`; the decisions are in the [Phase 7 plan](PHASE7_PLAN.md) (Q1 to Q5).
 
-Items marked `要確認` wait for the owner. Results are recorded with their date: 2026-11-01 on `dev` at `8dd64da`,
-2026-11-03 on the Phase 7 acceptance commit unless stated otherwise.
+Every item is done. Results are recorded with their date: 2026-11-01 on `dev` at `8dd64da`, 2026-11-03 on the
+Phase 7 acceptance commit (`acdc320`) unless stated otherwise.
 
 ## 1. Scope
 
 - [x] `git ls-remote origin` listed (2026-11-01): `refs/heads/main` (`4f5e399`), `refs/heads/dev` (`69efe47`), `HEAD`
   pointing to `main`. No tags, no other branches. The owner decided to publish `main` and `dev` (Q4).
 - [x] `refs/pull/*`: none; no pull request was ever opened.
-- [ ] Local branches to publish are pushed. Local `dev` is 10 commits ahead of `origin/dev`; `main` is at Phase 2
-  (`4f5e399`). Owner step: push `dev`, merge `dev` into `main` and push `main` (Q4). The final scan (section 5) runs
-  after that.
+- [x] Local branches to publish are pushed (owner, 2026-11-03): `git ls-remote origin` shows only `HEAD`,
+  `refs/heads/main` and `refs/heads/dev`, all at `acdc320` (the Phase 7 acceptance), the same as local `dev`.
 
 ## 2. History
 
@@ -76,9 +75,11 @@ Items marked `要確認` wait for the owner. Results are recorded with their dat
   vulnerabilities in 33 packages; `gitleaks git --log-opts="--all" --redact .` over 51 commits and `gitleaks dir
   --redact .` over the working tree with the acceptance changes, no leaks found; identities, co-author lines and home
   paths checked again, all clean.
-- [ ] Secret scan repeated over the refs on GitHub after the owner's pushes (section 1).
-- [ ] Mermaid diagrams changed in Phases 3 to 6 render on GitHub: `要確認` (owner), after the next push. They are in
-  `docs/en/ARCHITECTURE.md`, `docs/en/USER_GUIDE.md` and their Japanese twins.
+- [x] Secret scan repeated over the refs on GitHub after the owner's pushes (2026-11-03): a `git clone --mirror` of
+  `origin` (refs `main` and `dev`, 52 commits), `gitleaks git --log-opts="--all" --redact .`, no leaks found;
+  identities, co-author lines and home paths checked again, all clean.
+- [x] Mermaid diagrams changed in Phases 3 to 6 render on GitHub (owner, 2026-11-03): `docs/en/ARCHITECTURE.md`,
+  `docs/en/USER_GUIDE.md` and their Japanese twins.
 
 ## 6. Switch (owner)
 
@@ -88,7 +89,8 @@ audio-spectrum-app goes public before or together with this repository (Q3), wit
 2. Check that `git ls-remote origin` shows only `main` and `dev`.
 3. **Settings → General → Danger Zone → Change repository visibility → Make public.**
 
-- [ ] Visibility changed to public on: date.
+- [x] Visibility changed to public on: 2026-11-03 (owner). GitHub's API reports `visibility: public`, default branch
+  `main`, license MIT.
 
 ## 7. GitHub settings right after (owner)
 
@@ -107,20 +109,27 @@ Setting names checked against GitHub Docs on 2026-11-01. Everything here is free
 4. **Settings → General → Features**: turn off Wiki, Projects and Discussions. Issues: off unless you want reports in
    public (security reports go through private vulnerability reporting either way).
 
-- [ ] Private vulnerability reporting.
-- [ ] Secret scanning push protection.
-- [ ] Dependabot alerts.
-- [ ] Ruleset on the default branch: no force push, no deletion.
-- [ ] Actions disabled.
-- [ ] Unused features turned off.
+Applied by the owner on 2026-11-03. Items marked "API" were also checked from outside through GitHub's public API,
+without credentials; the others are visible only with the owner's account.
+
+- [x] Private vulnerability reporting: enabled (API: `/private-vulnerability-reporting` returns `enabled: true`).
+- [x] Secret scanning push protection: enabled (owner).
+- [x] Dependabot alerts: enabled (owner).
+- [x] Ruleset on the default branch: no force push, no deletion (API: `/rules/branches/main` returns `deletion` and
+  `non_fast_forward`). A new ruleset starts with its enforcement disabled; it was first saved that way and then set to
+  Active. `dev` has no rules.
+- [x] Actions disabled (owner).
+- [x] Unused features turned off: Issues, Wiki, Projects and Discussions are all off.
 - [x] Setting names checked against GitHub Docs on: 2026-11-01. The rule names "Restrict deletions" and "Block force
   pushes" and the label of the option that disables Actions were not shown on the pages read; check them on the
   settings page.
 
 ## 8. Verification
 
-- [ ] A signed-out browser shows only `main` and `dev` and the expected files.
-- [ ] The README quick start works from a clean directory without credentials (after milestone 3 and audio-spectrum-app
-  is public).
-- [ ] No secret scanning alerts under **Security → Secret scanning**.
-- [ ] README status updated.
+- [x] A signed-out browser shows only `main` and `dev` and the expected files (owner, 2026-11-03). Without
+  credentials, `git ls-remote` over HTTPS lists only `main` and `dev`.
+- [x] The README quick start works from a clean directory without credentials (2026-11-03): `git clone` over HTTPS
+  with Git credentials off and an empty uv cache, then `uv sync`, `uv run pytest` (309 passed),
+  `uv run lyrics-video --version` (0.6.0) and `install-app` into a temporary folder (with `AppIcon.icns`).
+- [x] No secret scanning alerts under **Security → Secret scanning** (owner, 2026-11-03).
+- [x] README status updated: Phase 7 accepted, version 0.6.0 (`acdc320`).
